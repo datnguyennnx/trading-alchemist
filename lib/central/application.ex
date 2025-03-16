@@ -17,7 +17,8 @@ defmodule Central.Application do
       # Start a worker by calling: Central.Worker.start_link(arg)
       # {Central.Worker, arg},
       # Start to serve requests, typically the last entry
-      CentralWeb.Endpoint
+      CentralWeb.Endpoint,
+      {TwMerge.Cache}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
