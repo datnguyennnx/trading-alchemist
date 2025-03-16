@@ -18,7 +18,7 @@ defmodule Central.Application do
       # {Central.Worker, arg},
       # Start to serve requests, typically the last entry
       CentralWeb.Endpoint,
-      {TwMerge.Cache}
+      TwMerge.Cache
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

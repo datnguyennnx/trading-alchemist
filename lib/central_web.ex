@@ -87,8 +87,6 @@ defmodule CentralWeb do
 
       # HTML escaping functionality
       import Phoenix.HTML
-      # Core UI components
-      import CentralWeb.CoreComponents
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
