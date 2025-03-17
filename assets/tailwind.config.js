@@ -1,33 +1,55 @@
 // See the Tailwind configuration guide for advanced usage
 // https://tailwindcss.com/docs/configuration
 
-const plugin = require("tailwindcss/plugin")
-const fs = require("fs")
-const path = require("path")
+const plugin = require("tailwindcss/plugin");
+const fs = require("fs");
+const path = require("path");
 
 module.exports = {
+  theme: {
+    extend: {
+      colors: require("./tailwind.colors.json"),},},
   content: [
+"../deps/salad_ui/lib/**/*.ex",
+    "../deps/salad_ui/lib/**/*.ex",
     "./js/**/*.js",
     "../lib/central_web.ex",
     "../lib/central_web/**/*.*ex"
   ],
-  theme: {
-    extend: {
-      colors: require("./tailwind.colors.json")
-    },
-  },
   plugins: [
+    require("@tailwindcss/forms"),
     require("@tailwindcss/typography"),
     require("./vendor/tailwindcss-animate"),
-    require("@tailwindcss/forms"),
+
     // Allows prefixing tailwind classes with LiveView classes to add rules
     // only when LiveView classes are applied, for example:
     //
     //     <div class="phx-click-loading:animate-ping">
     //
-    plugin(({addVariant}) => addVariant("phx-click-loading", [".phx-click-loading&", ".phx-click-loading &"])),
-    plugin(({addVariant}) => addVariant("phx-submit-loading", [".phx-submit-loading&", ".phx-submit-loading &"])),
-    plugin(({addVariant}) => addVariant("phx-change-loading", [".phx-change-loading&", ".phx-change-loading &"])),
+    plugin(({ addVariant }) =>
+      addVariant("phx-no-feedback", [
+        ".phx-no-feedback&",
+        ".phx-no-feedback &",
+      ]),
+    ),
+    plugin(({ addVariant }) =>
+      addVariant("phx-click-loading", [
+        ".phx-click-loading&",
+        ".phx-click-loading &",
+      ]),
+    ),
+    plugin(({ addVariant }) =>
+      addVariant("phx-submit-loading", [
+        ".phx-submit-loading&",
+        ".phx-submit-loading &",
+      ]),
+    ),
+    plugin(({ addVariant }) =>
+      addVariant("phx-change-loading", [
+        ".phx-change-loading&",
+        ".phx-change-loading &",
+      ]),
+    ),
 
     // Embeds Heroicons (https://heroicons.com) into your app.css bundle
     // See your `CoreComponents.icon/1` for more information.
@@ -39,8 +61,7 @@ module.exports = {
         ["", "/24/outline"],
         ["-solid", "/24/solid"],
         ["-mini", "/20/solid"],
-        ["-micro", "/16/solid"]
-      ]
+      ];
       icons.forEach(([suffix, dir]) => {
         fs.readdirSync(path.join(iconsDir, dir)).forEach(file => {
           let name = path.basename(file, ".svg") + suffix
