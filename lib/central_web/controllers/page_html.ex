@@ -88,7 +88,7 @@ defmodule CentralWeb.PageHTML do
           :for={item <- @items}
           id={id(item.title)}
           open={item[:is_active]}
-          class="group/collapsible block"
+          class="group/collapsible block overflow-hidden"
         >
           <.sidebar_menu_item>
             <.as_child

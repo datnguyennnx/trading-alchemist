@@ -43,6 +43,14 @@ defmodule CentralWeb.Components.Sidebar do
       }
       {@rest}
     >
+      <style>
+        .group\/collapsible:hover ~ * .salad-scroll-area,
+        .group\/collapsible:hover .salad-scroll-area,
+        .group\/collapsible:hover ~ * [data-sidebar="content"],
+        .group\/collapsible:hover [data-sidebar="content"] {
+          overflow: hidden !important;
+        }
+      </style>
       {render_slot(@inner_block)}
     </div>
     """
@@ -652,7 +660,7 @@ defmodule CentralWeb.Components.Sidebar do
       data-sidebar="menu-sub"
       class={
         classes([
-          "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5",
+          "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5 overflow-hidden",
           "group-data-[collapsible=icon]:hidden",
           @class
         ])

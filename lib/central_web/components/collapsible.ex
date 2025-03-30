@@ -79,7 +79,7 @@ defmodule CentralWeb.Components.Collapsible do
     <div
       class={
         classes([
-          "collapsible-content hidden transition-all duration-200 ease-in-out",
+          "collapsible-content hidden transition-all duration-200 ease-in-out overflow-hidden",
           @class
         ])
       }
