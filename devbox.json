@@ -5,7 +5,8 @@
     "darwin.apple_sdk.frameworks.CoreServices"
   ],
   "env": {
-    "LANG": "C.UTF-8"
+    "LANG": "C.UTF-8",
+    "ELIXIR_ERL_OPTIONS": "+fnu"
   },
   "shell": {
     "init_hook": [
