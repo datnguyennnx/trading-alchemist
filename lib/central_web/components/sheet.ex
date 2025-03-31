@@ -119,7 +119,7 @@ defmodule CentralWeb.Components.Sheet do
         role="sheet"
         class={
           classes([
-            "sheet-content-wrap hidden fixed z-50 bg-background shadow-lg transition",
+            "sheet-content-wrap hidden fixed z-50 bg-background shadow-lg transition dark:bg-background dark:text-foreground dark:border-border",
             @variant_class,
             @class
           ])
@@ -135,7 +135,7 @@ defmodule CentralWeb.Components.Sheet do
           <% else %>
             <button
               type="button"
-              class="ring-offset-background absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-ring focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none"
+              class="ring-offset-background absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-ring focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none dark:ring-offset-background dark:focus:ring-ring"
               phx-click={hide_sheet(@id, @side)}
             >
               <svg
@@ -174,7 +174,7 @@ defmodule CentralWeb.Components.Sheet do
 
   def sheet_title(assigns) do
     ~H"""
-    <h3 class={classes(["text-lg font-semibold text-foreground", @class])}>
+    <h3 class={classes(["text-lg font-semibold text-foreground dark:text-foreground", @class])}>
       {render_slot(@inner_block)}
     </h3>
     """
@@ -185,7 +185,7 @@ defmodule CentralWeb.Components.Sheet do
 
   def sheet_description(assigns) do
     ~H"""
-    <p class={classes(["text-sm text-muted-foreground", @class])}>
+    <p class={classes(["text-sm text-muted-foreground dark:text-muted-foreground", @class])}>
       {render_slot(@inner_block)}
     </p>
     """

@@ -1,0 +1,36 @@
+<.changelog
+  title="Changelog"
+  entries={[
+    %{
+      version: "0.1.0",
+      title: "React to Elixir Conversion",
+      date: "March 31, 2025",
+      description:
+        "Successfully converted the React FlickeringGrid component to an Elixir Phoenix component.",
+      features: [
+        %{
+          title: "FlickeringGrid Component",
+          description:
+            "Created a reusable Elixir component with matching API and functionality to the React version."
+        },
+        %{
+          title: "TailwindCSS Configuration",
+          description:
+            "Set up and configured TailwindCSS with color schemes and dark theme support."
+        }
+      ],
+      changes: [
+        %{
+          description:
+            "Created lib/central_web/components/flickering_grid.ex as a function component"
+        },
+        %{
+          description:
+            "Implemented flickering_grid.js for canvas animation and theme-switcher.js for theme"
+        },
+        %{description: "Updated app.js to register the FlickeringGrid and Theme-switcher hook"},
+        %{description: "Separating sidebar to app-sidebar and settings-dialogs components"}
+      ]
+    }
+  ]}
+/>

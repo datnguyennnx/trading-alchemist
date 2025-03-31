@@ -18,6 +18,7 @@ defmodule CentralWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+    get "/changelog", ChangelogController, :index
   end
 
   # Other scopes may use custom stacks.

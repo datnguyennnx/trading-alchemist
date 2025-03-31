@@ -8,9 +8,10 @@ const path = require("path");
 module.exports = {
   theme: {
     extend: {
-      colors: require("./tailwind.colors.json"),},},
+      colors: require("./tailwind.colors.json"),
+    },
+  },
   content: [
-"../deps/salad_ui/lib/**/*.ex",
     "../deps/salad_ui/lib/**/*.ex",
     "./js/**/*.js",
     "../lib/central_web.ex",
@@ -21,6 +22,38 @@ module.exports = {
     require("@tailwindcss/typography"),
     require("./vendor/tailwindcss-animate"),
 
+
+    // Allows prefixing tailwind classes with LiveView classes to add rules
+    // only when LiveView classes are applied, for example:
+    //
+    //     <div class="phx-click-loading:animate-ping">
+    //
+    plugin(({ addVariant }) =>
+      addVariant("phx-no-feedback", [
+        ".phx-no-feedback&",
+        ".phx-no-feedback &",
+      ]),
+    ),
+    plugin(({ addVariant }) =>
+      addVariant("phx-click-loading", [
+        ".phx-click-loading&",
+        ".phx-click-loading &",
+      ]),
+    ),
+    plugin(({ addVariant }) =>
+      addVariant("phx-submit-loading", [
+        ".phx-submit-loading&",
+        ".phx-submit-loading &",
+      ]),
+    ),
+    plugin(({ addVariant }) =>
+      addVariant("phx-change-loading", [
+        ".phx-change-loading&",
+        ".phx-change-loading &",
+      ]),
+    ),
+
+    
     // Allows prefixing tailwind classes with LiveView classes to add rules
     // only when LiveView classes are applied, for example:
     //
@@ -90,6 +123,14 @@ module.exports = {
           }
         }
       }, {values})
+    }),
+
+    // LiveView specific variants
+    plugin(({ addVariant }) => {
+      addVariant("phx-no-feedback", [".phx-no-feedback&", ".phx-no-feedback &"]);
+      addVariant("phx-click-loading", [".phx-click-loading&", ".phx-click-loading &"]);
+      addVariant("phx-submit-loading", [".phx-submit-loading&", ".phx-submit-loading &"]);
+      addVariant("phx-change-loading", [".phx-change-loading&", ".phx-change-loading &"]);
     })
   ]
 }

@@ -68,29 +68,54 @@
     --chart-5: 340 75% 55%;
     
     /* Added sidebar variables for dark theme */
-    --sidebar-background: 240 11% 7%;
-    --sidebar-foreground: 0 0% 85%;
-    --sidebar-primary: 0 0% 98%;
-    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-  
   * {
     @apply border-border !important;
   }
 }
 
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-  }
+body { @apply bg-background text-foreground; }
+
+/* Force light theme for specific elements */
+[data-force-light-theme],
+[data-force-light-theme] * {
+  --background: 0 0% 100% !important;
+  --foreground: 240 10% 3.9% !important;
+  --card: 0 0% 100% !important;
+  --card-foreground: 240 10% 3.9% !important;
+  --popover: 0 0% 100% !important;
+  --popover-foreground: 240 10% 3.9% !important;
+  --primary: 240 5.9% 10% !important;
+  --primary-foreground: 0 0% 98% !important;
+  --secondary: 240 4.8% 95.9% !important;
+  --secondary-foreground: 240 5.9% 10% !important;
+  --muted: 240 4.8% 95.9% !important;
+  --muted-foreground: 240 3.8% 46.1% !important;
+  --accent: 240 4.8% 95.9% !important;
+  --accent-foreground: 240 5.9% 10% !important;
+  --destructive: 0 84.2% 60.2% !important;
+  --destructive-foreground: 0 0% 98% !important;
+  --border: 240 5.9% 90% !important;
+  --input: 240 5.9% 90% !important;
+  --ring: 240 5.9% 10% !important;
+  
+  /* Force light mode styles */
+  color-scheme: light !important;
+  background-color: white !important;
+  color: black !important;
 }
 
-body { @apply bg-background text-foreground; }
+/* Ensure light mode for all child elements */
+[data-force-light-theme] [class*="text-"],
+[data-force-light-theme] [class*="bg-"] {
+  color: inherit !important;
+  background-color: inherit !important;
+}

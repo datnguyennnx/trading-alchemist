@@ -13,7 +13,7 @@ defmodule CentralWeb.Components.Skeleton do
     <div
       class={
         classes([
-          "animate-pulse rounded-md bg-muted",
+          "animate-pulse rounded-md bg-muted dark:bg-muted",
           @class
         ])
       }

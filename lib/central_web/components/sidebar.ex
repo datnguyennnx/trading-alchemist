@@ -43,14 +43,6 @@ defmodule CentralWeb.Components.Sidebar do
       }
       {@rest}
     >
-      <style>
-        .group\/collapsible:hover ~ * .salad-scroll-area,
-        .group\/collapsible:hover .salad-scroll-area,
-        .group\/collapsible:hover ~ * [data-sidebar="content"],
-        .group\/collapsible:hover [data-sidebar="content"] {
-          overflow: hidden !important;
-        }
-      </style>
       {render_slot(@inner_block)}
     </div>
     """
@@ -98,7 +90,7 @@ defmodule CentralWeb.Components.Sidebar do
       <.sheet_content
         data-sidebar="sidebar"
         data-mobile="true"
-        class="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+        class="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden dark:bg-sidebar dark:text-sidebar-foreground"
         style={
           style([
             %{
@@ -120,7 +112,7 @@ defmodule CentralWeb.Components.Sidebar do
   def sidebar(assigns) do
     ~H"""
     <div
-      class="group peer hidden md:block text-sidebar-foreground sidebar-root"
+      class="group peer hidden md:block text-sidebar-foreground sidebar-root dark:text-sidebar-foreground"
       data-state={@state}
       data-collapsible={(@state == "collapsed" && @collapsible) || "none"}
       data-variant={@variant}
@@ -155,7 +147,7 @@ defmodule CentralWeb.Components.Sidebar do
       >
         <div
           data-sidebar="sidebar"
-          class="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+          class="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow dark:bg-sidebar dark:border-sidebar-border"
         >
           {render_slot(@inner_block)}
         </div>
@@ -256,7 +248,7 @@ defmodule CentralWeb.Components.Sidebar do
       data-sidebar="input"
       class={
         classes([
-          "h-8 w-full bg-background shadow-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+          "h-8 w-full bg-background shadow-none focus-visible:ring-2 focus-visible:ring-sidebar-ring dark:bg-background dark:focus-visible:ring-sidebar-ring",
           @class
         ])
       }
@@ -660,7 +652,7 @@ defmodule CentralWeb.Components.Sidebar do
       data-sidebar="menu-sub"
       class={
         classes([
-          "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5 overflow-hidden",
+          "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5",
           "group-data-[collapsible=icon]:hidden",
           @class
         ])
