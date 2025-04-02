@@ -1,0 +1,17 @@
+_build/
+deps/
+.elixir_ls/
+priv/static/
+.mix/
+assets/node_modules/
+cover/
+*.beam
+*.ez
+*.plt
+*.so
+*.o
+erl_crash.dump
+
+.nix-hex/
+.nix-mix/
+.devbox/

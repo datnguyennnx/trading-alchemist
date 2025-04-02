@@ -1,0 +1,7 @@
+_build/
+deps/
+.elixir_ls/
+priv/static/
+.mix/
+assets/node_modules/
+cover/
