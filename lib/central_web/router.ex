@@ -19,6 +19,7 @@ defmodule CentralWeb.Router do
 
     get "/", PageController, :index
     get "/changelog", ChangelogController, :index
+    live "/chart", ChartLive
   end
 
   # Other scopes may use custom stacks.

@@ -24,6 +24,7 @@ import {LiveSocket} from "phoenix_live_view"
 // Import hooks
 import FlickeringGrid from "./hooks/flickering_grid"
 import ThemeSwitcher from "./hooks/theme-switcher"
+import TradingViewChart from "./hooks/tradingview_chart"
 
 // Apply theme from localStorage or system preference on initial page load
 const initializeTheme = () => {
@@ -40,12 +41,12 @@ document.addEventListener('DOMContentLoaded', initializeTheme);
 
 const Hooks = {
   FlickeringGrid,
-  ThemeSwitcher
+  ThemeSwitcher,
+  TradingViewChart
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
-  longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
   hooks: Hooks
 })

@@ -6,7 +6,7 @@ defmodule CentralWeb.Components.Common.AppSidebar do
 
   import SaladUI.Sidebar
   import SaladUI.Collapsible
-  import SaladUI.Icon, only: [icon: 1]
+  import SaladUI.Icon
 
   import Lucideicons, except: [import: 1, quote: 1, menu: 1]
   alias CentralWeb.Components.Common.SettingsDialog
@@ -23,6 +23,17 @@ defmodule CentralWeb.Components.Common.AppSidebar do
           %{
             title: "Money Track",
             url: "#"
+          }
+        ]
+      },
+      %{
+        title: "Charts",
+        url: "#",
+        icon: &chart_bar/1,
+        items: [
+          %{
+            title: "TradingView Chart",
+            url: "/chart"
           }
         ]
       },
