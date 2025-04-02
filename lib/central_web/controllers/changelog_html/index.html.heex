@@ -2,6 +2,42 @@
   title="Changelog"
   entries={[
     %{
+      version: "0.1.1",
+      title: "TradingView Chart Implementation",
+      date: "April 2, 2025",
+      description:
+        "Implemented a responsive candlestick chart using lightweight-charts v5.x with theme support.",
+      features: [
+        %{
+          title: "TradingView Chart",
+          description:
+            "Added a fully functional candlestick chart component with real-time data updates."
+        },
+        %{
+          title: "Theme Support",
+          description:
+            "Chart automatically adapts to light/dark themes with appropriate color schemes."
+        },
+        %{
+          title: "Responsive Design",
+          description:
+            "Chart automatically resizes to fit its container on window resize events."
+        }
+      ],
+      changes: [
+        %{
+          description:
+            "Created assets/js/hooks/tradingview_chart.js using lightweight-charts v5.x"
+        },
+        %{
+          description:
+            "Implemented timestamp normalization for accurate time representation"
+        },
+        %{description: "Added theme-aware styling for better UI integration"},
+        %{description: "Fixed API compatibility issues with lightweight-charts v5 syntax"}
+      ]
+    },
+    %{
       version: "0.1.0",
       title: "React to Elixir Conversion",
       date: "March 31, 2025",
