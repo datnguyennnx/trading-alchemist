@@ -308,8 +308,8 @@ defmodule Central.Backtest.Workers.MarketSync do
     # This function should insert or update the market data in the database
     try do
       # Debug: Log the first item to see its structure
-      if market_data && length(market_data) > 0 do
-        first_item = List.first(market_data)
+      if is_list(market_data) and length(market_data) > 0 do
+        first_item = hd(market_data)
         Logger.debug("Sample market data item: #{inspect(first_item, pretty: true)}")
       end
 
