@@ -52,6 +52,20 @@ defmodule CentralWeb.Telemetry do
         unit: {:native, :millisecond}
       ),
 
+      # LiveView Metrics
+      summary("phoenix.live_view.mount.duration",
+        unit: {:native, :millisecond},
+        tags: [:view]
+      ),
+      summary("phoenix.live_view.handle_params.duration",
+        unit: {:native, :millisecond},
+        tags: [:view]
+      ),
+      summary("phoenix.live_view.handle_event.duration",
+        unit: {:native, :millisecond},
+        tags: [:event, :view]
+      ),
+
       # Database Metrics
       summary("central.repo.query.total_time",
         unit: {:native, :millisecond},
@@ -61,6 +75,7 @@ defmodule CentralWeb.Telemetry do
         unit: {:native, :millisecond},
         description: "The time spent decoding the data received from the database"
       ),
+      # Additional DB metrics
       summary("central.repo.query.query_time",
         unit: {:native, :millisecond},
         description: "The time spent executing the query"
@@ -71,8 +86,14 @@ defmodule CentralWeb.Telemetry do
       ),
       summary("central.repo.query.idle_time",
         unit: {:native, :millisecond},
-        description:
-          "The time the connection spent waiting before being checked out for the query"
+        description: "The time the connection spent waiting before being checked out"
+      ),
+
+      # External API Metrics
+      summary("tesla.request.duration",
+        unit: {:native, :millisecond},
+        description: "The time spent on external HTTP requests",
+        tags: [:method, :url]
       ),
 
       # VM Metrics
@@ -88,6 +109,10 @@ defmodule CentralWeb.Telemetry do
       # A module, function and arguments to be invoked periodically.
       # This function must call :telemetry.execute/3 and a metric must be added above.
       # {CentralWeb, :count_users, []}
+
+      # System metrics
+      {:process_info, event: [:central, :vm, :process_info], name: :erlang, measurement: :process_info, keys: [:message_queue_len, :memory, :reductions]},
+      {CentralWeb.SystemMetrics, :dispatch_system_metrics, []}
     ]
   end
 end

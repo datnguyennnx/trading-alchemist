@@ -32,9 +32,10 @@ defmodule Central.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bcrypt_elixir, "~> 3.0"},
       {:phoenix, "~> 1.7.20"},
       {:phoenix_ecto, "~> 4.5"},
-      {:ecto_sql, "~> 3.10"},
+      {:ecto_sql, "~> 3.12.1"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
@@ -59,7 +60,9 @@ defmodule Central.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       {:salad_ui, "~> 0.9"},
-      {:lucide_icons, "~> 2.0"}
+      {:lucide_icons, "~> 2.0"},
+      {:tw_merge, "~> 0.1.1"},
+      {:tesla, "~> 1.8"}
     ]
   end
 

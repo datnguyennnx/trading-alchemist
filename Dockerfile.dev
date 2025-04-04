@@ -1,0 +1,42 @@
+FROM elixir:1.17-alpine
+
+# Install build dependencies
+RUN apk add --no-cache build-base git nodejs npm inotify-tools
+
+# Prepare work directory
+WORKDIR /app
+
+# Install hex + rebar
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+# Set environment to development
+ENV MIX_ENV=dev
+
+# Copy necessary files
+COPY mix.exs mix.lock ./
+
+# Install dependencies
+RUN mix deps.get
+
+# Copy the rest of the application code
+COPY . .
+
+# Compile dependencies
+RUN mix deps.compile
+
+# Configure development database
+RUN mix ecto.create || true
+
+# Install Node.js dependencies for frontend
+WORKDIR /app/assets
+RUN npm install
+
+# Return to app directory
+WORKDIR /app
+
+# Set up Phoenix server for development
+EXPOSE 4000
+
+# Run Phoenix server
+CMD ["mix", "phx.server"] 

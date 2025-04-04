@@ -1,18 +1,104 @@
 # Central
 
-To start your Phoenix server:
+A Phoenix application with TimescaleDB for time-series data.
 
-  * Run `mix setup` to install and setup dependencies
-  * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+## Development Setup
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+This project uses Docker Compose for PostgreSQL with TimescaleDB and DevBox for managing development dependencies.
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+### Prerequisites
+
+- [DevBox](https://jetify.com/devbox) installed
+- Docker and Docker Compose
+
+### Quick Start
+
+1. Clone the repository
+2. Enter the DevBox shell:
+   ```bash
+   devbox shell
+   ```
+3. Start the development environment:
+   ```bash
+   devbox run dev
+   ```
+
+This will start the PostgreSQL container, migrate the database, and start the Phoenix server.
+
+### Available Commands
+
+All commands are available through DevBox:
+
+```bash
+# Show all available commands
+devbox run help
+
+# Start just the database in Docker
+devbox run docker.up
+
+# Stop all Docker containers
+devbox run docker.down
+
+# Setup the database (create and migrate)
+devbox run db.setup
+
+# Reset the database (drop, create, and migrate)
+devbox run db.reset
+
+# Run database migrations
+devbox run db.migrate
+
+# Seed the database
+devbox run db.seed
+
+# Start the Phoenix server
+devbox run start
+
+# Stop the Phoenix server
+devbox run stop
+
+# Clean compiled artifacts
+devbox run clean
+
+# Setup full development environment (db + server)
+devbox run dev
+```
+
+### Manual Setup
+
+If you prefer not to use DevBox, you can use the Makefile directly:
+
+```bash
+# Show all available commands
+make help
+
+# Start the PostgreSQL container
+make docker.up
+
+# Start the full development environment
+make dev
+```
+
+### Environment Variables
+
+The application is configured to use the following environment variables for database connection:
+
+- `POSTGRES_HOST` (default: "localhost")
+- `POSTGRES_USER` (default: "postgres")
+- `POSTGRES_PASSWORD` (default: "postgres")
+- `POSTGRES_DB` (default: "central_dev")
+- `POSTGRES_PORT` (default: "5433")
+
+These are automatically set when using DevBox.
+
+## TimescaleDB
+
+This project uses TimescaleDB for efficient time-series data storage. The database is configured with hypertables for market data to optimize time-series queries.
 
 ## Learn more
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+* [Phoenix Framework](https://www.phoenixframework.org/)
+* [Phoenix Guides](https://hexdocs.pm/phoenix/overview.html)
+* [Phoenix Documentation](https://hexdocs.pm/phoenix)
+* [TimescaleDB Documentation](https://docs.timescale.com/)
+* [Elixir Forum](https://elixirforum.com/)

@@ -55,8 +55,21 @@ config :tailwind,
 
 # Configures Elixir's Logger
 config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  format: "[$date $time] $metadata[$level] $message\n",
+  metadata: [:request_id],
+  colors: [enabled: true],
+  time_format: "%H:%M:%S",
+  date_format: "%d/%m/%Y"
+
+# Optimize logging levels for different environments
+config :logger,
+  level: :info,
+  compile_time_purge_matching: [
+    [level_lower_than: :info]
+  ]
+
+# Configure Tesla HTTP client
+config :tesla, adapter: {Tesla.Adapter.Finch, [name: Central.Finch, pool_timeout: 5000]}
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason

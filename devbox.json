@@ -2,11 +2,17 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
   "packages": [
     "elixir@latest",
-    "darwin.apple_sdk.frameworks.CoreServices"
+    "docker",
+    "docker-compose"
   ],
   "env": {
     "LANG": "C.UTF-8",
-    "ELIXIR_ERL_OPTIONS": "+fnu"
+    "ELIXIR_ERL_OPTIONS": "+fnu",
+    "POSTGRES_HOST": "localhost",
+    "POSTGRES_USER": "postgres",
+    "POSTGRES_PASSWORD": "postgres",
+    "POSTGRES_DB": "central_dev",
+    "POSTGRES_PORT": "5433"
   },
   "shell": {
     "init_hook": [
@@ -19,8 +25,19 @@
       "mix local.rebar --force"
     ],
     "scripts": {
-      "build": "mix setup",
-      "start": "mix phx.server"
+      "setup": "make setup",
+      "db.setup": "make db",
+      "db.reset": "make db.reset",
+      "db.migrate": "make db.migrate",
+      "db.seed": "make seed",
+      "docker.up": "make docker.up",
+      "docker.down": "make docker.down",
+      "docker.build": "make docker.build",
+      "start": "make start",
+      "stop": "make stop",
+      "clean": "make clean",
+      "dev": "make dev",
+      "help": "make help"
     }
   }
 }

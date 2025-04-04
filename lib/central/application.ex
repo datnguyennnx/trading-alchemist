@@ -11,16 +11,19 @@ defmodule Central.Application do
       CentralWeb.Telemetry,
       Central.Repo,
       {DNSCluster, query: Application.get_env(:central, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: Central.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: Central.Finch},
-      # Start a worker by calling: Central.Worker.start_link(arg)
-      # {Central.Worker, arg},
+      # Registry for named processes (like WebSocket streams)
+      {Registry, keys: :unique, name: Central.Registry},
+      # Add Phoenix PubSub
+      {Phoenix.PubSub, name: Central.PubSub},
+      # Initialize the market data cache
+      {Task, fn -> Central.Backtest.Contexts.MarketData.init_cache() end},
+      # Start the market data sync worker
+      Central.Backtest.Workers.MarketSync,
       # Start to serve requests, typically the last entry
       CentralWeb.Endpoint,
-      TwMerge.Cache,
-      # Start the market data server
-      Central.MarketData.Server
+      TwMerge.Cache
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

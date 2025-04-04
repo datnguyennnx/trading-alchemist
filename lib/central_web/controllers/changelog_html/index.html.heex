@@ -2,6 +2,43 @@
   title="Changelog"
   entries={[
     %{
+      version: "0.1.2",
+      title: "Global Configuration and Logging Improvements",
+      date: "April 5, 2025",
+      description:
+        "Added centralized configuration modules and enhanced logging with improved timestamp formatting.",
+      features: [
+        %{
+          title: "Configuration Modules",
+          description:
+            "Created reusable modules for DateTime and HTTP handling with consistent interfaces."
+        },
+        %{
+          title: "Enhanced Logging",
+          description:
+            "Improved log readability with proper date formatting and color-coded output."
+        },
+        %{
+          title: "Background Process Fixes",
+          description:
+            "Fixed issues in the market sync worker and improved error handling."
+        }
+      ],
+      changes: [
+        %{
+          description:
+            "Created lib/central/config/datetime.ex for consistent DateTime handling"
+        },
+        %{
+          description:
+            "Created lib/central/config/http.ex for standardized HTTP status handling"
+        },
+        %{description: "Updated logger configuration with proper timestamp formatting"},
+        %{description: "Fixed state handling in market sync worker"},
+        %{description: "Enhanced HTTP client error handling with standardized error messages"}
+      ]
+    },
+    %{
       version: "0.1.1",
       title: "TradingView Chart Implementation",
       date: "April 2, 2025",

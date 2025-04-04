@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with TimescaleDB
+  db:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.postgres-timescale
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: central_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Phoenix application (for development)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev  # You'll need to create this
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/central_dev
+      MIX_ENV: dev
+      PORT: 4000
+      # Add any other environment variables your app needs
+    ports:
+      - "4000:4000"
+    volumes:
+      - .:/app  # Mount the application code
+    # Command to run Phoenix in development mode
+    command: mix phx.server
+
+volumes:
+  postgres_data: 

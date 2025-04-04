@@ -16,6 +16,7 @@ defmodule CentralWeb.Component do
       use Phoenix.Component
 
       import CentralWeb.ComponentHelpers
+      import TwMerge
 
       alias Phoenix.LiveView.JS
 

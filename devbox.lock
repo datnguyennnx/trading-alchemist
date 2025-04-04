@@ -15,6 +15,14 @@
         }
       }
     },
+    "docker": {
+      "resolved": "github:NixOS/nixpkgs/6c5963357f3c1c840201eda129a99d455074db04?narHash=sha256-yQugdVfi316qUfqzN8JMaA2vixl%2B45GxNm4oUfXlbgw%3D#docker",
+      "source": "nixpkg"
+    },
+    "docker-compose": {
+      "resolved": "github:NixOS/nixpkgs/6c5963357f3c1c840201eda129a99d455074db04?narHash=sha256-yQugdVfi316qUfqzN8JMaA2vixl%2B45GxNm4oUfXlbgw%3D#docker-compose",
+      "source": "nixpkg"
+    },
     "elixir@latest": {
       "last_modified": "2024-12-27T03:08:00Z",
       "plugin_version": "0.0.1",

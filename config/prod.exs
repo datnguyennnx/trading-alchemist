@@ -16,5 +16,13 @@ config :swoosh, local: false
 # Do not print debug messages in production
 config :logger, level: :info
 
+# Configure production logging format and metadata
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:request_id, :application, :module, :function],
+  level: :info,
+  utc_log: true,
+  truncate: :infinity
+
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.

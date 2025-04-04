@@ -1,0 +1,18 @@
+FROM timescale/timescaledb:latest-pg16
+
+# Environment variables for PostgreSQL
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=postgres
+ENV POSTGRES_DB=central_dev
+
+# Custom initialization scripts
+COPY ./docker/init-scripts/ /docker-entrypoint-initdb.d/
+
+# Set the data directory
+VOLUME ["/var/lib/postgresql/data"]
+
+# Expose PostgreSQL port
+EXPOSE 5432
+
+# Use the default entrypoint from the base image
+# The init scripts in /docker-entrypoint-initdb.d/ will run automatically 
