@@ -307,12 +307,6 @@ defmodule Central.Backtest.Workers.MarketSync do
     # Implementation of upsert_market_data function
     # This function should insert or update the market data in the database
     try do
-      # Debug: Log the first item to see its structure
-      if is_list(market_data) and length(market_data) > 0 do
-        first_item = hd(market_data)
-        Logger.debug("Sample market data item: #{inspect(first_item, pretty: true)}")
-      end
-
       # Get current timestamp for inserted_at
       now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
