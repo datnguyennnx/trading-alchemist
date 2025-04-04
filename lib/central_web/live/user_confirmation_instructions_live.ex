@@ -9,7 +9,7 @@ defmodule CentralWeb.UserConfirmationInstructionsLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-sm flex">
+    <div class="flex flex-col justify-center h-screen mx-auto max-w-sm">
       <.header class="text-center">
         No confirmation instructions received?
         <:subtitle>We'll send a new confirmation link to your inbox</:subtitle>
@@ -30,11 +30,6 @@ defmodule CentralWeb.UserConfirmationInstructionsLive do
           </.button>
         </div>
       </.form>
-
-      <p class="text-center mt-4">
-        <.link href={~p"/users/register"}>Register</.link>
-        | <.link href={~p"/users/log_in"}>Log in</.link>
-      </p>
     </div>
     """
   end

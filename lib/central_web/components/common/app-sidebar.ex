@@ -1,6 +1,7 @@
 defmodule CentralWeb.Components.Common.AppSidebar do
   use Phoenix.Component
   alias Phoenix.LiveView.JS
+  import Phoenix.Controller, only: [get_csrf_token: 0]
 
   import CentralWeb.ComponentHelpers
 
@@ -18,7 +19,6 @@ defmodule CentralWeb.Components.Common.AppSidebar do
         title: "Playground",
         url: "#",
         icon: &square_terminal/1,
-        is_active: true,
         items: [
           %{
             title: "Money Track",
@@ -83,6 +83,17 @@ defmodule CentralWeb.Components.Common.AppSidebar do
           </span>
           <span>{@settings_data.title}</span>
         </.sidebar_menu_button>
+
+        <form action="/users/log_out" method="post" class="mt-2">
+          <input type="hidden" name="_method" value="delete" />
+          <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+          <.sidebar_menu_button type="submit" class="hover:text-red-700 w-full">
+            <span class="mr-2 h-4 w-4 flex items-center">
+              <Lucideicons.log_out class="h-4 w-4" />
+            </span>
+            <span>Log out</span>
+          </.sidebar_menu_button>
+        </form>
 
         <SettingsDialog.settings_dialog
           id={@settings_data.dialog_id}

@@ -9,7 +9,7 @@ defmodule CentralWeb.UserConfirmationLive do
 
   def render(%{live_action: :edit} = assigns) do
     ~H"""
-    <div class="mx-auto max-w-sm">
+    <div class="flex flex-col justify-center h-screen mx-auto max-w-sm">
       <.header class="text-center">Confirm Account</.header>
 
       <.form for={@form} id="confirmation_form" phx-submit="confirm_account" class="space-y-6">
@@ -18,11 +18,6 @@ defmodule CentralWeb.UserConfirmationLive do
           <.button phx-disable-with="Confirming..." class="w-full">Confirm my account</.button>
         </div>
       </.form>
-
-      <p class="text-center mt-4">
-        <.link href={~p"/users/register"}>Register</.link>
-        | <.link href={~p"/users/log_in"}>Log in</.link>
-      </p>
     </div>
     """
   end

@@ -22,7 +22,6 @@ defmodule CentralWeb.Router do
 
     get "/", PageController, :index
     get "/changelog", ChangelogController, :index
-    live "/chart", ChartLive
   end
 
   # Other scopes may use custom stacks.
@@ -70,6 +69,7 @@ defmodule CentralWeb.Router do
       on_mount: [{CentralWeb.UserAuth, :ensure_authenticated}] do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+      live "/chart", ChartLive
     end
   end
 
