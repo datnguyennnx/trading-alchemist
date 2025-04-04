@@ -2,9 +2,86 @@
   title="Changelog"
   entries={[
     %{
+      version: "0.2.0",
+      title: "Core Infrastructure Implementation",
+      date: "April 4, 2025",
+      description:
+        "Implemented core application infrastructure with database schema, TradingView charts, authentication, and market data synchronization.",
+      features: [
+        %{
+          title: "Database Schema Setup",
+          description:
+            "Set up PostgreSQL database with TimescaleDB extension for efficient time-series data storage."
+        },
+        %{
+          title: "TradingView Chart Implementation",
+          description:
+            "Implemented real-time candlestick charts with symbol and timeframe selection using lightweight-charts."
+        },
+        %{
+          title: "Authentication System",
+          description:
+            "Created LiveView-based authentication system with user registration, login, and password reset."
+        },
+        %{
+          title: "Market Data Synchronization",
+          description:
+            "Implemented GenServer-based market data synchronization with Binance API and ETS caching."
+        },
+        %{
+          title: "DevBox and Docker Integration",
+          description:
+            "Set up development environment with Docker, TimescaleDB, and helper scripts."
+        },
+        %{
+          title: "Comprehensive Test Suite",
+          description:
+            "Created extensive test coverage for schemas, contexts, and web components."
+        }
+      ],
+      changes: [
+        %{
+          description:
+            "Set up PostgreSQL database with TimescaleDB extension and proper migrations"
+        },
+        %{
+          description:
+            "Created market_data hypertable with composite primary key for efficient time-series storage"
+        },
+        %{
+          description:
+            "Implemented real-time candlestick chart with theme support and PubSub updates"
+        },
+        %{
+          description:
+            "Optimized chart rendering with phx-update='ignore' for stateful DOM"
+        },
+        %{
+          description:
+            "Created user authentication system with LiveView-based UI"
+        },
+        %{
+          description:
+            "Implemented GenServer-based market data sync worker with error handling"
+        },
+        %{
+          description:
+            "Added Docker configuration with PostgreSQL and TimescaleDB"
+        },
+        %{
+          description:
+            "Created schema tests and context API tests for business logic"
+        },
+        %{
+          description:
+            "Added Central.Config modules for DateTime and HTTP handling"
+        }
+      ]
+    },
+    %{
       version: "0.1.2",
       title: "Global Configuration and Logging Improvements",
-      date: "April 5, 2025",
+      date: "April 3, 2025",
       description:
         "Added centralized configuration modules and enhanced logging with improved timestamp formatting.",
       features: [
