@@ -175,7 +175,20 @@ defmodule Central.Backtest.Workers.MarketSync do
 
   defp sync_market_data(symbols, timeframes) do
     for symbol <- symbols, timeframe <- timeframes do
-      Task.async(fn -> sync_single_market({symbol, timeframe}, self()) end)
+      Task.async(fn ->
+        # Get the current GenServer state and pass it rather than the PID
+        state = :sys.get_state(__MODULE__)
+        # Add a result key to make the result compatible with count_synced_items
+        sync_result = sync_single_market({symbol, timeframe}, state)
+        # Return a map with market_key and result
+        %{
+          market_key: {symbol, timeframe},
+          result: case sync_result do
+            {:noreply, _state} -> {:ok, 0} # No error but no data processed
+            other -> other # Pass through any other results
+          end
+        }
+      end)
     end
     |> Task.await_many(300_000) # 5 minute timeout for all tasks
   end
@@ -294,7 +307,39 @@ defmodule Central.Backtest.Workers.MarketSync do
     # Implementation of upsert_market_data function
     # This function should insert or update the market data in the database
     try do
-      {count, _} = Repo.insert_all(MarketData, market_data, on_conflict: :nothing)
+      # Debug: Log the first item to see its structure
+      if market_data && length(market_data) > 0 do
+        first_item = List.first(market_data)
+        Logger.debug("Sample market data item: #{inspect(first_item, pretty: true)}")
+      end
+
+      # Get current timestamp for inserted_at
+      now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+      # Convert string price values to Decimal before insert and add timestamps
+      market_data_with_decimals = Enum.map(market_data, fn item ->
+        case item do
+          nil -> nil  # Skip nil items
+          _ ->
+            # Create a new map with all required fields
+            %{
+              id: Ecto.UUID.generate(),
+              symbol: item.symbol,
+              timeframe: item.timeframe,
+              timestamp: item.timestamp,
+              open: parse_decimal(item.open),
+              high: parse_decimal(item.high),
+              low: parse_decimal(item.low),
+              close: parse_decimal(item.close),
+              volume: parse_decimal(item.volume),
+              source: item.source || "binance",
+              inserted_at: now
+            }
+        end
+      end)
+      |> Enum.reject(&is_nil/1)  # Remove any nil values
+
+      {count, _} = Repo.insert_all(MarketData, market_data_with_decimals, on_conflict: :nothing)
       {:ok, count}
     rescue
       e ->
@@ -302,6 +347,21 @@ defmodule Central.Backtest.Workers.MarketSync do
         {:error, "Database error: #{inspect(e)}"}
     end
   end
+
+  # Parse string or number to Decimal
+  defp parse_decimal(value) when is_binary(value) do
+    case Decimal.parse(value) do
+      {decimal, ""} -> decimal
+      {decimal, _} -> decimal
+      :error -> Decimal.new(0)
+    end
+  end
+
+  defp parse_decimal(value) when is_number(value) do
+    Decimal.new(value)
+  end
+
+  defp parse_decimal(_), do: Decimal.new(0)
 
   defp schedule_sync(delay) do
     Process.send_after(self(), :perform_sync, delay)
@@ -321,13 +381,23 @@ defmodule Central.Backtest.Workers.MarketSync do
   end
 
   defp count_synced_items(results) do
-    Enum.reduce(results, %{total: 0, success: 0, error: 0}, fn item, acc ->
-      case item.result do
-        {:ok, count} ->
-          %{acc | total: acc.total + count, success: acc.success + 1}
-        {:error, _} ->
-          %{acc | error: acc.error + 1}
-      end
+    # Make this function more resilient to different result formats
+    Enum.reduce(results, %{total: 0, success: 0, error: 0}, fn
+      # Handle the new result format with a result key
+      %{result: {:ok, count}} = _item, acc ->
+        %{acc | total: acc.total + count, success: acc.success + 1}
+
+      # Handle older format where result might be {:noreply, state}
+      %{result: {:noreply, _state}} = _item, acc ->
+        %{acc | success: acc.success + 1}
+
+      # Handle error result
+      %{result: {:error, _}} = _item, acc ->
+        %{acc | error: acc.error + 1}
+
+      # Handle any other unexpected format (defensive programming)
+      _item, acc ->
+        %{acc | error: acc.error + 1}
     end)
   end
 end
