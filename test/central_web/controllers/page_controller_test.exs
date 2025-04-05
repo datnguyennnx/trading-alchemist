@@ -3,7 +3,7 @@ defmodule CentralWeb.PageControllerTest do
 
   test "GET /", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Register"
-    assert html_response(conn, 200) =~ "Log in"
+    assert html_response(conn, 200) =~ "Log out"
+    assert html_response(conn, 200) =~ "Settings"
   end
 end

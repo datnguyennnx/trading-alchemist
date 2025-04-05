@@ -2,11 +2,12 @@ defmodule CentralWeb.ChangelogHTML do
   use CentralWeb, :html
   import CentralWeb.Components.FlickeringGrid
 
-  embed_templates "changelog_html/*"
+  embed_templates "/*"
 
   attr :title, :string, required: true
   attr :entries, :list, required: true
 
+  @spec changelog(map()) :: Phoenix.LiveView.Rendered.t()
   def changelog(assigns) do
     ~H"""
     <div class="min-h-screen bg-white relative text-black">
@@ -38,7 +39,7 @@ defmodule CentralWeb.ChangelogHTML do
                 <div class="absolute left-4 -translate-x-1/2">
                   <div class="w-3 h-3 bg-black rounded-full z-10 relative"></div>
                 </div>
-                
+
     <!-- Version content -->
                 <div>
                   <!-- Version header -->

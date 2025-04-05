@@ -1,4 +1,4 @@
-defmodule CentralWeb.UserRegistrationLive do
+defmodule CentralWeb.AuthLive.UserRegistrationLive do
   use CentralWeb, :live_view
 
   alias Central.Accounts

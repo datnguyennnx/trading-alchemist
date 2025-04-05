@@ -40,7 +40,7 @@ defmodule CentralWeb do
     quote do
       use Phoenix.Controller,
         formats: [:html, :json],
-        layouts: [html: CentralWeb.Layouts]
+        layouts: [html: CentralWeb.Template.Layouts]
 
       use Gettext, backend: CentralWeb.Gettext
 
@@ -53,7 +53,7 @@ defmodule CentralWeb do
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {CentralWeb.Layouts, :app}
+        layout: {CentralWeb.Template.Layouts, :app}
 
       unquote(html_helpers())
     end

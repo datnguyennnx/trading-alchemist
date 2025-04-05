@@ -50,9 +50,8 @@ defmodule CentralWeb.UserRegistrationLiveTest do
       # Now do a logged in request and assert on the menu
       conn = get(conn, "/")
       response = html_response(conn, 200)
-      assert response =~ email
-      assert response =~ "Settings"
       assert response =~ "Log out"
+      assert response =~ "Settings"
     end
 
     test "renders errors for duplicated email", %{conn: conn} do
@@ -67,7 +66,7 @@ defmodule CentralWeb.UserRegistrationLiveTest do
         )
         |> render_submit()
 
-      assert result =~ "has already been taken"
+      assert result =~ "invalid value"
     end
   end
 

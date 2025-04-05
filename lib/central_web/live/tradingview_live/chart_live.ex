@@ -1,4 +1,5 @@
-defmodule CentralWeb.ChartLive do
+defmodule CentralWeb.TradingViewLive.ChartLive do
+
   use CentralWeb, :live_view
   require Logger
 

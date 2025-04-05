@@ -16,7 +16,7 @@ config :central, CentralWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: CentralWeb.ErrorHTML, json: CentralWeb.ErrorJSON],
+    formats: [html: CentralWeb.Template.ErrorHTML, json: CentralWeb.Template.ErrorJSON],
     layout: false
   ],
   pubsub_server: Central.PubSub,

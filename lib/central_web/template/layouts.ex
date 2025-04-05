@@ -1,4 +1,4 @@
-defmodule CentralWeb.Layouts do
+defmodule CentralWeb.Template.Layouts do
   @moduledoc """
   This module holds different layouts used by your application.
 

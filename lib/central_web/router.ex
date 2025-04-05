@@ -7,7 +7,7 @@ defmodule CentralWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, html: {CentralWeb.Layouts, :root}
+    plug :put_root_layout, html: {CentralWeb.Template.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_user
@@ -53,10 +53,10 @@ defmodule CentralWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{CentralWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/log_in", UserLoginLive, :new
-      live "/users/reset_password", UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", UserResetPasswordLive, :edit
+      live "/users/register", AuthLive.UserRegistrationLive, :new
+      live "/users/log_in", AuthLive.UserLoginLive, :new
+      live "/users/reset_password", AuthLive.UserForgotPasswordLive, :new
+      live "/users/reset_password/:token", AuthLive.UserResetPasswordLive, :edit
     end
 
     post "/users/log_in", UserSessionController, :create
@@ -67,9 +67,9 @@ defmodule CentralWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [{CentralWeb.UserAuth, :ensure_authenticated}] do
-      live "/users/settings", UserSettingsLive, :edit
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
-      live "/chart", ChartLive
+      live "/users/settings", AuthLive.UserSettingsLive, :edit
+      live "/users/settings/confirm_email/:token", AuthLive.UserSettingsLive, :confirm_email
+      live "/chart", TradingViewLive.ChartLive
     end
   end
 
@@ -80,8 +80,8 @@ defmodule CentralWeb.Router do
 
     live_session :current_user,
       on_mount: [{CentralWeb.UserAuth, :mount_current_user}] do
-      live "/users/confirm/:token", UserConfirmationLive, :edit
-      live "/users/confirm", UserConfirmationInstructionsLive, :new
+      live "/users/confirm/:token", AuthLive.UserConfirmationLive, :edit
+      live "/users/confirm", AuthLive.UserConfirmationInstructionsLive, :new
     end
   end
 end

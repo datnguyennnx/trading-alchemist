@@ -1,4 +1,4 @@
-defmodule CentralWeb.UserSettingsLive do
+defmodule CentralWeb.AuthLive.UserSettingsLive do
   use CentralWeb, :live_view
   import CentralWeb.CoreComponents
   import CentralWeb.Components.Input

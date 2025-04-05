@@ -1,4 +1,4 @@
-defmodule CentralWeb.ErrorHTML do
+defmodule CentralWeb.Template.ErrorHTML do
   @moduledoc """
   This module is invoked by your endpoint in case of errors on HTML requests.
 

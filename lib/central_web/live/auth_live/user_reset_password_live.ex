@@ -1,4 +1,4 @@
-defmodule CentralWeb.UserResetPasswordLive do
+defmodule CentralWeb.AuthLive.UserResetPasswordLive do
   use CentralWeb, :live_view
   import CentralWeb.CoreComponents
   import CentralWeb.Components.Input

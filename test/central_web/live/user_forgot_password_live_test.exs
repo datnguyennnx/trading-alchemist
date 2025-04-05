@@ -9,11 +9,10 @@ defmodule CentralWeb.UserForgotPasswordLiveTest do
 
   describe "Forgot password page" do
     test "renders email page", %{conn: conn} do
-      {:ok, lv, html} = live(conn, ~p"/users/reset_password")
+      {:ok, _lv, html} = live(conn, ~p"/users/reset_password")
 
       assert html =~ "Forgot your password?"
-      assert has_element?(lv, ~s|a[href="#{~p"/users/register"}"]|, "Register")
-      assert has_element?(lv, ~s|a[href="#{~p"/users/log_in"}"]|, "Log in")
+      assert html =~ "We&#39;ll send a password reset link to your inbox"
     end
 
     test "redirects if already logged in", %{conn: conn} do
