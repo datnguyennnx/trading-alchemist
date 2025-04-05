@@ -1,32 +1,68 @@
+// Shared utility functions to avoid duplication
+const themeUtils = {
+  // Get the current theme from localStorage or system preference
+  getTheme: () => {
+    return localStorage.getItem('theme') || 
+           (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  },
+  
+  // Helper to update the theme dropdown UI
+  updateThemeUI: (theme) => {
+    const themeDropdownTrigger = document.getElementById('theme-dropdown-trigger');
+    if (!themeDropdownTrigger) return;
+    
+    // Update the icon
+    const iconElement = themeDropdownTrigger.querySelector('.theme-icon');
+    if (iconElement) {
+      iconElement.innerHTML = '';
+      const iconSpan = document.createElement('span');
+      iconSpan.className = `hero-${theme === 'light' ? 'sun' : 'moon'} h-4 w-4`;
+      iconElement.appendChild(iconSpan);
+    }
+    
+    // Update the text
+    const textElement = themeDropdownTrigger.querySelector('.theme-text');
+    if (textElement) {
+      textElement.textContent = theme === 'light' ? 'Light' : 'Dark';
+    }
+  },
+  
+  // Apply theme to DOM and localStorage
+  applyTheme: (theme) => {
+    const htmlElement = document.documentElement;
+    htmlElement.classList.remove('dark', 'light');
+    htmlElement.classList.add(theme);
+    htmlElement.style.colorScheme = theme;
+    localStorage.setItem('theme', theme);
+  }
+};
+
+// Main theme switcher hook
 const ThemeSwitcher = {
   mounted() {
-    // Get the current theme from localStorage or system preference
-    const getTheme = () => {
-      return localStorage.getItem('theme') || 
-             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    };
+    // Keep track of current theme to avoid infinite loops
+    this.currentTheme = null;
     
-    // Apply theme to DOM and store in local storage
+    // Apply theme to DOM and handle LiveView updates
     const setTheme = (theme) => {
-      const htmlElement = document.documentElement;
+      // Avoid infinite loops by checking if theme has changed
+      if (this.currentTheme === theme) return;
       
-      // Toggle dark class on html element
-      htmlElement.classList.toggle('dark', theme === 'dark');
+      // Update current theme tracker
+      this.currentTheme = theme;
       
-      // Set color-scheme style
-      htmlElement.style.colorScheme = theme;
+      // Apply theme to DOM and localStorage
+      themeUtils.applyTheme(theme);
       
-      localStorage.setItem('theme', theme);
-      
-      // Push the event immediately if possible, or after a short delay to ensure it gets pushed
+      // Push event to LiveView
       if (this.el.dataset.connected === "true") {
         this.pushEventSafe('theme-changed', { theme });
       } else {
-        // If not connected, schedule event to be pushed after connection
-        setTimeout(() => {
-          this.pushEventSafe('theme-changed', { theme });
-        }, 100);
+        setTimeout(() => this.pushEventSafe('theme-changed', { theme }), 100);
       }
+
+      // Update UI
+      themeUtils.updateThemeUI(theme);
     };
     
     // Helper to safely push events
@@ -39,21 +75,49 @@ const ThemeSwitcher = {
     };
     
     // Initial theme setup
-    const currentTheme = getTheme();
+    const currentTheme = themeUtils.getTheme();
     setTheme(currentTheme);
     
-    // Set connected flag when LiveView is mounted and connected
+    // Mark as connected when LiveView is ready
     window.addEventListener('phx:page-loading-stop', () => {
       this.el.dataset.connected = "true";
-      this.pushEventSafe('theme-changed', { theme: getTheme() });
-    }, { once: true });
+      const theme = themeUtils.getTheme();
+      if (this.currentTheme !== theme) {
+        this.pushEventSafe('theme-changed', { theme });
+      }
+      themeUtils.updateThemeUI(theme);
+    });
     
-    // Handle theme change events from the server
-    this.handleEvent('change_theme', ({ theme }) => setTheme(theme));
+    // Handle theme change events from LiveView
+    this.handleEvent('change_theme', ({ theme }) => {
+      if (this.currentTheme !== theme) {
+        setTheme(theme);
+      }
+    });
     
     // Make setTheme available to this hook instance
     this.setTheme = setTheme;
   }
 };
 
-export default ThemeSwitcher; 
+// Dedicated hook for theme UI updates
+const ThemeUIUpdater = {
+  mounted() {
+    // Update UI when theme changes via LiveView
+    this.handleEvent('change_theme', ({ theme }) => {
+      themeUtils.updateThemeUI(theme);
+    });
+    
+    // Initialize with current theme
+    themeUtils.updateThemeUI(themeUtils.getTheme());
+    
+    // Listen for theme changes from any source
+    window.addEventListener('set-theme', (event) => {
+      if (event.detail?.theme) {
+        themeUtils.updateThemeUI(event.detail.theme);
+      }
+    });
+  }
+};
+
+export { ThemeSwitcher as default, ThemeUIUpdater, themeUtils }; 

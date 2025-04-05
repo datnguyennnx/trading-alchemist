@@ -74,27 +74,8 @@ defmodule CentralWeb.Components.Common.AppSidebar do
         <.nav_main items={@data.navMain} />
       </.sidebar_content>
       <.sidebar_footer>
-        <.sidebar_menu_button
-          id={@settings_data.trigger_id}
-          phx-click={JS.exec("phx-show-modal", to: "##{@settings_data.dialog_id}")}
-        >
-          <span class="mr-2 h-4 w-4 flex items-center">
-            <.icon name={@settings_data.icon} class="h-4 w-4" />
-          </span>
-          <span>{@settings_data.title}</span>
-        </.sidebar_menu_button>
-
-        <form action="/users/log_out" method="post" class="mt-2">
-          <input type="hidden" name="_method" value="delete" />
-          <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
-          <.sidebar_menu_button type="submit" class="hover:text-red-700 w-full">
-            <span class="mr-2 h-4 w-4 flex items-center">
-              <Lucideicons.log_out class="h-4 w-4" />
-            </span>
-            <span>Log out</span>
-          </.sidebar_menu_button>
-        </form>
-
+        <.settings_button settings_data={@settings_data} />
+        <.logout_button />
         <SettingsDialog.settings_dialog
           id={@settings_data.dialog_id}
           trigger_id={@settings_data.trigger_id}
@@ -106,6 +87,37 @@ defmodule CentralWeb.Components.Common.AppSidebar do
     """
   end
 
+  attr :settings_data, :map, required: true
+  defp settings_button(assigns) do
+    ~H"""
+    <.sidebar_menu_button
+      id={@settings_data.trigger_id}
+      phx-click={JS.exec("phx-show-modal", to: "##{@settings_data.dialog_id}")}
+    >
+      <span class="mr-2 h-4 w-4 flex items-center">
+        <.icon name={@settings_data.icon} class="h-4 w-4" />
+      </span>
+      <span><%= @settings_data.title %></span>
+    </.sidebar_menu_button>
+    """
+  end
+
+  defp logout_button(assigns) do
+    ~H"""
+    <form action="/users/log_out" method="post" class="mt-2">
+      <input type="hidden" name="_method" value="delete" />
+      <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+      <.sidebar_menu_button type="submit" class="hover:text-red-700 w-full">
+        <span class="mr-2 h-4 w-4 flex items-center">
+          <Lucideicons.log_out class="h-4 w-4" />
+        </span>
+        <span>Log out</span>
+      </.sidebar_menu_button>
+    </form>
+    """
+  end
+
+  attr :items, :list, required: true
   def nav_main(assigns) do
     ~H"""
     <.sidebar_group>
@@ -113,40 +125,53 @@ defmodule CentralWeb.Components.Common.AppSidebar do
         Monitoring
       </.sidebar_group_label>
       <.sidebar_menu>
-        <.collapsible
-          :for={item <- @items}
-          id={generate_id(item.title)}
-          open={item[:is_active]}
-          class="group/collapsible block overflow-hidden"
-        >
-          <.sidebar_menu_item>
-            <.as_child
-              tag={&collapsible_trigger/1}
-              child={&sidebar_menu_button/1}
-              tooltip={item.title}
-            >
-              <.dynamic :if={not is_nil(item.icon)} tag={item.icon} />
-
-              <span>
-                {item.title}
-              </span>
-              <.chevron_right class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-            </.as_child>
-            <.collapsible_content>
-              <.sidebar_menu_sub>
-                <.sidebar_menu_sub_item :for={sub_item <- item.items}>
-                  <.as_child tag={&sidebar_menu_sub_button/1} child="a" href={sub_item.url}>
-                    <span>
-                      {sub_item.title}
-                    </span>
-                  </.as_child>
-                </.sidebar_menu_sub_item>
-              </.sidebar_menu_sub>
-            </.collapsible_content>
-          </.sidebar_menu_item>
-        </.collapsible>
+        <.nav_item :for={item <- @items} item={item} />
       </.sidebar_menu>
     </.sidebar_group>
+    """
+  end
+
+  attr :item, :map, required: true
+  defp nav_item(assigns) do
+    ~H"""
+    <.collapsible
+      id={generate_id(@item.title)}
+      open={@item[:is_active]}
+      class="group/collapsible block overflow-hidden"
+    >
+      <.sidebar_menu_item>
+        <.as_child
+          tag={&collapsible_trigger/1}
+          child={&sidebar_menu_button/1}
+          tooltip={@item.title}
+        >
+          <.dynamic :if={not is_nil(@item.icon)} tag={@item.icon} />
+
+          <span>
+            <%= @item.title %>
+          </span>
+          <.chevron_right class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+        </.as_child>
+        <.collapsible_content>
+          <.sidebar_menu_sub>
+            <.nav_sub_item :for={sub_item <- @item.items} sub_item={sub_item} />
+          </.sidebar_menu_sub>
+        </.collapsible_content>
+      </.sidebar_menu_item>
+    </.collapsible>
+    """
+  end
+
+  attr :sub_item, :map, required: true
+  defp nav_sub_item(assigns) do
+    ~H"""
+    <.sidebar_menu_sub_item>
+      <.as_child tag={&sidebar_menu_sub_button/1} child="a" href={@sub_item.url}>
+        <span>
+          <%= @sub_item.title %>
+        </span>
+      </.as_child>
+    </.sidebar_menu_sub_item>
     """
   end
 
@@ -168,7 +193,7 @@ defmodule CentralWeb.Components.Common.AppSidebar do
             </.sidebar_trigger>
           </header>
           <div class="flex flex-1 flex-col gap-4 p-4">
-            {render_slot(@inner_block)}
+            <%= render_slot(@inner_block) %>
           </div>
         </.sidebar_inset>
       </.sidebar_provider>

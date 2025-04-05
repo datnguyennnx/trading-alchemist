@@ -32,6 +32,11 @@ defmodule CentralWeb.PageHTML do
 
   # Handle theme change from settings dialog
   def handle_event("change_theme", %{"theme" => theme}, socket) do
-    {:noreply, push_event(socket, "change_theme", %{theme: theme})}
+    # Update the theme in socket assigns first, then push the event to JS
+    {:noreply,
+      socket
+      |> assign(theme: theme)
+      |> push_event("change_theme", %{theme: theme})
+    }
   end
 end
