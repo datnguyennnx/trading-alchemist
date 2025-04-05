@@ -48,11 +48,19 @@ const ThemeSwitcher = {
       // Avoid infinite loops by checking if theme has changed
       if (this.currentTheme === theme) return;
       
+      console.log("ThemeSwitcher: Setting theme to", theme);
+      
       // Update current theme tracker
       this.currentTheme = theme;
       
       // Apply theme to DOM and localStorage
       themeUtils.applyTheme(theme);
+      
+      // Dispatch the set-theme event (this will trigger all other components to update)
+      document.dispatchEvent(new CustomEvent('set-theme', { 
+        bubbles: true, 
+        detail: { theme } 
+      }));
       
       // Push event to LiveView
       if (this.el.dataset.connected === "true") {
@@ -92,6 +100,13 @@ const ThemeSwitcher = {
     this.handleEvent('change_theme', ({ theme }) => {
       if (this.currentTheme !== theme) {
         setTheme(theme);
+      }
+    });
+    
+    // Listen for global theme changes (from other sources)
+    window.addEventListener('set-theme', (event) => {
+      if (event.detail?.theme && this.currentTheme !== event.detail.theme) {
+        setTheme(event.detail.theme);
       }
     });
     

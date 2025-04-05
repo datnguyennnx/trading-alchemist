@@ -3,14 +3,12 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
   alias Phoenix.LiveView.JS
 
   # Import the SaladUI components
-  import SaladUI.Button, only: [button: 1]
-  import SaladUI.Dialog, only: [dialog: 1, dialog_header: 1]
+  import SaladUI.Button
+  import SaladUI.Dialog
+  import SaladUI.DropdownMenu
+  import SaladUI.Menu
+  import SaladUI.Icon
 
-  import SaladUI.DropdownMenu,
-    only: [dropdown_menu: 1, dropdown_menu_trigger: 1, dropdown_menu_content: 1]
-
-  import SaladUI.Menu, only: [menu: 1, menu_group: 1, menu_item: 1]
-  import SaladUI.Icon, only: [icon: 1]
 
   # Define the settings navigation items
   @settings_nav_items [
@@ -97,7 +95,11 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
               id="theme-dropdown-trigger"
             >
               <span class="h-4 w-4 flex items-center theme-icon">
-                <.icon name={"hero-#{if @current_theme == "light", do: "sun", else: "moon"}"} class="h-4 w-4" />
+                <%= if @current_theme == "light" do %>
+                  <.icon name="hero-sun" class="h-4 w-4" />
+                <% else %>
+                  <.icon name="hero-moon" class="h-4 w-4" />
+                <% end %>
               </span>
               <span class="theme-text"><%= if @current_theme == "light", do: "Light", else: "Dark" %></span>
             </.button>
@@ -106,8 +108,8 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
         <.dropdown_menu_content align="end" class="bg-popover text-popover-foreground border-border">
           <.menu>
             <.menu_group>
-              <.theme_option theme="light" icon="sun" />
-              <.theme_option theme="dark" icon="moon" />
+              <.theme_option theme="light" />
+              <.theme_option theme="dark" />
             </.menu_group>
           </.menu>
         </.dropdown_menu_content>
@@ -118,18 +120,23 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
 
   # Theme option menu item
   attr :theme, :string, required: true
-  attr :icon, :string, required: true
   defp theme_option(assigns) do
     ~H"""
     <.menu_item
       id={"theme-#{@theme}-selector"}
       phx-click={
-        JS.dispatch("set-theme", detail: %{theme: @theme})
-        |> JS.push("change_theme", value: %{theme: @theme})
+        JS.push("change_theme", value: %{theme: @theme})
+        |> JS.dispatch("set-theme", detail: %{theme: @theme})
       }
       class="hover:bg-accent hover:text-accent-foreground"
     >
-      <.icon name={"hero-#{@icon}"} class="mr-2 h-4 w-4" />
+      <span class="mr-2 h-4 w-4 flex items-center">
+        <%= if @theme == "light" do %>
+          <.icon name="hero-sun" class="h-4 w-4"/>
+        <% else %>
+          <.icon name="hero-moon" class="h-4 w-4"/>
+        <% end %>
+      </span>
       <span><%= String.capitalize(@theme) %></span>
     </.menu_item>
     """
