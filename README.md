@@ -1,9 +1,10 @@
 <div align="center">
-  <img src="./public/logo.png" width="300px" align="center" style="margin-bottom: -52px;" />
-  <h1 style="border-bottom-width: 0px;" align="center">Trading Alchemist</h1>
-  <blockquote> Trading Alchemist: Where market chaos confesses its secrets and your financial nightmares get a comedy reboot. The only tool that turns your "I should have bought Bitcoin in 2010" regrets into actionable intelligence without requiring a time machine.</blockquote>
+  <img src="./public/logo.png" width="250px" align="center"/>
+  <h1 align="center">Trading Alchemist</h1>
+  <p><em>Distilling market chaos into alchemical insight.</em></p>
+  <blockquote>Read the market's cryptic runes. Turn loss to foresight, or fade into whispered legend. Master the signals.</blockquote>
+  <p><strong>Trading Alchemist:</strong> Clarity from chaos, since Bitcoin was myth.</p>
 </div>
-
 
 
 ## Overview
