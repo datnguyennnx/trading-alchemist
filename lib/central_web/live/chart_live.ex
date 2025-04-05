@@ -17,11 +17,14 @@ defmodule CentralWeb.ChartLive do
   import CentralWeb.Components.Separator
   import CentralWeb.Components.Icon
 
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     # Get available symbols from the context
     symbols = get_symbols()
     default_symbol = "BTCUSDT"
     default_timeframe = "1h" # Default to 1-hour timeframe
+
+    # Use theme from session if available, otherwise default to "dark"
+    theme = session["theme"] || "dark"
 
     # Initial state
     socket = socket
@@ -32,7 +35,7 @@ defmodule CentralWeb.ChartLive do
         symbol: default_symbol,
         symbols: symbols,
         timeframes: ["1m", "5m", "15m", "1h", "4h", "1d"],
-        chart_theme: "dark"
+        chart_theme: theme
       )
 
     # Load data immediately for the initial view
@@ -46,34 +49,41 @@ defmodule CentralWeb.ChartLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col h-full w-full bg-background p-4 gap-4">
-      <div class="flex flex-row items-center justify-between">
-        <div class="flex items-center gap-2">
-          <h1 class="text-2xl font-bold text-foreground">TradingView Chart</h1>
-          <.dropdown_menu>
-            <.dropdown_menu_trigger class="flex items-center">
-              <.button variant="outline" size="sm" class="gap-1">
-                <span><%= @symbol %></span>
-                <.icon name="hero-chevron-down" class="h-4 w-4" />
-              </.button>
-            </.dropdown_menu_trigger>
-            <.dropdown_menu_content>
-              <div class="py-1.5 text-xs font-medium text-muted-foreground px-2">
-                Symbol
-              </div>
-              <div class="h-px bg-muted my-1"></div>
-              <%= for symbol <- @symbols do %>
-                <div class="cursor-pointer select-none rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground" phx-click="set_symbol" phx-value-symbol={symbol}><%= symbol %></div>
-              <% end %>
-            </.dropdown_menu_content>
-          </.dropdown_menu>
+
+      <h1 class="text-2xl font-bold text-foreground">TradingView Chart</h1>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-card rounded-lg p-3 shadow-sm">
+        <!-- Market data stats -->
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-1">
+            <span class="text-xs text-muted-foreground">Open</span>
+            <span class="font-medium text-sm"><%= format_price(get_latest_price(@chart_data, :open)) %></span>
+          </div>
+          <.separator orientation="vertical" class="h-5" />
+          <div class="flex items-center gap-1">
+            <span class="text-xs text-muted-foreground">High</span>
+            <span class="font-medium text-sm text-green-500"><%= format_price(get_latest_price(@chart_data, :high)) %></span>
+          </div>
+          <.separator orientation="vertical" class="h-5" />
+          <div class="flex items-center gap-1">
+            <span class="text-xs text-muted-foreground">Low</span>
+            <span class="font-medium text-sm text-red-500"><%= format_price(get_latest_price(@chart_data, :low)) %></span>
+          </div>
+          <.separator orientation="vertical" class="h-5" />
+          <div class="flex items-center gap-1">
+            <span class="text-xs text-muted-foreground">Close</span>
+            <span class="font-medium text-sm"><%= format_price(get_latest_price(@chart_data, :close)) %></span>
+          </div>
         </div>
 
+        <!-- Controls -->
         <div class="flex items-center gap-2">
           <.dropdown_menu>
             <.dropdown_menu_trigger class="flex items-center">
-              <.button variant="outline" size="sm" class="gap-1">
+              <.button variant="outline" size="sm" class="gap-1 h-8">
+                <.icon name="hero-clock" class="h-3.5 w-3.5 mr-1" />
                 <span><%= @timeframe %></span>
-                <.icon name="hero-chevron-down" class="h-4 w-4" />
+                <.icon name="hero-chevron-down" class="h-3.5 w-3.5" />
               </.button>
             </.dropdown_menu_trigger>
             <.dropdown_menu_content>
@@ -87,50 +97,36 @@ defmodule CentralWeb.ChartLive do
             </.dropdown_menu_content>
           </.dropdown_menu>
 
-          <.tooltip>
-            <.button phx-click="refresh_data" variant="outline" size="icon">
-              <.icon name="hero-arrow-path" class="h-4 w-4" />
-            </.button>
-            <.tooltip_content>Refresh Data</.tooltip_content>
-          </.tooltip>
+          <.dropdown_menu>
+            <.dropdown_menu_trigger class="flex items-center">
+              <.button variant="outline" size="sm" class="gap-1 h-8">
+                <.icon name="hero-currency-dollar" class="h-3.5 w-3.5 mr-1" />
+                <span><%= @symbol %></span>
+                <.icon name="hero-chevron-down" class="h-3.5 w-3.5" />
+              </.button>
+            </.dropdown_menu_trigger>
+            <.dropdown_menu_content>
+              <div class="py-1.5 text-xs font-medium text-muted-foreground px-2">
+                Symbol
+              </div>
+              <div class="h-px bg-muted my-1"></div>
+              <%= for symbol <- @symbols do %>
+                <div class="cursor-pointer select-none rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground" phx-click="set_symbol" phx-value-symbol={symbol}><%= symbol %></div>
+              <% end %>
+            </.dropdown_menu_content>
+          </.dropdown_menu>
 
           <.tooltip>
-            <.button phx-click="force_reload" variant="destructive" size="icon">
-              <.icon name="hero-exclamation-triangle" class="h-4 w-4" />
-            </.button>
-            <.tooltip_content>Force Reload Chart</.tooltip_content>
-          </.tooltip>
-
-          <.tooltip>
-            <.button phx-click="debug_chart" variant="default" size="icon">
-              <.icon name="hero-bug-ant" class="h-4 w-4" />
-            </.button>
-            <.tooltip_content>Debug Chart Data</.tooltip_content>
+            <.tooltip_trigger>
+              <.button variant="ghost" size="icon" class="h-8 w-8" phx-click="refresh_data">
+                <.icon name="hero-arrow-path" class="h-4 w-4" />
+              </.button>
+            </.tooltip_trigger>
+            <.tooltip_content>
+              <p>Refresh Chart</p>
+            </.tooltip_content>
           </.tooltip>
         </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mt-2">
-        <div class="p-3 rounded-md bg-card">
-          <div class="text-muted-foreground mb-1">Open</div>
-          <div class="font-medium"><%= format_price(get_latest_price(@chart_data, :open)) %></div>
-        </div>
-        <div class="p-3 rounded-md bg-card">
-          <div class="text-muted-foreground mb-1">High</div>
-          <div class="font-medium text-green-500"><%= format_price(get_latest_price(@chart_data, :high)) %></div>
-        </div>
-        <div class="p-3 rounded-md bg-card">
-          <div class="text-muted-foreground mb-1">Low</div>
-          <div class="font-medium text-red-500"><%= format_price(get_latest_price(@chart_data, :low)) %></div>
-        </div>
-      </div>
-      <.separator />
-
-      <!-- Chart data count info -->
-      <div class="text-sm text-muted-foreground mb-2">
-        Candles: <%= length(@chart_data) %> |
-        Symbol: <%= @symbol %> |
-        Timeframe: <%= @timeframe %>
       </div>
 
       <!-- Simplified chart container without overlay elements -->
@@ -139,6 +135,8 @@ defmodule CentralWeb.ChartLive do
         phx-hook="TradingViewChart"
         data-chart-data={Jason.encode!(@chart_data)}
         data-theme={@chart_theme}
+        data-symbol={@symbol}
+        data-timeframe={@timeframe}
         data-debug={Jason.encode!(%{count: length(@chart_data), timestamp: DateTime.utc_now()})}
         class="w-full h-[70vh] rounded-lg border border-border bg-card"
         phx-update="ignore"
@@ -167,7 +165,11 @@ defmodule CentralWeb.ChartLive do
     # Generate new data and push it directly to the chart
     if length(chart_data) > 0 do
       # Push the existing data directly to the chart
-      socket = push_event(socket, "chart-data-updated", %{data: chart_data})
+      socket = push_event(socket, "chart-data-updated", %{
+        data: chart_data,
+        symbol: socket.assigns.symbol,
+        timeframe: socket.assigns.timeframe
+      })
       {:noreply, socket}
     else
       # Fetch fresh data
@@ -176,7 +178,11 @@ defmodule CentralWeb.ChartLive do
       socket =
         socket
         |> assign(chart_data: fresh_data)
-        |> push_event("chart-data-updated", %{data: fresh_data})
+        |> push_event("chart-data-updated", %{
+          data: fresh_data,
+          symbol: socket.assigns.symbol,
+          timeframe: socket.assigns.timeframe
+        })
 
       {:noreply, socket}
     end
@@ -191,7 +197,11 @@ defmodule CentralWeb.ChartLive do
     socket =
       socket
       |> assign(chart_data: chart_data, loading: false)
-      |> push_event("chart-data-updated", %{data: chart_data})
+      |> push_event("chart-data-updated", %{
+        data: chart_data,
+        symbol: socket.assigns.symbol,
+        timeframe: socket.assigns.timeframe
+      })
 
     {:noreply, socket}
   end
@@ -220,6 +230,29 @@ defmodule CentralWeb.ChartLive do
     {:noreply, socket}
   end
 
+  def handle_event("chart-theme-changed", %{"theme" => theme}, socket) do
+    # Update chart theme when changed from chart component
+    {:noreply, assign(socket, :chart_theme, theme)}
+  end
+
+  def handle_event("theme-changed", %{"theme" => theme}, socket) do
+    # Update chart theme when global theme changes
+    socket = socket
+      |> assign(:chart_theme, theme)
+      |> push_event("chart-theme-updated", %{theme: theme})
+
+    {:noreply, socket}
+  end
+
+  def handle_event("change_theme", %{"theme" => theme}, socket) do
+    # Handle theme change from settings dialog
+    socket = socket
+      |> assign(:chart_theme, theme)
+      |> push_event("chart-theme-updated", %{theme: theme})
+
+    {:noreply, socket}
+  end
+
   # Handle loading initial data
   def handle_info(:load_initial_data, socket) do
     chart_data = fetch_market_data(socket.assigns.symbol, socket.assigns.timeframe)
@@ -237,7 +270,11 @@ defmodule CentralWeb.ChartLive do
     socket =
       socket
       |> assign(chart_data: chart_data, loading: false)
-      |> push_event("chart-data-updated", %{data: chart_data})
+      |> push_event("chart-data-updated", %{
+        data: chart_data,
+        symbol: socket.assigns.symbol,
+        timeframe: socket.assigns.timeframe
+      })
 
     {:noreply, socket}
   end
@@ -259,7 +296,11 @@ defmodule CentralWeb.ChartLive do
     socket =
       socket
       |> assign(chart_data: chart_data, loading: false)
-      |> push_event("chart-data-updated", %{data: chart_data})
+      |> push_event("chart-data-updated", %{
+        data: chart_data,
+        symbol: socket.assigns.symbol,
+        timeframe: socket.assigns.timeframe
+      })
 
     {:noreply, socket}
   end

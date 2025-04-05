@@ -24,7 +24,7 @@ import {LiveSocket} from "phoenix_live_view"
 // Import hooks
 import FlickeringGrid from "./hooks/flickering_grid"
 import ThemeSwitcher, { ThemeUIUpdater, themeUtils } from "./hooks/theme-switcher"
-import TradingViewChart from "./hooks/tradingview_chart"
+import TradingViewChart from "./hooks/tradingview"
 
 // Run theme initialization BEFORE LiveView connects
 document.addEventListener('DOMContentLoaded', () => {
@@ -74,10 +74,20 @@ document.addEventListener('set-theme', (event) => {
     if (lastSetTheme === theme) return;
     lastSetTheme = theme;
     
+    console.log("Global theme changed to:", theme);
+    
     // Apply theme to DOM and localStorage using shared utility
     themeUtils.applyTheme(theme);
     
     // Update theme UI using shared utility
     themeUtils.updateThemeUI(theme);
+    
+    // No need to dispatch another set-theme event - that would create a loop
+    // Instead, dispatch a separate event for non-LiveView components
+    const themeEvent = new CustomEvent('theme-updated', { 
+      bubbles: true, 
+      detail: { theme } 
+    });
+    document.dispatchEvent(themeEvent);
   }
 });
