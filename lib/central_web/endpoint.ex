@@ -25,6 +25,15 @@ defmodule CentralWeb.Endpoint do
     gzip: false,
     only: CentralWeb.static_paths()
 
+  # Add a second Plug.Static configuration specifically for favicon and icon files
+  # This ensures they're properly served with appropriate cache headers
+  plug Plug.Static,
+    at: "/",
+    from: :central,
+    gzip: false,
+    only: ~w(favicon.ico site.webmanifest apple-touch-icon.png favicon-32x32.png favicon-16x16.png),
+    cache_control_for_etags: "public, max-age=86400"
+
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do
