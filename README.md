@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="./public/logo.png" width="260px" align="center" style="margin-bottom: -52px;" />
-  <p style="font-size: 40px;" align="center">Trading Alchemist</p>
+  <img src="./public/logo.png" width="300px" align="center" style="margin-bottom: -52px;" />
+  <h1 style="border-bottom-width: 0px;" align="center">Trading Alchemist</h1>
   <blockquote> Trading Alchemist: Where market chaos confesses its secrets and your financial nightmares get a comedy reboot. The only tool that turns your "I should have bought Bitcoin in 2010" regrets into actionable intelligence without requiring a time machine.</blockquote>
 </div>
 
