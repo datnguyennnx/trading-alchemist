@@ -1,10 +1,41 @@
-# Central
+<div align="center">
+  <img src="./public/logo.png" width="260px" align="center" style="margin-bottom: -52px;" />
+  <p style="font-size: 40px;" align="center">Trading Alchemist</p>
+  <blockquote> Trading Alchemist: Where market chaos confesses its secrets and your financial nightmares get a comedy reboot. The only tool that turns your "I should have bought Bitcoin in 2010" regrets into actionable intelligence without requiring a time machine.</blockquote>
+</div>
 
-A Phoenix application with TimescaleDB for time-series data.
 
-## Development Setup
 
-This project uses Docker Compose for PostgreSQL with TimescaleDB and DevBox for managing development dependencies.
+## Overview
+
+Trading Alchemist is a comprehensive trading analysis platform built with Elixir and Phoenix, leveraging TimescaleDB for efficient time-series data storage. The platform offers a robust backtesting system for cryptocurrency trading strategies with advanced analytics capabilities.
+
+### Key Features
+
+- **Strategy Builder**: Create, test, and refine trading strategies with flexible entry/exit rule configurations
+- **Backtesting Engine**: Evaluate strategy performance against historical market data
+- **Market Data Management**: Synchronization with Binance API for real-time and historical data
+- **Performance Analytics**: Comprehensive metrics including win rate, profit factor, drawdown, Sharpe ratio
+- **Transaction History**: Import and replay your actual trading history
+- **Risk Management**: Configure position sizing, stop-loss, and take-profit settings
+
+> For detailed feature documentation, explore the [features_docs](./features_docs) directory, especially the [backtest](./features_docs/backtest) section containing system diagrams, API designs, and implementation guidelines.
+
+## System Architecture
+
+Trading Alchemist is built with:
+
+- **Phoenix Framework**: Web application and LiveView for real-time UI interactions
+- **Elixir**: Core business logic with functional programming patterns
+- **PostgreSQL with TimescaleDB**: Efficient storage for time-series market data
+- **Redis and ETS**: Caching for performance optimization
+- **Binance API Integration**: For market data retrieval
+
+The system follows a modular architecture with contexts for:
+- Strategy management
+- Backtest execution
+- Market data handling
+- Performance analysis
 
 ### Prerequisites
 
@@ -90,6 +121,16 @@ The application is configured to use the following environment variables for dat
 - `POSTGRES_PORT` (default: "5433")
 
 These are automatically set when using DevBox.
+
+## API Endpoints
+
+The platform provides RESTful API endpoints for:
+- Authentication and session management
+- Strategy CRUD operations
+- Backtest execution and analysis
+- Market data retrieval
+
+For detailed API documentation, refer to the API Design docs.
 
 ## TimescaleDB
 
