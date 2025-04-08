@@ -9,39 +9,49 @@ import { themes } from './themes';
 import { initializeChart, destroyChart } from './chart';
 import { setupEventHandlers } from './events';
 
+// Cache for chart data to prevent unnecessary re-parsing
+const chartDataCache = new WeakMap();
+
 /**
- * TradingView Chart Phoenix LiveView Hook
+ * TradingView Chart Phoenix LiveView Hook - Optimized for performance
  */
 const TradingViewChart = {
   mounted() {
     console.log("TradingView Chart hook mounted");
     
     try {
-      // Clear any potential "Loading" overlay that might block the chart
-      const loadingOverlays = this.el.querySelectorAll('.absolute');
-      loadingOverlays.forEach(overlay => {
+      // Clear any potential "Loading" overlay
+      const loadingElements = this.el.querySelectorAll('.absolute');
+      loadingElements.forEach(overlay => {
         overlay.style.display = 'none';
       });
       
-      // Parse the chart data
+      // Parse the chart data - with caching for performance
       let chartData;
-      try {
-        chartData = JSON.parse(this.el.dataset.chartData);
-        
-        // For production, reduce logging
-        if (process.env.NODE_ENV !== 'production') {
-          console.log("Chart data parsed successfully, first item:", chartData[0]);
-          console.log("Chart data length:", chartData.length);
+      if (chartDataCache.has(this.el)) {
+        // Use cached data if available
+        chartData = chartDataCache.get(this.el);
+      } else {
+        try {
+          chartData = JSON.parse(this.el.dataset.chartData);
+          // Cache the parsed data for future use
+          chartDataCache.set(this.el, chartData);
           
-          // Log debugging info
-          if (this.el.dataset.debug) {
-            console.log("Debug info:", JSON.parse(this.el.dataset.debug));
+          // For production, reduce logging
+          if (process.env.NODE_ENV !== 'production') {
+            console.log("Chart data parsed successfully, first item:", chartData[0]);
+            console.log("Chart data length:", chartData.length);
+            
+            // Log debugging info
+            if (this.el.dataset.debug) {
+              console.log("Debug info:", JSON.parse(this.el.dataset.debug));
+            }
           }
+        } catch (e) {
+          console.error("Error parsing chart data:", e);
+          console.error("Raw chart data:", this.el.dataset.chartData);
+          chartData = [];
         }
-      } catch (e) {
-        console.error("Error parsing chart data:", e);
-        console.error("Raw chart data:", this.el.dataset.chartData);
-        chartData = [];
       }
       
       // Get configuration from data attributes
@@ -68,7 +78,7 @@ const TradingViewChart = {
         }
       }
       
-      // Initialize chart
+      // Initialize chart with performance optimizations
       const { chart, candleSeries, volumeSeries } = initializeChart(
         container, 
         chartData,
@@ -77,119 +87,76 @@ const TradingViewChart = {
         timeframe
       );
       
-      // Set up event handlers
+      // Set up event handlers with optimized event delegation
       setupEventHandlers(this, chart, candleSeries, volumeSeries, themes, theme);
       
-      // Set up global theme change listener
+      // Set up global theme change listener - using passive events for better performance
       this.themeChangeListener = (event) => {
         if (event.detail?.theme && themes[event.detail.theme]) {
           // Only update if theme is different from current
           if (event.detail.theme !== this.theme) {
             console.log("TradingView chart: Detected global theme change to", event.detail.theme);
             
-            // Get the new theme
-            const newTheme = themes[event.detail.theme];
-            
-            // Apply theme directly to chart
-            chart.applyOptions({
-              layout: {
-                background: { 
-                  type: 'solid', 
-                  color: event.detail.theme === 'dark' ? 'rgb(13, 17, 23)' : 'rgb(249, 250, 251)' 
-                },
-                textColor: newTheme.textColor,
-              },
-              grid: {
-                vertLines: newTheme.grid.vertLines,
-                horzLines: newTheme.grid.horzLines,
-              },
-              timeScale: {
-                borderColor: newTheme.borderColor,
-                textColor: newTheme.textColor,
-              },
-              rightPriceScale: {
-                borderColor: newTheme.borderColor,
-                textColor: newTheme.textColor,
-              },
-              crosshair: {
-                vertLine: {
-                  color: newTheme.crosshairColor,
-                  labelBackgroundColor: newTheme.crosshairColor,
-                },
-                horzLine: {
-                  color: newTheme.crosshairColor,
-                  labelBackgroundColor: newTheme.crosshairColor,
-                },
-              },
-              watermark: {
-                ...chart.options().watermark,
-                color: newTheme.watermarkColor,
-              }
-            });
-            
-            // Apply theme to candlestick series
-            candleSeries.applyOptions({
-              upColor: newTheme.upColor,
-              downColor: newTheme.downColor,
-              wickUpColor: newTheme.upColor,
-              wickDownColor: newTheme.downColor,
-              priceLineColor: newTheme.borderColor,
-            });
-            
-            // Update volume series if it exists
-            if (volumeSeries) {
-              // Re-color the volume bars based on candle direction
-              const volumeData = volumeSeries.data().map(item => {
-                const candle = candleSeries.data().find(c => c.time === item.time);
-                return {
-                  time: item.time,
-                  value: item.value,
-                  color: candle && candle.close >= candle.open ? 
-                    newTheme.volumeColor : newTheme.volumeDownColor,
-                };
-              });
-              
-              volumeSeries.setData(volumeData);
-            }
+            // Push event to server to update theme
+            this.pushEvent("chart-theme-updated", { theme: event.detail.theme });
             
             // Update theme tracking
             this.theme = event.detail.theme;
             
             // Update data attribute for consistency
             this.el.dataset.theme = event.detail.theme;
-            
-            console.log("TradingView chart: Theme updated to", event.detail.theme);
           }
         }
       };
       
-      // Add listener for global theme changes
-      window.addEventListener('set-theme', this.themeChangeListener);
+      // Add event listeners with passive option for better performance
+      window.addEventListener('set-theme', this.themeChangeListener, { passive: true });
+      document.addEventListener('theme-updated', this.themeChangeListener, { passive: true });
       
-      // Also listen for the theme-updated event (backup method)
-      this.themeUpdatedListener = (event) => {
-        if (event.detail?.theme && themes[event.detail.theme]) {
-          console.log("TradingView chart: Detected theme-updated event:", event.detail.theme);
-          if (event.detail.theme !== this.theme) {
-            // Use the same implementation as themeChangeListener
-            this.themeChangeListener({ detail: { theme: event.detail.theme } });
-          }
-        }
-      };
-      document.addEventListener('theme-updated', this.themeUpdatedListener);
+      // Set a flag to indicate the chart is mounted (for LiveView updates)
+      this.el.dataset.connected = "true";
       
     } catch (error) {
       console.error("Error initializing TradingView chart:", error);
     }
   },
   
+  updated() {
+    // Optimize updates to avoid unnecessary re-renders
+    const newChartData = this.el.dataset.chartData;
+    const newSymbol = this.el.dataset.symbol;
+    const newTimeframe = this.el.dataset.timeframe;
+    
+    // Only process update if data has actually changed
+    if (this._lastChartData !== newChartData || 
+        this._lastSymbol !== newSymbol || 
+        this._lastTimeframe !== newTimeframe) {
+      
+      // Store current values for future comparison
+      this._lastChartData = newChartData;
+      this._lastSymbol = newSymbol;
+      this._lastTimeframe = newTimeframe;
+      
+      // Clear data cache when inputs change
+      chartDataCache.delete(this.el);
+      
+      console.log("Chart data updated, triggering rerender");
+    }
+  },
+  
+  disconnected() {
+    // Clear the cache when the element is disconnected
+    chartDataCache.delete(this.el);
+  },
+  
   destroyed() {
-    // Remove global theme change listener
+    // Clean up resources to prevent memory leaks
+    chartDataCache.delete(this.el);
+    
+    // Remove global theme change listeners
     if (this.themeChangeListener) {
       window.removeEventListener('set-theme', this.themeChangeListener);
-    }
-    if (this.themeUpdatedListener) {
-      document.removeEventListener('theme-updated', this.themeUpdatedListener);
+      document.removeEventListener('theme-updated', this.themeChangeListener);
     }
     
     destroyChart(this.chart, this.resizeHandler);

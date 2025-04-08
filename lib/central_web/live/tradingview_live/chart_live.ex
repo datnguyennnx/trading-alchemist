@@ -162,7 +162,6 @@ defmodule CentralWeb.TradingViewLive.ChartLive do
     # Diagnostic information
     chart_data = socket.assigns.chart_data
 
-
     # Generate new data and push it directly to the chart
     if length(chart_data) > 0 do
       # Push the existing data directly to the chart
@@ -252,6 +251,76 @@ defmodule CentralWeb.TradingViewLive.ChartLive do
       |> push_event("chart-theme-updated", %{theme: theme})
 
     {:noreply, socket}
+  end
+
+  def handle_event("load-historical-data", %{"timestamp" => timestamp, "symbol" => symbol, "timeframe" => timeframe} = params, socket) do
+    # Convert timestamp to DateTime
+    earliest_time = DateTime.from_unix!(timestamp)
+
+    # Get batch size from params or use default
+    batch_size = Map.get(params, "batchSize", 200)
+    batch_size = min(batch_size, 200) # Cap to prevent excessive fetching
+
+    # Calculate start and end times for fetching historical data
+    timeframe_seconds = case timeframe do
+      "1m" -> 60
+      "5m" -> 5 * 60
+      "15m" -> 15 * 60
+      "1h" -> 3600
+      "4h" -> 4 * 3600
+      "1d" -> 86400
+      _ -> 3600 # Default to 1h
+    end
+
+    # Calculate time needed to fetch earlier candles
+    fetch_duration = timeframe_seconds * batch_size
+    start_time = DateTime.add(earliest_time, -fetch_duration, :second)
+    end_time = earliest_time
+
+    Logger.info("Fetching historical data for #{symbol}/#{timeframe} from #{DateTime.to_iso8601(start_time)} to #{DateTime.to_iso8601(end_time)} (batch size: #{batch_size})")
+
+    # Fetch historical data
+    candles = MarketDataContext.get_candles(symbol, timeframe, start_time, end_time)
+
+    Logger.info("Found #{length(candles)} historical candles")
+
+    # Format the data for the chart
+    formatted_data = format_chart_data(candles)
+
+    # Check if we have data to indicate if more is available
+    has_more = length(formatted_data) > 0
+
+    # Optimize batch size for next fetch based on results and timing
+    # If we're returning close to the requested amount, we likely have more data
+    # If we're returning significantly less, we may be approaching the end of data
+    recommended_batch_size = cond do
+      length(formatted_data) >= batch_size * 0.9 ->
+        # Got nearly as many as requested, maintain or increase batch size
+        batch_size
+      length(formatted_data) >= batch_size * 0.5 ->
+        # Getting fewer, maintain batch size
+        batch_size
+      length(formatted_data) > 0 ->
+        # Getting much fewer, reduce batch size
+        max(50, trunc(batch_size * 0.7))
+      true ->
+        # No data, default to small batch size
+        100
+    end
+
+    # Send the data back to the client
+    socket = push_event(socket, "chart-data-updated", %{
+      data: formatted_data,
+      symbol: symbol,
+      timeframe: timeframe,
+      append: true # Indicate this is an append operation
+    })
+
+    # Return value to JavaScript pushEvent using {:reply, value, socket}
+    {:reply, %{
+      has_more: has_more,
+      batchSize: recommended_batch_size
+    }, socket}
   end
 
   # Handle loading initial data
@@ -465,4 +534,31 @@ defmodule CentralWeb.TradingViewLive.ChartLive do
   defp format_price(price) when price >= 1000, do: "$#{:erlang.float_to_binary(price, decimals: 2)}"
   defp format_price(price) when price >= 1, do: "$#{:erlang.float_to_binary(price, decimals: 2)}"
   defp format_price(price), do: "$#{:erlang.float_to_binary(price, decimals: 4)}"
+
+  # Format chart data for TradingView
+  defp format_chart_data(candles) do
+    formatted = Enum.map(candles, fn candle ->
+      time = DateTime.to_unix(candle.timestamp)
+
+      %{
+        time: time,  # Ensure this is a Unix timestamp in seconds
+        open: to_float(candle.open),
+        high: to_float(candle.high),
+        low: to_float(candle.low),
+        close: to_float(candle.close),
+        volume: candle.volume && to_float(candle.volume) || 0.0
+      }
+    end)
+
+    # Log the formatted data structure
+    if length(formatted) > 0 do
+      first_formatted = List.first(formatted)
+      last_formatted = List.last(formatted)
+      Logger.debug("First formatted candle: #{inspect(first_formatted)}")
+      Logger.debug("Last formatted candle: #{inspect(last_formatted)}")
+      Logger.debug("Total formatted candles: #{length(formatted)}")
+    end
+
+    formatted
+  end
 end

@@ -29,7 +29,17 @@ export const setupEventHandlers = (hook, chart, candleSeries, volumeSeries, them
   // Set up LiveView event handlers
   setupChartDataHandler(hook, chart, candleSeries, volumeSeries, themes);
   setupThemeUpdateHandler(hook, chart, candleSeries, volumeSeries, themes);
-  setupRangeChangeHandler(hook, candleSeries, volumeSeries);
+  
+  // Reference to range change handler for reset functionality
+  const rangeHandlerContext = {};
+  setupRangeChangeHandler(hook, candleSeries, volumeSeries, rangeHandlerContext);
+  
+  // Store reference to reset function for external access
+  hook.resetHistoryTracking = () => {
+    if (rangeHandlerContext.resetLastFetchTimestamp) {
+      rangeHandlerContext.resetLastFetchTimestamp();
+    }
+  };
 };
 
 /**
@@ -71,7 +81,7 @@ const createResizeHandler = (hook, chart) => {
  * @param {Object} themes - Available themes
  */
 const setupChartDataHandler = (hook, chart, candleSeries, volumeSeries, themes) => {
-  hook.handleEvent("chart-data-updated", ({ data, symbol, timeframe }) => {
+  hook.handleEvent("chart-data-updated", ({ data, symbol, timeframe, append }) => {
     if (!data || !Array.isArray(data) || data.length === 0) {
       console.error("Received invalid data update");
       return;
@@ -86,7 +96,45 @@ const setupChartDataHandler = (hook, chart, candleSeries, volumeSeries, themes) 
       
       // Update chart data
       const activeTheme = themes[hook.theme];
-      updateChartSeries(candleSeries, volumeSeries, data, activeTheme);
+      
+      if (append) {
+        // Get the existing data
+        const existingData = candleSeries.data();
+        
+        // For historical data (from load-historical-data event):
+        // Sort data by timestamp since historical data is usually older
+        const combinedData = [...data, ...existingData].sort((a, b) => a.time - b.time);
+        
+        // Remove any duplicates (keep the first occurrence)
+        const uniqueData = [];
+        const timeMap = new Map();
+        
+        combinedData.forEach(candle => {
+          if (!timeMap.has(candle.time)) {
+            timeMap.set(candle.time, true);
+            uniqueData.push(candle);
+          }
+        });
+        
+        console.log(`Combined data: existing=${existingData.length}, new=${data.length}, combined=${uniqueData.length}`);
+        
+        // Update the series with combined data
+        updateChartSeries(candleSeries, volumeSeries, uniqueData, activeTheme);
+      } else {
+        // Replace existing data
+        updateChartSeries(candleSeries, volumeSeries, data, activeTheme);
+        
+        // Reset history tracking when chart data is replaced (not appended)
+        // This happens when symbol or timeframe changes
+        if (hook.resetHistoryTracking) {
+          // Check if timeframe has changed
+          if (timeframe && timeframe !== hook.el.dataset.prevTimeframe) {
+            console.log("Timeframe changed, resetting history tracking");
+            hook.resetHistoryTracking();
+            hook.el.dataset.prevTimeframe = timeframe;
+          }
+        }
+      }
       
       // Update watermark if symbol changed
       if (symbol && symbol !== hook.el.dataset.symbol) {
@@ -102,7 +150,10 @@ const setupChartDataHandler = (hook, chart, candleSeries, volumeSeries, themes) 
       
       // Update the timeframe if it changed
       if (timeframe && timeframe !== hook.el.dataset.timeframe) {
+        // Store previous timeframe before updating
+        hook.el.dataset.prevTimeframe = hook.el.dataset.timeframe || timeframe;
         hook.el.dataset.timeframe = timeframe;
+        
         // Adjust time scale formatting based on timeframe
         chart.applyOptions({
           timeScale: {
@@ -234,17 +285,135 @@ const setupThemeUpdateHandler = (hook, chart, candleSeries, volumeSeries, themes
  * @param {Object} candleSeries - The candlestick series
  * @param {Object} volumeSeries - The volume series (optional) 
  */
-const setupRangeChangeHandler = (hook, candleSeries, volumeSeries) => {
-  hook.chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
-    // This could be used for dynamic data loading or other optimizations
-    // For now, we'll just use it to ensure volume series is properly colored
+const setupRangeChangeHandler = (hook, candleSeries, volumeSeries, rangeHandlerContext) => {
+  let isFetching = false;
+  let lastFetchTimestamp = null;
+  const fetchThreshold = 50; // When fewer than this many bars are visible before the start, load more
+  const fetchCooldown = 500; // Further reduced cooldown for better responsiveness (ms)
+  let lastFetchTime = Date.now() - fetchCooldown; // Initialize to allow immediate first fetch
+  let hasMoreData = true; // Track if we have more data to load
+  let batchSize = 200; // Default batch size
+  
+  // Track loading state to show/hide loading indicator
+  const setLoading = (isLoading) => {
+    // Remove any existing loading indicators first
+    const existingIndicators = hook.el.querySelectorAll('.history-loading-indicator');
+    existingIndicators.forEach(el => el.remove());
     
-    if (volumeSeries && candleSeries) {
-      const visibleData = candleSeries.data();
-      if (visibleData.length === 0) return;
+    if (isLoading) {
+      const loadingEl = document.createElement('div');
+      loadingEl.className = 'absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-xs rounded px-2 py-1 flex items-center history-loading-indicator z-10';
+      loadingEl.innerHTML = '<div class="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div> Loading historical data...';
+      hook.el.appendChild(loadingEl);
+    }
+  };
+  
+  hook.chart.timeScale().subscribeVisibleLogicalRangeChange(async (range) => {
+    if (!range || isFetching || !hasMoreData) return;
+    
+    const now = Date.now();
+    if (now - lastFetchTime < fetchCooldown) return; // Apply cooldown
+    
+    const barsInfo = candleSeries.barsInLogicalRange(range);
+    if (!barsInfo || barsInfo.barsBefore === undefined) return;
+    
+    // If we're near the beginning of the data, fetch historical data
+    if (barsInfo.barsBefore < fetchThreshold) {
+      isFetching = true;
+      lastFetchTime = now;
       
-      // This would be the place to dynamically update volume colors
-      // if we were implementing more advanced features
+      try {
+        // Get all current data to find the earliest point
+        const allData = candleSeries.data();
+        if (!allData || allData.length === 0) {
+          isFetching = false;
+          return;
+        }
+        
+        // Use a faster way to find the earliest candle (optimization)
+        // This is faster than sorting the entire array
+        let earliestCandle = allData[0];
+        for (let i = 1; i < allData.length; i++) {
+          if (allData[i].time < earliestCandle.time) {
+            earliestCandle = allData[i];
+          }
+        }
+
+        // Convert the UTC timestamp to a Date object
+        const earliestTime = new Date(earliestCandle.time * 1000);
+        
+        // Allow fetching if we're looking at earlier data than before
+        if (lastFetchTimestamp && earliestCandle.time >= lastFetchTimestamp) {
+          console.log("Skipping fetch - need to scroll further left to load more data");
+          isFetching = false;
+          return;
+        }
+        
+        // Record this fetch timestamp - this is now the earliest point we've fetched
+        lastFetchTimestamp = earliestCandle.time;
+        
+        // Show loading indicator
+        setLoading(true);
+        
+        console.log(`Fetching historical data before ${earliestTime.toISOString()}`);
+        
+        // Request historical data from LiveView
+        const response = await hook.pushEvent("load-historical-data", {
+          timestamp: earliestCandle.time,
+          symbol: hook.el.dataset.symbol,
+          timeframe: hook.el.dataset.timeframe,
+          batchSize: batchSize // Allow server to adjust batch size
+        });
+        
+        console.log("Response from load-historical-data:", response);
+        
+        // Check if we have a valid response before using it
+        if (response && response.has_more !== undefined) {
+          hasMoreData = response.has_more;
+          console.log(`Historical data load complete, has more: ${hasMoreData}`);
+          
+          // Dynamically adjust batch size based on response time and data volume
+          if (response.batchSize) {
+            batchSize = response.batchSize;
+          } else if (hasMoreData) {
+            // If loading was fast (< 300ms), increase batch size for next time
+            const fetchDuration = Date.now() - lastFetchTime;
+            if (fetchDuration < 300 && batchSize < 500) {
+              batchSize = Math.min(500, batchSize * 1.5);
+              console.log(`Increased batch size to ${batchSize} (fetch took ${fetchDuration}ms)`);
+            } else if (fetchDuration > 800 && batchSize > 50) {
+              // If loading was slow, decrease batch size
+              batchSize = Math.max(50, batchSize * 0.7);
+              console.log(`Decreased batch size to ${batchSize} (fetch took ${fetchDuration}ms)`);
+            }
+          }
+        } else {
+          console.warn("Invalid response from load-historical-data event", response);
+          // Default to true so we can try again
+          hasMoreData = true;
+        }
+        
+        // Remove loading indicator
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching historical data:", error);
+        // Keep hasMoreData true to allow retries after errors
+        hasMoreData = true;
+        setLoading(false);
+      } finally {
+        // Release the fetch lock with shorter delay
+        setTimeout(() => {
+          isFetching = false;
+        }, 100);
+      }
     }
   });
+  
+  // Store reference to reset function for external access
+  rangeHandlerContext.resetLastFetchTimestamp = () => {
+    console.log("Resetting history tracking state");
+    lastFetchTimestamp = null;
+    hasMoreData = true; // Reset this flag too to ensure we can load data
+    batchSize = 200; // Reset batch size to default
+  };
 }; 
