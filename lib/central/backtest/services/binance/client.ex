@@ -225,33 +225,41 @@ defmodule Central.Backtest.Services.Binance.Client do
 
   ## Parameters
     - symbol: Trading pair (e.g., "BTCUSDT")
-    - interval: Timeframe (e.g., "1m", "1h", "1d")
+    - interval: Timeframe (e.g., "1m", "5m", "1h", "1d")
     - start_time: Starting time (DateTime)
     - end_time: Ending time (DateTime)
-    - chunk_size: Size of each chunk in milliseconds (default: 1 day)
 
   ## Returns
     - {:ok, candles} on success
     - {:error, reason} on failure
   """
-  def download_historical_data(symbol, interval, start_time, end_time, chunk_size \\ 86_400_000) do
+  def download_historical_data(symbol, interval, start_time, end_time) do
     # Calculate total time range in milliseconds
     start_ms = DateTime.to_unix(start_time, :millisecond)
     end_ms = DateTime.to_unix(end_time, :millisecond)
 
+    # Calculate optimal chunk size based on timeframe and Binance's 1000 candle limit
+    chunk_size = calculate_optimal_chunk_size(interval)
+
     # Create chunks of time ranges
     chunks = create_time_chunks(start_ms, end_ms, chunk_size)
 
-    # Make parallel requests for each chunk
+    # Make parallel requests for each chunk with rate limiting
     results =
       chunks
       |> Enum.map(fn {chunk_start, chunk_end} ->
-         Task.async(fn ->
-           Process.sleep(100) # Add a small delay to avoid hitting rate limits
-           get_klines(symbol, interval, start_time: chunk_start, end_time: chunk_end)
-         end)
+        Task.async(fn ->
+          # Add exponential backoff for rate limiting
+          backoff = 100
+          max_retries = 5
+
+          retry_with_backoff(fn ->
+            Process.sleep(backoff) # Add delay to avoid rate limits
+            get_klines(symbol, interval, start_time: chunk_start, end_time: chunk_end, limit: 1000)
+          end, max_retries, backoff)
+        end)
       end)
-      |> Enum.map(&Task.await(&1, 60_000))
+      |> Task.await_many(300_000) # 5 minute timeout for all tasks
 
     # Check if any chunk failed
     case Enum.find(results, fn result -> match?({:error, _}, result) end) do
@@ -262,12 +270,41 @@ defmodule Central.Backtest.Services.Binance.Client do
           |> Enum.map(fn {:ok, chunk_data} -> chunk_data end)
           |> List.flatten()
           |> Enum.sort_by(& &1.timestamp, DateTime)
+          |> validate_data_continuity(interval)
 
         {:ok, candles}
 
       {:error, reason} ->
         # At least one chunk failed
         {:error, reason}
+    end
+  end
+
+  # Calculate optimal chunk size based on timeframe and Binance's 1000 candle limit
+  defp calculate_optimal_chunk_size(interval) do
+    case interval do
+      "1m" -> 60_000 * 1000 # 1000 minutes = ~16.67 hours
+      "5m" -> 300_000 * 1000 # 1000 * 5 minutes = ~83.33 hours
+      "15m" -> 900_000 * 1000 # 1000 * 15 minutes = ~250 hours
+      "1h" -> 3_600_000 * 1000 # 1000 hours = ~41.67 days
+      "4h" -> 14_400_000 * 1000 # 1000 * 4 hours = ~166.67 days
+      "1d" -> 86_400_000 * 1000 # 1000 days
+      _ -> 86_400_000 # Default to 1 day
+    end
+  end
+
+  # Retry with exponential backoff
+  defp retry_with_backoff(fun, max_retries, backoff) do
+    try do
+      fun.()
+    rescue
+      e ->
+        if max_retries > 0 do
+          Process.sleep(backoff)
+          retry_with_backoff(fun, max_retries - 1, backoff * 2)
+        else
+          {:error, "Max retries exceeded: #{inspect(e)}"}
+        end
     end
   end
 
@@ -279,12 +316,43 @@ defmodule Central.Backtest.Services.Binance.Client do
       else
         current_end = min(current_start + chunk_size, end_ms)
         chunk = {
-          DateTime.from_unix!(current_start, :millisecond) |> DateTimeConfig.truncate(),
-          DateTime.from_unix!(current_end, :millisecond) |> DateTimeConfig.truncate()
+          DateTime.from_unix!(current_start, :millisecond),
+          DateTime.from_unix!(current_end, :millisecond)
         }
         {chunk, current_end}
       end
     end)
     |> Enum.to_list()
+  end
+
+  # Validate data continuity with more lenient gap detection
+  defp validate_data_continuity(candles, interval) do
+    # Calculate expected interval in milliseconds
+    interval_ms = case interval do
+      "1m" -> 60_000
+      "5m" -> 300_000
+      "15m" -> 900_000
+      "1h" -> 3_600_000
+      "4h" -> 14_400_000
+      "1d" -> 86_400_000
+      _ -> 60_000
+    end
+
+    # Sort candles by timestamp
+    sorted_candles = Enum.sort_by(candles, & &1.timestamp, DateTime)
+
+    # Check for gaps with a more lenient threshold (2x interval)
+    Enum.reduce(sorted_candles, [], fn candle, acc ->
+      case acc do
+        [] -> [candle]
+        [prev | _] ->
+          gap = DateTime.diff(candle.timestamp, prev.timestamp, :millisecond)
+          if gap > interval_ms * 2 do
+            Logger.warning("Data gap detected: #{gap}ms between #{prev.timestamp} and #{candle.timestamp}")
+          end
+          [candle | acc]
+      end
+    end)
+    |> Enum.reverse()
   end
 end

@@ -224,8 +224,8 @@ defmodule Central.Backtest.Workers.MarketSync do
       Task.start(fn ->
         sync_start_time = DateTimeConfig.now()
 
-        # Fetch the data from Binance
-        case BinanceClient.download_historical_data(symbol, timeframe, fetch_start_time, fetch_end_time) do
+        # Fetch the data from Binance with retries
+        case fetch_with_retries(symbol, timeframe, fetch_start_time, fetch_end_time) do
           {:ok, market_data} ->
             # Success - insert the data into the database
             case upsert_market_data(market_data) do
@@ -257,6 +257,62 @@ defmodule Central.Backtest.Workers.MarketSync do
       end)
 
       {:noreply, new_state}
+    end
+  end
+
+  defp fetch_with_retries(symbol, timeframe, start_time, end_time, retries \\ 3) do
+    case BinanceClient.download_historical_data(symbol, timeframe, start_time, end_time) do
+      {:ok, market_data} ->
+        # Validate data completeness with more lenient threshold
+        case validate_data_completeness(market_data, timeframe, start_time, end_time) do
+          :ok -> {:ok, market_data}
+          {:error, reason} ->
+            if retries > 0 do
+              Logger.warning("Data validation failed, retrying... (#{retries} attempts left)")
+              Process.sleep(2000) # Increased wait time between retries
+              fetch_with_retries(symbol, timeframe, start_time, end_time, retries - 1)
+            else
+              # Even if validation fails, return partial data
+              Logger.warning("Using partial data after retries exhausted: #{reason}")
+              {:ok, market_data}
+            end
+        end
+
+      {:error, reason} ->
+        if retries > 0 do
+          Logger.warning("Fetch failed, retrying... (#{retries} attempts left)")
+          Process.sleep(2000) # Increased wait time between retries
+          fetch_with_retries(symbol, timeframe, start_time, end_time, retries - 1)
+        else
+          {:error, reason}
+        end
+    end
+  end
+
+  defp validate_data_completeness(market_data, timeframe, start_time, end_time) do
+    # Calculate expected number of candles based on timeframe
+    expected_count = calculate_expected_candles(timeframe, start_time, end_time)
+    actual_count = length(market_data)
+
+    # Be more lenient with validation (70% of expected data is acceptable)
+    if actual_count < expected_count * 0.7 do
+      {:error, "Incomplete data: expected #{expected_count} candles, got #{actual_count}"}
+    else
+      :ok
+    end
+  end
+
+  defp calculate_expected_candles(timeframe, start_time, end_time) do
+    total_seconds = DateTime.diff(end_time, start_time)
+
+    case timeframe do
+      "1m" -> div(total_seconds, 60)
+      "5m" -> div(total_seconds, 300)
+      "15m" -> div(total_seconds, 900)
+      "1h" -> div(total_seconds, 3600)
+      "4h" -> div(total_seconds, 14400)
+      "1d" -> div(total_seconds, 86400)
+      _ -> div(total_seconds, 3600) # Default to 1h
     end
   end
 
@@ -304,8 +360,6 @@ defmodule Central.Backtest.Workers.MarketSync do
   end
 
   defp upsert_market_data(market_data) do
-    # Implementation of upsert_market_data function
-    # This function should insert or update the market data in the database
     try do
       # Get current timestamp for inserted_at
       now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
@@ -333,8 +387,13 @@ defmodule Central.Backtest.Workers.MarketSync do
       end)
       |> Enum.reject(&is_nil/1)  # Remove any nil values
 
-      {count, _} = Repo.insert_all(MarketData, market_data_with_decimals, on_conflict: :nothing)
-      {:ok, count}
+      # Batch insert in chunks of 1000
+      total_count = Enum.reduce(Enum.chunk_every(market_data_with_decimals, 1000), 0, fn chunk, acc ->
+        {count, _} = Repo.insert_all(MarketData, chunk, on_conflict: :nothing)
+        acc + count
+      end)
+
+      {:ok, total_count}
     rescue
       e ->
         Logger.error("Error upserting market data: #{inspect(e)}")
