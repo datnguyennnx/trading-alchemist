@@ -32,8 +32,8 @@ defmodule CentralWeb.Components.Common.AppSidebar do
         icon: &chart_bar/1,
         items: [
           %{
-            title: "TradingView Chart",
-            url: "/chart"
+            title: "Back Test",
+            url: "/backtest"
           }
         ]
       },

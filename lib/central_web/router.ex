@@ -69,7 +69,16 @@ defmodule CentralWeb.Router do
       on_mount: [{CentralWeb.UserAuth, :ensure_authenticated}] do
       live "/users/settings", AuthLive.UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", AuthLive.UserSettingsLive, :confirm_email
-      live "/chart", TradingViewLive.ChartLive
+
+      # Strategy management routes
+      live "/strategies", StrategyLive.IndexLive, :index
+      live "/strategies/new", StrategyLive.FormLive, :new
+      live "/strategies/:id", StrategyLive.ShowLive, :show
+      live "/strategies/:id/edit", StrategyLive.FormLive, :edit
+
+      # Backtest routes
+      live "/backtest", BacktestLive.IndexLive, :index
+      live "/backtest/:strategy_id", BacktestLive.ShowLive, :show
     end
   end
 

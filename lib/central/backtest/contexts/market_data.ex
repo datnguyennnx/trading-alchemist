@@ -34,13 +34,33 @@ defmodule Central.Backtest.Contexts.MarketData do
     symbols_query = from m in MarketData, select: m.symbol, distinct: true
 
     # Try to get from cache first
-    case :ets.lookup(@ets_table, :symbols) do
-      [{:symbols, symbols}] ->
-        symbols
+    try do
+      case :ets.lookup(@ets_table, :symbols) do
+        [{:symbols, symbols}] ->
+          symbols
 
-      [] ->
+        [] ->
+          symbols = Repo.all(symbols_query)
+          # Add default symbols if none are found
+          symbols = if Enum.empty?(symbols), do: ["BTCUSDT", "ETHUSDT"], else: symbols
+          :ets.insert(@ets_table, {:symbols, symbols})
+          symbols
+      end
+    rescue
+      # Handle case when ETS table doesn't exist
+      ArgumentError ->
         symbols = Repo.all(symbols_query)
-        :ets.insert(@ets_table, {:symbols, symbols})
+        # Add default symbols if none are found
+        symbols = if Enum.empty?(symbols), do: ["BTCUSDT", "ETHUSDT"], else: symbols
+
+        # Try to create the table if it doesn't exist
+        try do
+          :ets.new(@ets_table, [:set, :public, :named_table, read_concurrency: true])
+          :ets.insert(@ets_table, {:symbols, symbols})
+        rescue
+          _ -> :ok # Table might already exist in another process
+        end
+
         symbols
     end
   end
@@ -57,13 +77,33 @@ defmodule Central.Backtest.Contexts.MarketData do
     timeframes_query = from m in MarketData, select: m.timeframe, distinct: true
 
     # Try to get from cache first
-    case :ets.lookup(@ets_table, :timeframes) do
-      [{:timeframes, timeframes}] ->
-        timeframes
+    try do
+      case :ets.lookup(@ets_table, :timeframes) do
+        [{:timeframes, timeframes}] ->
+          timeframes
 
-      [] ->
+        [] ->
+          timeframes = Repo.all(timeframes_query)
+          # Add default timeframes if none are found
+          timeframes = if Enum.empty?(timeframes), do: ["1m", "5m", "15m", "1h", "4h", "1d"], else: timeframes
+          :ets.insert(@ets_table, {:timeframes, timeframes})
+          timeframes
+      end
+    rescue
+      # Handle case when ETS table doesn't exist
+      ArgumentError ->
         timeframes = Repo.all(timeframes_query)
-        :ets.insert(@ets_table, {:timeframes, timeframes})
+        # Add default timeframes if none are found
+        timeframes = if Enum.empty?(timeframes), do: ["1m", "5m", "15m", "1h", "4h", "1d"], else: timeframes
+
+        # Try to create the table if it doesn't exist
+        try do
+          :ets.new(@ets_table, [:set, :public, :named_table, read_concurrency: true])
+          :ets.insert(@ets_table, {:timeframes, timeframes})
+        rescue
+          _ -> :ok # Table might already exist in another process
+        end
+
         timeframes
     end
   end

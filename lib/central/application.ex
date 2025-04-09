@@ -17,10 +17,14 @@ defmodule Central.Application do
       {Registry, keys: :unique, name: Central.Registry},
       # Add Phoenix PubSub
       {Phoenix.PubSub, name: Central.PubSub},
+      # Task Supervisor for background jobs
+      {Task.Supervisor, name: Central.TaskSupervisor},
       # Initialize the market data cache
       {Task, fn -> Central.Backtest.Contexts.MarketData.init_cache() end},
       # Start the market data sync worker
       Central.Backtest.Workers.MarketSync,
+      # Start the BacktestRunner GenServer
+      {Central.Backtest.Workers.BacktestRunner, []},
       # Start to serve requests, typically the last entry
       CentralWeb.Endpoint,
       TwMerge.Cache
