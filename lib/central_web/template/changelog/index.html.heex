@@ -2,6 +2,78 @@
   title="Changelog"
   entries={[
     %{
+      version: "0.2.1",
+      title: "Backtest Engine and Performance Analytics",
+      date: "April 10, 2025",
+      description:
+        "Implemented comprehensive backtest engine with performance analytics, background processing, and system optimizations.",
+      features: [
+        %{
+          title: "Backtest Engine Core",
+          description:
+            "Strategy execution framework with rule evaluators, position management, indicators, and transaction simulation."
+        },
+        %{
+          title: "Performance Analytics System",
+          description:
+            "Key performance metrics calculation, drawdown analysis, trade categorization, and performance summary generation."
+        },
+        %{
+          title: "Background Processing System",
+          description:
+            "BacktestRunner worker for async execution, concurrent backtests with rate limiting, and real-time status updates."
+        },
+        %{
+          title: "UI Enhancements",
+          description:
+            "Accordion-based interface for collapsible backtest history and table component for trade visualization."
+        },
+        %{
+          title: "Architectural Improvements",
+          description:
+            "Modular design with separation of concerns across specialized service modules for better maintainability."
+        }
+      ],
+      changes: [
+        %{
+          description:
+            "Implemented supervised task execution for backtests with error handling and recovery"
+        },
+        %{
+          description:
+            "Optimized database queries with proper indexing and improved trade record normalization"
+        },
+        %{
+          description:
+            "Fixed arithmetic errors in performance calculations with consistent decimal/float handling"
+        },
+        %{
+          description:
+            "Implemented PubSub for real-time updates and background worker supervision tree"
+        },
+        %{
+          description:
+            "Refactored monolithic StrategyExecutor into specialized service modules"
+        },
+        %{
+          description:
+            "Added backtest cancellation capability and improved progress tracking"
+        },
+        %{
+          description:
+            "Enhanced load times with optimized queries and bulk database operations"
+        },
+        %{
+          description:
+            "Added accordion and table components for better backtest/trade visualization"
+        },
+        %{
+          description:
+            "Implemented proper status coloring and empty state handling for better UX"
+        }
+      ]
+    },
+    %{
       version: "0.2.0",
       title: "Core Infrastructure Implementation",
       date: "April 4, 2025",
