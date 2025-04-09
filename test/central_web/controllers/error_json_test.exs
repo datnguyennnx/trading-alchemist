@@ -2,7 +2,9 @@ defmodule CCentralWeb.Template.ErrorJSONTest do
   use CentralWeb.ConnCase, async: true
 
   test "renders 404" do
-    assert CentralWeb.Template.ErrorJSON.render("404.json", %{}) == %{errors: %{detail: "Not Found"}}
+    assert CentralWeb.Template.ErrorJSON.render("404.json", %{}) == %{
+             errors: %{detail: "Not Found"}
+           }
   end
 
   test "renders 500" do

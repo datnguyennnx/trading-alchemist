@@ -29,10 +29,19 @@ defmodule CentralWeb.BacktestLive.Components.BacktestTest do
               <div class="space-y-2">
                 <h3 class="text-md font-medium">Backtest Runner Status</h3>
                 <div>
-                  <p class="text-sm text-muted-foreground">Running backtests: <span class="font-medium"><%= @runner_state.running_count %></span></p>
-                  <p class="text-sm text-muted-foreground">Total executed: <span class="font-medium"><%= @runner_state.metrics.total_executed %></span></p>
-                  <p class="text-sm text-muted-foreground">Completed: <span class="font-medium"><%= @runner_state.metrics.completed %></span></p>
-                  <p class="text-sm text-muted-foreground">Failed: <span class="font-medium"><%= @runner_state.metrics.failed %></span></p>
+                  <p class="text-sm text-muted-foreground">
+                    Running backtests: <span class="font-medium">{@runner_state.running_count}</span>
+                  </p>
+                  <p class="text-sm text-muted-foreground">
+                    Total executed:
+                    <span class="font-medium">{@runner_state.metrics.total_executed}</span>
+                  </p>
+                  <p class="text-sm text-muted-foreground">
+                    Completed: <span class="font-medium">{@runner_state.metrics.completed}</span>
+                  </p>
+                  <p class="text-sm text-muted-foreground">
+                    Failed: <span class="font-medium">{@runner_state.metrics.failed}</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -41,15 +50,17 @@ defmodule CentralWeb.BacktestLive.Components.BacktestTest do
               <div class="space-y-4 border rounded-md p-4">
                 <div class="flex justify-between">
                   <p class="text-sm font-medium">Backtest ID:</p>
-                  <p class="text-sm"><%= @backtest.id %></p>
+                  <p class="text-sm">{@backtest.id}</p>
                 </div>
                 <div class="flex justify-between">
                   <p class="text-sm font-medium">Status:</p>
-                  <p class={status_class(@backtest.status)}><%= String.capitalize(to_string(@backtest.status)) %></p>
+                  <p class={status_class(@backtest.status)}>
+                    {String.capitalize(to_string(@backtest.status))}
+                  </p>
                 </div>
                 <div class="flex justify-between">
                   <p class="text-sm font-medium">Progress:</p>
-                  <p class="text-sm"><%= @progress %>%</p>
+                  <p class="text-sm">{@progress}%</p>
                 </div>
 
                 <.progress value={@progress} class="w-full" />
@@ -57,18 +68,18 @@ defmodule CentralWeb.BacktestLive.Components.BacktestTest do
                 <%= if @backtest.status == :completed do %>
                   <div class="flex justify-between">
                     <p class="text-sm font-medium">Total Trades:</p>
-                    <p class="text-sm"><%= length(@backtest.trades) %></p>
+                    <p class="text-sm">{length(@backtest.trades)}</p>
                   </div>
                   <div class="flex justify-between">
                     <p class="text-sm font-medium">Final Balance:</p>
-                    <p class="text-sm"><%= format_balance(@backtest.final_balance) %></p>
+                    <p class="text-sm">{format_balance(@backtest.final_balance)}</p>
                   </div>
                 <% end %>
 
                 <%= if @backtest.status == :failed do %>
                   <div class="flex justify-between">
                     <p class="text-sm font-medium">Error:</p>
-                    <p class="text-sm text-red-500"><%= @backtest.metadata["error"] %></p>
+                    <p class="text-sm text-red-500">{@backtest.metadata["error"]}</p>
                   </div>
                 <% end %>
               </div>
@@ -120,10 +131,11 @@ defmodule CentralWeb.BacktestLive.Components.BacktestTest do
 
   def handle_info({:backtest_update, backtest}, socket) do
     # Extract progress from backtest metadata if it exists
-    progress = case backtest.metadata do
-      %{"progress" => progress} when is_integer(progress) -> progress
-      _ -> socket.assigns.progress
-    end
+    progress =
+      case backtest.metadata do
+        %{"progress" => progress} when is_integer(progress) -> progress
+        _ -> socket.assigns.progress
+      end
 
     {:noreply,
      socket
@@ -190,5 +202,6 @@ defmodule CentralWeb.BacktestLive.Components.BacktestTest do
   defp format_balance(balance) when is_number(balance) do
     :erlang.float_to_binary(balance, decimals: 2)
   end
+
   defp format_balance(balance), do: balance
 end

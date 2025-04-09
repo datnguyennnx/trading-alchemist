@@ -5,7 +5,6 @@ defmodule Central.Utils.TradeAdapter do
   """
 
   require Logger
-  alias Central.Backtest.Services.MarketDataHandler
 
   @doc """
   Adds backward compatibility to trade records to ensure both field names work.
@@ -76,20 +75,25 @@ defmodule Central.Utils.TradeAdapter do
     cond do
       is_nil(value) ->
         Decimal.new(0)
+
       is_struct(value, Decimal) ->
         value
+
       is_float(value) ->
         # Convert float to Decimal with reasonable precision
         Decimal.from_float(value)
+
       is_integer(value) ->
         Decimal.new(value)
+
       is_binary(value) ->
         case Decimal.parse(value) do
-          {:ok, decimal} -> decimal
+          {decimal, ""} -> decimal
           _ -> Decimal.new(0)
         end
+
       true ->
-        Logger.warn("Unexpected PnL value type: #{inspect(value)}")
+        Logger.warning("Unexpected PnL value type: #{inspect(value)}")
         Decimal.new(0)
     end
   end

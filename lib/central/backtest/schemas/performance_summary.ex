@@ -30,10 +30,25 @@ defmodule Central.Backtest.Schemas.PerformanceSummary do
   @doc false
   def changeset(performance_summary, attrs) do
     performance_summary
-    |> cast(attrs, [:total_trades, :winning_trades, :losing_trades, :win_rate, :profit_factor,
-                    :max_drawdown, :max_drawdown_percentage, :sharpe_ratio, :sortino_ratio,
-                    :total_pnl, :total_pnl_percentage, :average_win, :average_loss,
-                    :largest_win, :largest_loss, :metrics, :backtest_id])
+    |> cast(attrs, [
+      :total_trades,
+      :winning_trades,
+      :losing_trades,
+      :win_rate,
+      :profit_factor,
+      :max_drawdown,
+      :max_drawdown_percentage,
+      :sharpe_ratio,
+      :sortino_ratio,
+      :total_pnl,
+      :total_pnl_percentage,
+      :average_win,
+      :average_loss,
+      :largest_win,
+      :largest_loss,
+      :metrics,
+      :backtest_id
+    ])
     |> validate_required([:total_trades, :winning_trades, :losing_trades, :backtest_id])
     |> validate_number(:total_trades, greater_than_or_equal_to: 0)
     |> validate_number(:winning_trades, greater_than_or_equal_to: 0)

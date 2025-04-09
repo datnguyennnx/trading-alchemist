@@ -54,6 +54,6 @@ defmodule Central.Backtest.Contexts.BacktestContext do
       preload: [:strategy]
     )
     |> Repo.all()
-    |> Enum.sort_by(&(&1.inserted_at), {:desc, DateTime})
+    |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
   end
 end

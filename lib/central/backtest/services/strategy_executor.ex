@@ -8,18 +8,17 @@ defmodule Central.Backtest.Services.StrategyExecutor do
   """
 
   require Logger
-  import Ecto.Query
   alias Ecto.Multi
 
   alias Central.Backtest.Contexts.BacktestContext
+
   alias Central.Backtest.Services.{
     RiskManager,
-    DataFeed,
-    Indicators,
-    MarketDataHandler,
     TradeManager,
-    RuleEvaluator
+    RuleEvaluator,
+    MarketDataHandler
   }
+
   alias Central.Utils.DatetimeUtils
   alias Central.Repo
 
@@ -62,7 +61,8 @@ defmodule Central.Backtest.Services.StrategyExecutor do
       Logger.debug("Initial state created: #{inspect(initial_state)}")
 
       # Process each candle
-      {final_state, _} = process_all_candles(market_data, initial_state, backtest, progress_callback)
+      {final_state, _} =
+        process_all_candles(market_data, initial_state, backtest, progress_callback)
 
       Logger.info("Completed processing candles. Final balance: #{inspect(final_state.balance)}")
       Logger.debug("Total trades executed: #{length(final_state.trades)}")
@@ -72,25 +72,30 @@ defmodule Central.Backtest.Services.StrategyExecutor do
 
       # Update the backtest with results
       Logger.info("Updating backtest results in database for backtest_id: #{backtest_id}")
-      {:ok, updated_backtest} = update_backtest_results(backtest, final_state)
+      {:ok, _updated_backtest} = update_backtest_results(backtest, final_state)
 
-      Logger.info("Backtest completed successfully: backtest_id=#{backtest_id}, final_balance=#{inspect(final_state.balance)}")
+      Logger.info(
+        "Backtest completed successfully: backtest_id=#{backtest_id}, final_balance=#{inspect(final_state.balance)}"
+      )
 
       # Final progress update
       progress_callback.(100)
 
-      {:ok, %{
-        backtest_id: backtest_id,
-        final_balance: final_state.balance,
-        trade_count: length(final_state.trades)
-      }}
+      {:ok,
+       %{
+         backtest_id: backtest_id,
+         final_balance: final_state.balance,
+         trade_count: length(final_state.trades)
+       }}
     rescue
       e ->
         Logger.error("Error executing backtest #{backtest_id}: #{inspect(e)}")
         Logger.error("Stacktrace: #{Exception.format_stacktrace()}")
 
         # Update backtest status to failed
-        update_backtest_status(BacktestContext.get_backtest!(backtest_id), :failed, %{error: "#{inspect(e)}"})
+        update_backtest_status(BacktestContext.get_backtest!(backtest_id), :failed, %{
+          error: "#{inspect(e)}"
+        })
 
         {:error, e}
     end
@@ -98,17 +103,30 @@ defmodule Central.Backtest.Services.StrategyExecutor do
 
   # Log important backtest parameters
   defp log_backtest_params(backtest) do
-    Logger.debug("Backtest details: id=#{inspect(backtest.id)}, symbol=#{inspect(backtest.symbol)}, timeframe=#{inspect(backtest.timeframe)}")
-    Logger.debug("Backtest period: start=#{inspect(backtest.start_time)}, end=#{inspect(backtest.end_time)}")
-    Logger.debug("Backtest config: initial_balance=#{inspect(backtest.initial_balance)}, position_size=#{inspect(RiskManager.get_position_size(backtest))}")
-    Logger.debug("Strategy: id=#{inspect(backtest.strategy.id)}, name=#{inspect(backtest.strategy.name)}")
+    Logger.debug(
+      "Backtest details: id=#{inspect(backtest.id)}, symbol=#{inspect(backtest.symbol)}, timeframe=#{inspect(backtest.timeframe)}"
+    )
+
+    Logger.debug(
+      "Backtest period: start=#{inspect(backtest.start_time)}, end=#{inspect(backtest.end_time)}"
+    )
+
+    Logger.debug(
+      "Backtest config: initial_balance=#{inspect(backtest.initial_balance)}, position_size=#{inspect(RiskManager.get_position_size(backtest))}"
+    )
+
+    Logger.debug(
+      "Strategy: id=#{inspect(backtest.strategy.id)}, name=#{inspect(backtest.strategy.name)}"
+    )
+
     Logger.debug("Strategy config: #{inspect(backtest.strategy.config)}")
   end
 
   # Initialize the state for a backtest
   defp initialize_backtest_state(backtest) do
     # Get initial balance
-    initial_balance = MarketDataHandler.parse_decimal_or_float(backtest.initial_balance) || 10000.0
+    initial_balance =
+      MarketDataHandler.parse_decimal_or_float(backtest.initial_balance) || 10000.0
 
     Logger.debug("Initial balance set to: #{inspect(initial_balance)}")
 
@@ -127,17 +145,25 @@ defmodule Central.Backtest.Services.StrategyExecutor do
 
     Logger.info("Starting to process #{total_candles} candles for backtest_id: #{backtest.id}")
 
-    Enum.reduce_while(market_data, {initial_state, nil}, fn candle, {state, _prev_candle} = acc ->
+    Enum.reduce_while(market_data, {initial_state, nil}, fn candle,
+                                                            {state, _prev_candle} = _acc ->
       try do
         # Update progress every 5% of candles
         if rem(state.processed_candles, max(1, div(total_candles, 20))) == 0 do
           progress = round(state.processed_candles / total_candles * 100)
-          Logger.debug("Processing progress: #{progress}% (candle #{state.processed_candles + 1} of #{total_candles})")
+
+          Logger.debug(
+            "Processing progress: #{progress}% (candle #{state.processed_candles + 1} of #{total_candles})"
+          )
+
           progress_callback.(progress)
         end
 
         # Process this candle
-        Logger.debug("Processing candle #{state.processed_candles + 1}: timestamp=#{inspect(candle.timestamp)}, close=#{inspect(candle.close)}")
+        Logger.debug(
+          "Processing candle #{state.processed_candles + 1}: timestamp=#{inspect(candle.timestamp)}, close=#{inspect(candle.close)}"
+        )
+
         updated_state = process_candle(candle, state, backtest)
 
         # Log position changes
@@ -160,12 +186,17 @@ defmodule Central.Backtest.Services.StrategyExecutor do
   defp log_position_changes(old_state, new_state, candle, candle_number) do
     if new_state.position != old_state.position do
       if new_state.position != nil do
-        Logger.info("Position opened at candle #{candle_number}: price=#{inspect(candle.close)}, size=#{inspect(new_state.position.size)}")
+        Logger.info(
+          "Position opened at candle #{candle_number}: price=#{inspect(candle.close)}, size=#{inspect(new_state.position.size)}"
+        )
       end
 
       if old_state.position != nil && new_state.position == nil do
         latest_trade = List.first(new_state.trades)
-        Logger.info("Position closed at candle #{candle_number}: profit/loss=#{inspect(latest_trade.pnl)}")
+
+        Logger.info(
+          "Position closed at candle #{candle_number}: profit/loss=#{inspect(latest_trade.pnl)}"
+        )
       end
     end
   end
@@ -204,13 +235,14 @@ defmodule Central.Backtest.Services.StrategyExecutor do
 
       # Enter position
       %{
-        state |
-        position: %{
-          entry_price: MarketDataHandler.parse_decimal_or_float(candle.close),
-          entry_time: timestamp,
-          size: position_size,
-          direction: :long  # For simplicity, only long positions for now
-        }
+        state
+        | position: %{
+            entry_price: MarketDataHandler.parse_decimal_or_float(candle.close),
+            entry_time: timestamp,
+            size: position_size,
+            # For simplicity, only long positions for now
+            direction: :long
+          }
       }
     else
       state
@@ -246,22 +278,28 @@ defmodule Central.Backtest.Services.StrategyExecutor do
   # Update backtest results in the database
   defp update_backtest_results(backtest, final_state) do
     # Get original balance as float for calculation
-    initial_balance = MarketDataHandler.parse_decimal_or_float(backtest.initial_balance) || 10000.0
+    initial_balance =
+      MarketDataHandler.parse_decimal_or_float(backtest.initial_balance) || 10000.0
 
     # Ensure final balance is a number
     final_balance = MarketDataHandler.parse_decimal_or_float(final_state.balance)
     profit_loss = final_balance - initial_balance
 
     # First update the backtest status and final balance
-    multi = Multi.new()
-    |> Multi.update(:backtest, Ecto.Changeset.change(backtest, %{
-      final_balance: final_balance,
-      status: :completed,
-      metadata: Map.merge(backtest.metadata || %{}, %{
-        "trade_count" => length(final_state.trades),
-        "profit_loss" => profit_loss
-      })
-    }))
+    multi =
+      Multi.new()
+      |> Multi.update(
+        :backtest,
+        Ecto.Changeset.change(backtest, %{
+          final_balance: final_balance,
+          status: :completed,
+          metadata:
+            Map.merge(backtest.metadata || %{}, %{
+              "trade_count" => length(final_state.trades),
+              "profit_loss" => profit_loss
+            })
+        })
+      )
 
     # Prepare trade records for database
     trade_entries = prepare_trade_entries(final_state.trades, backtest.id)
@@ -285,7 +323,7 @@ defmodule Central.Backtest.Services.StrategyExecutor do
       # Calculate percentage PnL
       entry_price = MarketDataHandler.parse_decimal_or_float(trade.entry_price)
       pnl = MarketDataHandler.parse_decimal_or_float(trade.pnl)
-      pnl_percentage = if entry_price > 0, do: (pnl / entry_price) * 100, else: 0
+      pnl_percentage = if entry_price > 0, do: pnl / entry_price * 100, else: 0
 
       # Get current timestamp as NaiveDateTime for database compatibility with inserted_at/updated_at
       now = DatetimeUtils.naive_utc_now_sec()
@@ -295,7 +333,10 @@ defmodule Central.Backtest.Services.StrategyExecutor do
       exit_time = DatetimeUtils.to_utc_datetime(trade.exit_time)
 
       # Log the datetime conversions for debugging
-      Logger.debug("Entry time conversion: #{inspect(trade.entry_time)} -> #{inspect(entry_time)}")
+      Logger.debug(
+        "Entry time conversion: #{inspect(trade.entry_time)} -> #{inspect(entry_time)}"
+      )
+
       Logger.debug("Exit time conversion: #{inspect(trade.exit_time)} -> #{inspect(exit_time)}")
 
       %{
@@ -305,7 +346,8 @@ defmodule Central.Backtest.Services.StrategyExecutor do
         exit_price: MarketDataHandler.parse_decimal_or_float(trade.exit_price),
         exit_time: exit_time,
         quantity: MarketDataHandler.parse_decimal_or_float(trade.size),
-        side: trade.direction, # Keep as atom for Ecto.Enum field
+        # Keep as atom for Ecto.Enum field
+        side: trade.direction,
         pnl: pnl,
         pnl_percentage: pnl_percentage,
         fees: 0.0,
@@ -320,7 +362,7 @@ defmodule Central.Backtest.Services.StrategyExecutor do
   end
 
   # Update backtest status in the database
-  defp update_backtest_status(backtest, status, metadata \\ %{}) do
+  defp update_backtest_status(backtest, status, metadata) do
     # Merge new metadata with existing metadata
     updated_metadata = Map.merge(backtest.metadata || %{}, metadata)
 

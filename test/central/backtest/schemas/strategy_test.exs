@@ -43,13 +43,14 @@ defmodule Central.Backtest.Schemas.StrategyTest do
     test "changeset with invalid attributes" do
       changeset = Strategy.changeset(%Strategy{}, %{})
       refute changeset.valid?
+
       assert %{
-        name: ["can't be blank"],
-        config: ["can't be blank"],
-        entry_rules: ["can't be blank"],
-        exit_rules: ["can't be blank"],
-        user_id: ["can't be blank"]
-      } = errors_on(changeset)
+               name: ["can't be blank"],
+               config: ["can't be blank"],
+               entry_rules: ["can't be blank"],
+               exit_rules: ["can't be blank"],
+               user_id: ["can't be blank"]
+             } = errors_on(changeset)
     end
 
     test "changeset with name too short", %{valid_attrs: valid_attrs} do
@@ -94,21 +95,25 @@ defmodule Central.Backtest.Schemas.StrategyTest do
       strategy = BacktestFixtures.strategy_fixture()
       assert strategy.name == "Test Strategy"
       assert strategy.description == "A strategy for testing"
+
       assert strategy.config == %{
-        "risk_percentage" => 1,
-        "take_profit" => 3,
-        "stop_loss" => 2
-      }
+               "risk_percentage" => 1,
+               "take_profit" => 3,
+               "stop_loss" => 2
+             }
+
       assert strategy.entry_rules == %{
-        "conditions" => [
-          %{"indicator" => "price", "comparison" => "above", "value" => 50000}
-        ]
-      }
+               "conditions" => [
+                 %{"indicator" => "price", "comparison" => "above", "value" => 50000}
+               ]
+             }
+
       assert strategy.exit_rules == %{
-        "conditions" => [
-          %{"indicator" => "price", "comparison" => "below", "value" => 48000}
-        ]
-      }
+               "conditions" => [
+                 %{"indicator" => "price", "comparison" => "below", "value" => 48000}
+               ]
+             }
+
       assert strategy.is_active == true
       assert strategy.is_public == false
       assert strategy.user_id
@@ -140,20 +145,24 @@ defmodule Central.Backtest.Schemas.StrategyTest do
       strategy = BacktestFixtures.strategy_fixture(custom_attrs)
       assert strategy.name == "Custom Bollinger Strategy"
       assert strategy.description == "Uses Bollinger Bands for entries and exits"
+
       assert strategy.config == %{
-        "risk_percentage" => 1.5,
-        "bands_deviation" => 2.0
-      }
+               "risk_percentage" => 1.5,
+               "bands_deviation" => 2.0
+             }
+
       assert strategy.entry_rules == %{
-        "conditions" => [
-          %{"indicator" => "price", "comparison" => "below", "value" => "lower_band"}
-        ]
-      }
+               "conditions" => [
+                 %{"indicator" => "price", "comparison" => "below", "value" => "lower_band"}
+               ]
+             }
+
       assert strategy.exit_rules == %{
-        "conditions" => [
-          %{"indicator" => "price", "comparison" => "above", "value" => "middle_band"}
-        ]
-      }
+               "conditions" => [
+                 %{"indicator" => "price", "comparison" => "above", "value" => "middle_band"}
+               ]
+             }
+
       assert strategy.is_active == false
       assert strategy.is_public == true
       assert strategy.user_id == user.id

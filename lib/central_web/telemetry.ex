@@ -111,7 +111,11 @@ defmodule CentralWeb.Telemetry do
       # {CentralWeb, :count_users, []}
 
       # System metrics
-      {:process_info, event: [:central, :vm, :process_info], name: :erlang, measurement: :process_info, keys: [:message_queue_len, :memory, :reductions]},
+      {:process_info,
+       event: [:central, :vm, :process_info],
+       name: :erlang,
+       measurement: :process_info,
+       keys: [:message_queue_len, :memory, :reductions]},
       {CentralWeb.SystemMetrics, :dispatch_system_metrics, []}
     ]
   end

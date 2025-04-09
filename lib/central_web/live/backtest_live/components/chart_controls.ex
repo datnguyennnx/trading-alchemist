@@ -23,7 +23,7 @@ defmodule CentralWeb.BacktestLive.Components.ChartControls do
         <.dropdown_menu_trigger class="flex items-center">
           <.button variant="outline" size="sm" class="gap-1 h-8">
             <.icon name="hero-clock" class="h-3.5 w-3.5 mr-1" />
-            <span><%= @timeframe %></span>
+            <span>{@timeframe}</span>
             <.icon name="hero-chevron-down" class="h-3.5 w-3.5" />
           </.button>
         </.dropdown_menu_trigger>
@@ -33,7 +33,13 @@ defmodule CentralWeb.BacktestLive.Components.ChartControls do
           </div>
           <div class="h-px bg-muted my-1"></div>
           <%= for timeframe <- @timeframes do %>
-            <div class="cursor-pointer select-none rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground" phx-click="set_timeframe" phx-value-timeframe={timeframe}><%= DataFormatter.timeframe_display(timeframe) %></div>
+            <div
+              class="cursor-pointer select-none rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+              phx-click="set_timeframe"
+              phx-value-timeframe={timeframe}
+            >
+              {DataFormatter.timeframe_display(timeframe)}
+            </div>
           <% end %>
         </.dropdown_menu_content>
       </.dropdown_menu>
@@ -42,7 +48,7 @@ defmodule CentralWeb.BacktestLive.Components.ChartControls do
         <.dropdown_menu_trigger class="flex items-center">
           <.button variant="outline" size="sm" class="gap-1 h-8">
             <.icon name="hero-currency-dollar" class="h-3.5 w-3.5 mr-1" />
-            <span><%= @symbol %></span>
+            <span>{@symbol}</span>
             <.icon name="hero-chevron-down" class="h-3.5 w-3.5" />
           </.button>
         </.dropdown_menu_trigger>
@@ -52,7 +58,13 @@ defmodule CentralWeb.BacktestLive.Components.ChartControls do
           </div>
           <div class="h-px bg-muted my-1"></div>
           <%= for symbol <- @symbols do %>
-            <div class="cursor-pointer select-none rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground" phx-click="set_symbol" phx-value-symbol={symbol}><%= symbol %></div>
+            <div
+              class="cursor-pointer select-none rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+              phx-click="set_symbol"
+              phx-value-symbol={symbol}
+            >
+              {symbol}
+            </div>
           <% end %>
         </.dropdown_menu_content>
       </.dropdown_menu>

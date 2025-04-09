@@ -10,9 +10,10 @@ defmodule Central.Backtest.Services.Binance.Client do
   alias Central.Config.DateTime, as: DateTimeConfig
   alias Central.Config.HTTP, as: HTTPConfig
 
-  import HTTPConfig, only: [
-    extract_error_message: 1
-  ]
+  import HTTPConfig,
+    only: [
+      extract_error_message: 1
+    ]
 
   # Import HTTP status code ranges for use in guard clauses
   @success_status_range HTTPConfig.success_status_range()
@@ -23,6 +24,7 @@ defmodule Central.Backtest.Services.Binance.Client do
 
   plug Tesla.Middleware.BaseUrl, @base_url
   plug Tesla.Middleware.JSON
+
   plug Tesla.Middleware.Retry,
     delay: 500,
     max_retries: 5,
@@ -65,8 +67,13 @@ defmodule Central.Backtest.Services.Binance.Client do
     ]
 
     # Add optional params if provided
-    query = if start_time, do: [{:startTime, DateTime.to_unix(start_time, :millisecond)} | query], else: query
-    query = if end_time, do: [{:endTime, DateTime.to_unix(end_time, :millisecond)} | query], else: query
+    query =
+      if start_time,
+        do: [{:startTime, DateTime.to_unix(start_time, :millisecond)} | query],
+        else: query
+
+    query =
+      if end_time, do: [{:endTime, DateTime.to_unix(end_time, :millisecond)} | query], else: query
 
     # Make the request
     "/api/v3/klines"
@@ -154,7 +161,7 @@ defmodule Central.Backtest.Services.Binance.Client do
         exchange_info["symbols"]
         |> Enum.filter(fn info ->
           info["status"] == "TRADING" &&
-          (is_nil(symbol) || String.contains?(info["symbol"], String.upcase(symbol)))
+            (is_nil(symbol) || String.contains?(info["symbol"], String.upcase(symbol)))
         end)
         |> Enum.map(& &1["symbol"])
 
@@ -181,18 +188,21 @@ defmodule Central.Backtest.Services.Binance.Client do
   end
 
   # Handle HTTP response and transform data if successful
-  defp handle_response({:ok, %{status: status, body: body}}, transform_fn) when status in @success_status_range do
+  defp handle_response({:ok, %{status: status, body: body}}, transform_fn)
+       when status in @success_status_range do
     {:ok, transform_fn.(body)}
   end
 
   # Handle client errors (4xx)
-  defp handle_response({:ok, %{status: status, body: body}}, _transform_fn) when status in @client_error_range do
+  defp handle_response({:ok, %{status: status, body: body}}, _transform_fn)
+       when status in @client_error_range do
     log_error_response(status, body, :client_error)
     {:error, "Client error: #{status} - #{extract_error_message(body)}"}
   end
 
   # Handle server errors (5xx)
-  defp handle_response({:ok, %{status: status, body: body}}, _transform_fn) when status in @server_error_range do
+  defp handle_response({:ok, %{status: status, body: body}}, _transform_fn)
+       when status in @server_error_range do
     log_error_response(status, body, :server_error)
     {:error, "Server error: #{status} - #{extract_error_message(body)}"}
   end
@@ -253,13 +263,24 @@ defmodule Central.Backtest.Services.Binance.Client do
           backoff = 100
           max_retries = 5
 
-          retry_with_backoff(fn ->
-            Process.sleep(backoff) # Add delay to avoid rate limits
-            get_klines(symbol, interval, start_time: chunk_start, end_time: chunk_end, limit: 1000)
-          end, max_retries, backoff)
+          retry_with_backoff(
+            fn ->
+              # Add delay to avoid rate limits
+              Process.sleep(backoff)
+
+              get_klines(symbol, interval,
+                start_time: chunk_start,
+                end_time: chunk_end,
+                limit: 1000
+              )
+            end,
+            max_retries,
+            backoff
+          )
         end)
       end)
-      |> Task.await_many(300_000) # 5 minute timeout for all tasks
+      # 5 minute timeout for all tasks
+      |> Task.await_many(300_000)
 
     # Check if any chunk failed
     case Enum.find(results, fn result -> match?({:error, _}, result) end) do
@@ -283,13 +304,20 @@ defmodule Central.Backtest.Services.Binance.Client do
   # Calculate optimal chunk size based on timeframe and Binance's 1000 candle limit
   defp calculate_optimal_chunk_size(interval) do
     case interval do
-      "1m" -> 60_000 * 1000 # 1000 minutes = ~16.67 hours
-      "5m" -> 300_000 * 1000 # 1000 * 5 minutes = ~83.33 hours
-      "15m" -> 900_000 * 1000 # 1000 * 15 minutes = ~250 hours
-      "1h" -> 3_600_000 * 1000 # 1000 hours = ~41.67 days
-      "4h" -> 14_400_000 * 1000 # 1000 * 4 hours = ~166.67 days
-      "1d" -> 86_400_000 * 1000 # 1000 days
-      _ -> 86_400_000 # Default to 1 day
+      # 1000 minutes = ~16.67 hours
+      "1m" -> 60_000 * 1000
+      # 1000 * 5 minutes = ~83.33 hours
+      "5m" -> 300_000 * 1000
+      # 1000 * 15 minutes = ~250 hours
+      "15m" -> 900_000 * 1000
+      # 1000 hours = ~41.67 days
+      "1h" -> 3_600_000 * 1000
+      # 1000 * 4 hours = ~166.67 days
+      "4h" -> 14_400_000 * 1000
+      # 1000 days
+      "1d" -> 86_400_000 * 1000
+      # Default to 1 day
+      _ -> 86_400_000
     end
   end
 
@@ -315,10 +343,12 @@ defmodule Central.Backtest.Services.Binance.Client do
         nil
       else
         current_end = min(current_start + chunk_size, end_ms)
+
         chunk = {
           DateTime.from_unix!(current_start, :millisecond),
           DateTime.from_unix!(current_end, :millisecond)
         }
+
         {chunk, current_end}
       end
     end)
@@ -328,15 +358,16 @@ defmodule Central.Backtest.Services.Binance.Client do
   # Validate data continuity with more lenient gap detection
   defp validate_data_continuity(candles, interval) do
     # Calculate expected interval in milliseconds
-    interval_ms = case interval do
-      "1m" -> 60_000
-      "5m" -> 300_000
-      "15m" -> 900_000
-      "1h" -> 3_600_000
-      "4h" -> 14_400_000
-      "1d" -> 86_400_000
-      _ -> 60_000
-    end
+    interval_ms =
+      case interval do
+        "1m" -> 60_000
+        "5m" -> 300_000
+        "15m" -> 900_000
+        "1h" -> 3_600_000
+        "4h" -> 14_400_000
+        "1d" -> 86_400_000
+        _ -> 60_000
+      end
 
     # Sort candles by timestamp
     sorted_candles = Enum.sort_by(candles, & &1.timestamp, DateTime)
@@ -344,12 +375,18 @@ defmodule Central.Backtest.Services.Binance.Client do
     # Check for gaps with a more lenient threshold (2x interval)
     Enum.reduce(sorted_candles, [], fn candle, acc ->
       case acc do
-        [] -> [candle]
+        [] ->
+          [candle]
+
         [prev | _] ->
           gap = DateTime.diff(candle.timestamp, prev.timestamp, :millisecond)
+
           if gap > interval_ms * 2 do
-            Logger.warning("Data gap detected: #{gap}ms between #{prev.timestamp} and #{candle.timestamp}")
+            Logger.warning(
+              "Data gap detected: #{gap}ms between #{prev.timestamp} and #{candle.timestamp}"
+            )
           end
+
           [candle | acc]
       end
     end)

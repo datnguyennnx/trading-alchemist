@@ -28,7 +28,9 @@ defmodule CentralWeb.StrategyLive.IndexLive do
             <.card>
               <.card_header>
                 <.card_title>No Strategies Found</.card_title>
-                <.card_description>Get started by creating your first trading strategy</.card_description>
+                <.card_description>
+                  Get started by creating your first trading strategy
+                </.card_description>
               </.card_header>
               <.card_content>
                 <p class="text-muted-foreground">
@@ -46,23 +48,23 @@ defmodule CentralWeb.StrategyLive.IndexLive do
           <%= for strategy <- @strategies do %>
             <.card>
               <.card_header>
-                <.card_title><%= strategy.name %></.card_title>
-                <.card_description><%= truncate_description(strategy.description) %></.card_description>
+                <.card_title>{strategy.name}</.card_title>
+                <.card_description>{truncate_description(strategy.description)}</.card_description>
               </.card_header>
               <.card_content>
                 <div class="space-y-4">
                   <div class="flex justify-between">
                     <span class="text-muted-foreground">Symbol:</span>
-                    <span class="font-medium"><%= strategy.config["symbol"] %></span>
+                    <span class="font-medium">{strategy.config["symbol"]}</span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-muted-foreground">Timeframe:</span>
-                    <span class="font-medium"><%= strategy.config["timeframe"] %></span>
+                    <span class="font-medium">{strategy.config["timeframe"]}</span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-muted-foreground">Rules:</span>
                     <span class="font-medium">
-                      <%= "#{count_rules(strategy.config["entry_rules"])} entries, #{count_rules(strategy.config["exit_rules"])} exits" %>
+                      {"#{count_rules(strategy.config["entry_rules"])} entries, #{count_rules(strategy.config["exit_rules"])} exits"}
                     </span>
                   </div>
                 </div>
@@ -88,6 +90,7 @@ defmodule CentralWeb.StrategyLive.IndexLive do
   end
 
   defp truncate_description(nil), do: "No description provided"
+
   defp truncate_description(description) do
     if String.length(description) > 100 do
       String.slice(description, 0..97) <> "..."

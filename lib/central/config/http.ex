@@ -131,6 +131,7 @@ defmodule Central.Config.HTTP do
       true -> inspect(body)
     end
   end
+
   def extract_error_message(body) when is_binary(body), do: body
   def extract_error_message(body), do: inspect(body)
 end

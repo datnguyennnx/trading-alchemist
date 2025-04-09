@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
     <.live_title default="Central">
-      <%= assigns[:page_title] %>
+      {assigns[:page_title]}
     </.live_title>
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <link rel="icon" type="image/x-icon" href={~p"/favicon.ico"} />
@@ -17,6 +17,6 @@
     </script>
   </head>
   <body class="antialiased">
-    <%= @inner_content %>
+    {@inner_content}
   </body>
 </html>

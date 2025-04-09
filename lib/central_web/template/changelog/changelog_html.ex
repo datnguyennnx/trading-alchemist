@@ -39,7 +39,7 @@ defmodule CentralWeb.ChangelogHTML do
                 <div class="absolute left-4 -translate-x-1/2">
                   <div class="w-3 h-3 bg-black rounded-full z-10 relative"></div>
                 </div>
-
+                
     <!-- Version content -->
                 <div>
                   <!-- Version header -->

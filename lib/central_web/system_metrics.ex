@@ -72,7 +72,7 @@ defmodule CentralWeb.SystemMetrics do
           checked_out: stats.checked_out,
           total: stats.connected,
           pool_size: pool_size,
-          utilization: (stats.checked_out / pool_size)
+          utilization: stats.checked_out / pool_size
         },
         %{}
       )

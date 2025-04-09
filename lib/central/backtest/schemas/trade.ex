@@ -27,7 +27,22 @@ defmodule Central.Backtest.Schemas.Trade do
   @doc false
   def changeset(trade, attrs) do
     trade
-    |> cast(attrs, [:entry_time, :entry_price, :exit_time, :exit_price, :quantity, :side, :pnl, :pnl_percentage, :fees, :tags, :entry_reason, :exit_reason, :metadata, :backtest_id])
+    |> cast(attrs, [
+      :entry_time,
+      :entry_price,
+      :exit_time,
+      :exit_price,
+      :quantity,
+      :side,
+      :pnl,
+      :pnl_percentage,
+      :fees,
+      :tags,
+      :entry_reason,
+      :exit_reason,
+      :metadata,
+      :backtest_id
+    ])
     |> validate_required([:entry_time, :entry_price, :quantity, :side, :backtest_id])
     |> validate_number(:entry_price, greater_than: 0)
     |> validate_number(:quantity, greater_than: 0)
@@ -70,7 +85,16 @@ defmodule Central.Backtest.Schemas.Trade do
   """
   def entry_changeset(trade, attrs) do
     trade
-    |> cast(attrs, [:entry_time, :entry_price, :quantity, :side, :entry_reason, :tags, :metadata, :backtest_id])
+    |> cast(attrs, [
+      :entry_time,
+      :entry_price,
+      :quantity,
+      :side,
+      :entry_reason,
+      :tags,
+      :metadata,
+      :backtest_id
+    ])
     |> validate_required([:entry_time, :entry_price, :quantity, :side, :backtest_id])
     |> validate_number(:entry_price, greater_than: 0)
     |> validate_number(:quantity, greater_than: 0)

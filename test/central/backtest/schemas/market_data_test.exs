@@ -26,34 +26,36 @@ defmodule Central.Backtest.Schemas.MarketDataTest do
       # Missing required fields
       changeset = MarketData.changeset(%MarketData{}, %{})
       refute changeset.valid?
+
       assert %{
-        symbol: ["can't be blank"],
-        timeframe: ["can't be blank"],
-        timestamp: ["can't be blank"],
-        open: ["can't be blank"],
-        high: ["can't be blank"],
-        low: ["can't be blank"],
-        close: ["can't be blank"]
-      } = errors_on(changeset)
+               symbol: ["can't be blank"],
+               timeframe: ["can't be blank"],
+               timestamp: ["can't be blank"],
+               open: ["can't be blank"],
+               high: ["can't be blank"],
+               low: ["can't be blank"],
+               close: ["can't be blank"]
+             } = errors_on(changeset)
     end
 
     test "changeset with negative price values" do
       invalid_attrs = %{
-        @valid_attrs |
-        open: Decimal.new("-100.00"),
-        high: Decimal.new("-90.00"),
-        low: Decimal.new("-110.00"),
-        close: Decimal.new("-95.00")
+        @valid_attrs
+        | open: Decimal.new("-100.00"),
+          high: Decimal.new("-90.00"),
+          low: Decimal.new("-110.00"),
+          close: Decimal.new("-95.00")
       }
 
       changeset = MarketData.changeset(%MarketData{}, invalid_attrs)
       refute changeset.valid?
+
       assert %{
-        open: ["must be greater than or equal to 0"],
-        high: ["must be greater than or equal to 0"],
-        low: ["must be greater than or equal to 0"],
-        close: ["must be greater than or equal to 0"]
-      } = errors_on(changeset)
+               open: ["must be greater than or equal to 0"],
+               high: ["must be greater than or equal to 0"],
+               low: ["must be greater than or equal to 0"],
+               close: ["must be greater than or equal to 0"]
+             } = errors_on(changeset)
     end
 
     test "changeset with negative volume" do

@@ -17,18 +17,20 @@ defmodule CentralWeb.BacktestLive.Utils.DataFormatter do
       Logger.debug("Last candle timestamp: #{inspect(last.timestamp)}")
     end
 
-    formatted = Enum.map(sorted_candles, fn candle ->
-      time = DateTime.to_unix(candle.timestamp)
+    formatted =
+      Enum.map(sorted_candles, fn candle ->
+        time = DateTime.to_unix(candle.timestamp)
 
-      %{
-        time: time,  # Ensure this is a Unix timestamp in seconds
-        open: to_float(candle.open),
-        high: to_float(candle.high),
-        low: to_float(candle.low),
-        close: to_float(candle.close),
-        volume: candle.volume && to_float(candle.volume) || 0.0
-      }
-    end)
+        %{
+          # Ensure this is a Unix timestamp in seconds
+          time: time,
+          open: to_float(candle.open),
+          high: to_float(candle.high),
+          low: to_float(candle.low),
+          close: to_float(candle.close),
+          volume: (candle.volume && to_float(candle.volume)) || 0.0
+        }
+      end)
 
     # Log the formatted data structure
     if length(formatted) > 0 do
@@ -59,7 +61,10 @@ defmodule CentralWeb.BacktestLive.Utils.DataFormatter do
   Format price for display in UI
   """
   def format_price(nil), do: "--"
-  def format_price(price) when price >= 1000, do: "$#{:erlang.float_to_binary(price, decimals: 2)}"
+
+  def format_price(price) when price >= 1000,
+    do: "$#{:erlang.float_to_binary(price, decimals: 2)}"
+
   def format_price(price) when price >= 1, do: "$#{:erlang.float_to_binary(price, decimals: 2)}"
   def format_price(price), do: "$#{:erlang.float_to_binary(price, decimals: 4)}"
 

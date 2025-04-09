@@ -33,13 +33,17 @@ defmodule Central.Utils.DatetimeUtils do
       # Parse ISO8601 strings
       is_binary(value) ->
         case DateTime.from_iso8601(value) do
-          {:ok, dt, _} -> dt
+          {:ok, dt, _} ->
+            dt
+
           {:error, _} ->
             # Try as NaiveDateTime
             case NaiveDateTime.from_iso8601(value) do
-              {:ok, ndt} -> DateTime.from_naive!(ndt, "Etc/UTC")
+              {:ok, ndt} ->
+                DateTime.from_naive!(ndt, "Etc/UTC")
+
               {:error, _} ->
-                Logger.warn("Failed to parse datetime string: #{inspect(value)}")
+                Logger.warning("Failed to parse datetime string: #{inspect(value)}")
                 nil
             end
         end
@@ -49,7 +53,7 @@ defmodule Central.Utils.DatetimeUtils do
         nil
 
       true ->
-        Logger.warn("Unsupported datetime format: #{inspect(value)}")
+        Logger.warning("Unsupported datetime format: #{inspect(value)}")
         nil
     end
   end

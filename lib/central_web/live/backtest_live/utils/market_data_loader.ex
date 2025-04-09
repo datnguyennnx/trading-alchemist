@@ -19,9 +19,10 @@ defmodule CentralWeb.BacktestLive.Utils.MarketDataLoader do
     rescue
       # Fall back to query if the context call fails (might be ETS table issues)
       _ ->
-        query = from m in MarketDataSchema,
-          select: m.symbol,
-          distinct: true
+        query =
+          from m in MarketDataSchema,
+            select: m.symbol,
+            distinct: true
 
         symbols = Repo.all(query) |> Enum.sort()
         if Enum.empty?(symbols), do: ["BTCUSDT"], else: symbols
@@ -37,19 +38,21 @@ defmodule CentralWeb.BacktestLive.Utils.MarketDataLoader do
     start_time = calculate_start_time(end_time, timeframe, 200)
 
     # Skip the context and use direct query for reliability
-    query = from m in MarketDataSchema,
-      where: m.symbol == ^symbol,
-      where: m.timeframe == ^timeframe,
-      where: m.timestamp >= ^start_time,
-      where: m.timestamp <= ^end_time,
-      order_by: [asc: m.timestamp],
-      limit: 200
+    query =
+      from m in MarketDataSchema,
+        where: m.symbol == ^symbol,
+        where: m.timeframe == ^timeframe,
+        where: m.timestamp >= ^start_time,
+        where: m.timestamp <= ^end_time,
+        order_by: [asc: m.timestamp],
+        limit: 200
 
     candles = Repo.all(query)
 
     if Enum.empty?(candles) do
       # No data found, trigger a sync for this symbol/timeframe
       Logger.info("No data found for #{symbol}/#{timeframe} - triggering sync")
+
       try do
         # Trigger market sync for this specific symbol and timeframe
         MarketSync.trigger_sync(symbol, timeframe)
@@ -60,6 +63,7 @@ defmodule CentralWeb.BacktestLive.Utils.MarketDataLoader do
 
         # Try one more time
         retried_candles = Repo.all(query)
+
         if Enum.empty?(retried_candles) do
           Logger.info("Still no data available after sync trigger")
           []
@@ -75,31 +79,36 @@ defmodule CentralWeb.BacktestLive.Utils.MarketDataLoader do
     else
       # We have data, format it for the chart
       Logger.info("Fetched #{length(candles)} candles for #{symbol}/#{timeframe}")
+
       if length(candles) > 0 do
         sample = List.first(candles)
         Logger.debug("Sample candle: #{inspect(sample, pretty: true)}")
       end
+
       DataFormatter.format_market_data(candles)
     end
   rescue
     error ->
       Logger.error("Error fetching market data: #{inspect(error, pretty: true)}")
-      []  # Return empty list on error
+      # Return empty list on error
+      []
   end
 
   @doc """
   Calculate start time based on timeframe and candle count
   """
   def calculate_start_time(end_time, timeframe, count) do
-    seconds = case timeframe do
-      "1m" -> count * 60
-      "5m" -> count * 5 * 60
-      "15m" -> count * 15 * 60
-      "1h" -> count * 3600
-      "4h" -> count * 4 * 3600
-      "1d" -> count * 86400
-      _ -> count * 3600 # Default to 1h
-    end
+    seconds =
+      case timeframe do
+        "1m" -> count * 60
+        "5m" -> count * 5 * 60
+        "15m" -> count * 15 * 60
+        "1h" -> count * 3600
+        "4h" -> count * 4 * 3600
+        "1d" -> count * 86400
+        # Default to 1h
+        _ -> count * 3600
+      end
 
     DateTime.add(end_time, -seconds, :second)
   end
@@ -109,16 +118,19 @@ defmodule CentralWeb.BacktestLive.Utils.MarketDataLoader do
   """
   def fetch_historical_data(symbol, timeframe, start_time, end_time) do
     # Skip the context and use direct query for reliability
-    query = from m in MarketDataSchema,
-      where: m.symbol == ^symbol,
-      where: m.timeframe == ^timeframe,
-      where: m.timestamp >= ^start_time,
-      where: m.timestamp <= ^end_time,
-      order_by: [asc: m.timestamp]
+    query =
+      from m in MarketDataSchema,
+        where: m.symbol == ^symbol,
+        where: m.timeframe == ^timeframe,
+        where: m.timestamp >= ^start_time,
+        where: m.timestamp <= ^end_time,
+        order_by: [asc: m.timestamp]
 
     candles = Repo.all(query)
 
-    Logger.info("Fetched #{length(candles)} historical candles for #{symbol}/#{timeframe} from #{DateTime.to_iso8601(start_time)} to #{DateTime.to_iso8601(end_time)}")
+    Logger.info(
+      "Fetched #{length(candles)} historical candles for #{symbol}/#{timeframe} from #{DateTime.to_iso8601(start_time)} to #{DateTime.to_iso8601(end_time)}"
+    )
 
     if length(candles) > 0 do
       DataFormatter.format_market_data(candles)
@@ -128,6 +140,7 @@ defmodule CentralWeb.BacktestLive.Utils.MarketDataLoader do
   rescue
     error ->
       Logger.error("Error fetching historical market data: #{inspect(error, pretty: true)}")
-      []  # Return empty list on error
+      # Return empty list on error
+      []
   end
 end

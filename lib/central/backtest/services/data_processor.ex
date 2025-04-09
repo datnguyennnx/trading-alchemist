@@ -19,19 +19,19 @@ defmodule Central.Backtest.Services.DataProcessor do
   def normalize_binance_candles(candles, symbol, timeframe) do
     candles
     |> Enum.map(fn [
-        open_time,
-        open,
-        high,
-        low,
-        close,
-        volume,
-        _close_time,
-        _quote_volume,
-        _trades,
-        _taker_buy_base,
-        _taker_buy_quote,
-        _ignore
-      ] ->
+                     open_time,
+                     open,
+                     high,
+                     low,
+                     close,
+                     volume,
+                     _close_time,
+                     _quote_volume,
+                     _trades,
+                     _taker_buy_base,
+                     _taker_buy_quote,
+                     _ignore
+                   ] ->
       %{
         symbol: symbol,
         timeframe: timeframe,
@@ -71,7 +71,9 @@ defmodule Central.Backtest.Services.DataProcessor do
           volume: candle.volume
         }
 
-      other -> other # Already transformed or other format
+      # Already transformed or other format
+      other ->
+        other
     end)
   end
 
@@ -131,7 +133,9 @@ defmodule Central.Backtest.Services.DataProcessor do
       close = group |> Enum.at(-1) |> Map.get(:close)
       high = group |> Enum.map(&Map.get(&1, :high)) |> Enum.max(fn -> Decimal.new(0) end)
       low = group |> Enum.map(&Map.get(&1, :low)) |> Enum.min(fn -> Decimal.new(0) end)
-      volume = group |> Enum.map(&Map.get(&1, :volume)) |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+
+      volume =
+        group |> Enum.map(&Map.get(&1, :volume)) |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
 
       %{
         symbol: group |> Enum.at(0) |> Map.get(:symbol),
@@ -166,18 +170,18 @@ defmodule Central.Backtest.Services.DataProcessor do
     # Check for required fields
     has_required =
       Map.has_key?(candle, :timestamp) and
-      Map.has_key?(candle, :open) and
-      Map.has_key?(candle, :high) and
-      Map.has_key?(candle, :low) and
-      Map.has_key?(candle, :close)
+        Map.has_key?(candle, :open) and
+        Map.has_key?(candle, :high) and
+        Map.has_key?(candle, :low) and
+        Map.has_key?(candle, :close)
 
     # Validate values
     valid_values =
       Decimal.compare(candle.high, candle.low) != :lt and
-      Decimal.compare(candle.open, Decimal.new(0)) != :lt and
-      Decimal.compare(candle.high, Decimal.new(0)) != :lt and
-      Decimal.compare(candle.low, Decimal.new(0)) != :lt and
-      Decimal.compare(candle.close, Decimal.new(0)) != :lt
+        Decimal.compare(candle.open, Decimal.new(0)) != :lt and
+        Decimal.compare(candle.high, Decimal.new(0)) != :lt and
+        Decimal.compare(candle.low, Decimal.new(0)) != :lt and
+        Decimal.compare(candle.close, Decimal.new(0)) != :lt
 
     has_required and valid_values
   end

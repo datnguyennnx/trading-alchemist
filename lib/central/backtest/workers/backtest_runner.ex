@@ -19,8 +19,10 @@ defmodule Central.Backtest.Workers.BacktestRunner do
 
   # Configuration constants
   @max_concurrent_backtests 5
-  @backtest_timeout 300_000  # 5 minutes
-  @retry_delay 5_000         # 5 seconds between retries
+  # 5 minutes
+  @backtest_timeout 300_000
+  # 5 seconds between retries
+  @retry_delay 5_000
 
   @doc """
   Starts the backtest runner worker.
@@ -35,16 +37,18 @@ defmodule Central.Backtest.Workers.BacktestRunner do
   def init(_args) do
     # Recover any pending backtests on restart
     recover_pending_backtests()
-    {:ok, %{
-      running: %{},
-      metrics: %{
-        total_executed: 0,
-        failed: 0,
-        completed: 0,
-        canceled: 0
-      },
-      progress: %{}
-    }}
+
+    {:ok,
+     %{
+       running: %{},
+       metrics: %{
+         total_executed: 0,
+         failed: 0,
+         completed: 0,
+         canceled: 0
+       },
+       progress: %{}
+     }}
   end
 
   @doc """
@@ -74,7 +78,8 @@ defmodule Central.Backtest.Workers.BacktestRunner do
     - backtest_id: ID of the backtest
     - progress: Integer progress value (0-100)
   """
-  def update_progress(backtest_id, progress) when is_integer(progress) and progress >= 0 and progress <= 100 do
+  def update_progress(backtest_id, progress)
+      when is_integer(progress) and progress >= 0 and progress <= 100 do
     GenServer.cast(__MODULE__, {:update_progress, backtest_id, progress})
   end
 
@@ -95,6 +100,7 @@ defmodule Central.Backtest.Workers.BacktestRunner do
       metrics: state.metrics,
       progress: state.progress
     }
+
     {:reply, safe_state, state}
   end
 
@@ -125,20 +131,22 @@ defmodule Central.Backtest.Workers.BacktestRunner do
       # We can run the backtest
       true ->
         # Mark as running in the worker state and initialize progress tracking
-        state = state
-                |> put_in([:running, backtest_id], %{
-                  started_at: DateTime.utc_now(),
-                  task_ref: nil
-                })
-                |> put_in([:progress, backtest_id], 0)
+        state =
+          state
+          |> put_in([:running, backtest_id], %{
+            started_at: DateTime.utc_now(),
+            task_ref: nil
+          })
+          |> put_in([:progress, backtest_id], 0)
 
         # Update the backtest status in the database
         update_status(backtest_id, :running)
 
         # Execute the backtest in a supervised Task
-        task = Task.Supervisor.async_nolink(Central.TaskSupervisor, fn ->
-          execute_backtest_with_timeout(backtest_id)
-        end)
+        task =
+          Task.Supervisor.async_nolink(Central.TaskSupervisor, fn ->
+            execute_backtest_with_timeout(backtest_id)
+          end)
 
         # Store task reference
         state = put_in(state, [:running, backtest_id, :task_ref], task.ref)
@@ -159,13 +167,14 @@ defmodule Central.Backtest.Workers.BacktestRunner do
         case Process.info(self(), :links) do
           {:links, links} ->
             # Find the process linked to this task
-            task_pid = Enum.find(links, fn pid ->
-              Process.info(pid, :dictionary)
-              |> case do
-                {:dictionary, dict} -> dict[:"$initial_call"] == {Task.Supervised, :invoke, 3}
-                _ -> false
-              end
-            end)
+            task_pid =
+              Enum.find(links, fn pid ->
+                Process.info(pid, :dictionary)
+                |> case do
+                  {:dictionary, dict} -> dict[:"$initial_call"] == {Task.Supervised, :invoke, 3}
+                  _ -> false
+                end
+              end)
 
             if task_pid, do: Process.exit(task_pid, :kill)
         end
@@ -177,11 +186,12 @@ defmodule Central.Backtest.Workers.BacktestRunner do
         })
 
         # Update metrics
-        state = update_in(state.metrics, fn metrics ->
-          metrics
-          |> Map.update!(:total_executed, &(&1 + 1))
-          |> Map.update!(:canceled, &(&1 + 1))
-        end)
+        state =
+          update_in(state.metrics, fn metrics ->
+            metrics
+            |> Map.update!(:total_executed, &(&1 + 1))
+            |> Map.update!(:canceled, &(&1 + 1))
+          end)
 
         # Remove from running and progress tracking
         {_, state} = pop_in(state, [:running, backtest_id])
@@ -198,6 +208,7 @@ defmodule Central.Backtest.Workers.BacktestRunner do
     case Enum.find(state.running, fn {_id, data} -> data.task_ref == ref end) do
       {backtest_id, _} ->
         handle_backtest_completion(backtest_id, reason, state)
+
       nil ->
         {:noreply, state}
     end
@@ -218,12 +229,14 @@ defmodule Central.Backtest.Workers.BacktestRunner do
           {:ok, _} ->
             # Successful completion
             handle_backtest_completion(backtest_id, :normal, state)
+
           {:error, error} ->
             # Task completed but with an error
             Logger.error("Backtest error: #{inspect(error)}")
             {:noreply, state} = handle_backtest_completion(backtest_id, {:error, error}, state)
             {:noreply, state}
         end
+
       nil ->
         # No backtest found for this reference - unusual but handle gracefully
         {:noreply, state}
@@ -237,18 +250,20 @@ defmodule Central.Backtest.Workers.BacktestRunner do
   defp execute_backtest_with_timeout(backtest_id) do
     try do
       # Execute the backtest with progress tracking and apply timeout
-      task = Task.async(fn ->
-        StrategyExecutor.execute_backtest(backtest_id, fn progress ->
-          # Update progress in the runner state
-          update_progress(backtest_id, progress)
+      task =
+        Task.async(fn ->
+          StrategyExecutor.execute_backtest(backtest_id, fn progress ->
+            # Update progress in the runner state
+            update_progress(backtest_id, progress)
+          end)
         end)
-      end)
 
       # Apply timeout
       case Task.yield(task, @backtest_timeout) || Task.shutdown(task) do
         {:ok, result} ->
           # Task completed successfully within timeout
           result
+
         nil ->
           # Task took too long and was shut down
           {:error, :timeout}
@@ -259,7 +274,10 @@ defmodule Central.Backtest.Workers.BacktestRunner do
         {:error, error}
     catch
       kind, reason ->
-        Logger.error("Backtest caught #{kind}: #{inspect(reason)}\n#{Exception.format_stacktrace()}")
+        Logger.error(
+          "Backtest caught #{kind}: #{inspect(reason)}\n#{Exception.format_stacktrace()}"
+        )
+
         {:error, {kind, reason}}
     end
   end
@@ -271,16 +289,18 @@ defmodule Central.Backtest.Workers.BacktestRunner do
     {_, new_state} = pop_in(new_state, [:progress, backtest_id])
 
     # Update metrics
-    new_state = update_in(new_state.metrics, fn metrics ->
-      metrics
-      |> Map.update!(:total_executed, &(&1 + 1))
-      |> case do
-        metrics when reason == :normal ->
-          Map.update!(metrics, :completed, &(&1 + 1))
-        metrics ->
-          Map.update!(metrics, :failed, &(&1 + 1))
-      end
-    end)
+    new_state =
+      update_in(new_state.metrics, fn metrics ->
+        metrics
+        |> Map.update!(:total_executed, &(&1 + 1))
+        |> case do
+          metrics when reason == :normal ->
+            Map.update!(metrics, :completed, &(&1 + 1))
+
+          metrics ->
+            Map.update!(metrics, :failed, &(&1 + 1))
+        end
+      end)
 
     case reason do
       :normal ->
@@ -291,29 +311,35 @@ defmodule Central.Backtest.Workers.BacktestRunner do
         Task.start(fn ->
           try do
             # Run performance calculations in parallel with error trapping
-            task1 = Task.async(fn ->
-              try do
-                Performance.generate_performance_summary(backtest_id)
-              rescue
-                e ->
-                  Logger.error("Performance summary error: #{inspect(e)}")
-                  Logger.error("Performance summary stacktrace: #{Exception.format_stacktrace()}")
-                  # Return to avoid crashing the task
-                  {:error, e}
-              end
-            end)
+            task1 =
+              Task.async(fn ->
+                try do
+                  Performance.generate_performance_summary(backtest_id)
+                rescue
+                  e ->
+                    Logger.error("Performance summary error: #{inspect(e)}")
 
-            task2 = Task.async(fn ->
-              try do
-                RiskManager.update_risk_metrics(backtest_id)
-              rescue
-                e ->
-                  Logger.error("Risk metrics error: #{inspect(e)}")
-                  Logger.error("Risk metrics stacktrace: #{Exception.format_stacktrace()}")
-                  # Return to avoid crashing the task
-                  {:error, e}
-              end
-            end)
+                    Logger.error(
+                      "Performance summary stacktrace: #{Exception.format_stacktrace()}"
+                    )
+
+                    # Return to avoid crashing the task
+                    {:error, e}
+                end
+              end)
+
+            task2 =
+              Task.async(fn ->
+                try do
+                  RiskManager.update_risk_metrics(backtest_id)
+                rescue
+                  e ->
+                    Logger.error("Risk metrics error: #{inspect(e)}")
+                    Logger.error("Risk metrics stacktrace: #{Exception.format_stacktrace()}")
+                    # Return to avoid crashing the task
+                    {:error, e}
+                end
+              end)
 
             # Wait for both tasks to complete with timeout
             Task.await(task1, 30_000)
@@ -328,11 +354,13 @@ defmodule Central.Backtest.Workers.BacktestRunner do
 
       {:error, error} ->
         # Handle error case with detailed error info
-        error_message = case error do
-          %{__exception__: true} = exception -> Exception.message(exception)
-          :timeout -> "Backtest timed out after #{@backtest_timeout}ms"
-          _ -> inspect(error)
-        end
+        error_message =
+          case error do
+            %{__exception__: true} = exception -> Exception.message(exception)
+            :timeout -> "Backtest timed out after #{@backtest_timeout}ms"
+            _ -> inspect(error)
+          end
+
         update_status(backtest_id, :failed, %{error: error_message})
         Logger.error("Backtest failed: #{backtest_id}, reason: #{error_message}")
 
@@ -365,13 +393,13 @@ defmodule Central.Backtest.Workers.BacktestRunner do
     |> Repo.update!()
   end
 
-
   defp recover_pending_backtests do
     import Ecto.Query
 
     # Find all pending or running backtests that need to be restarted
-    query = from b in Backtest,
-      where: b.status in [:pending, :running]
+    query =
+      from b in Backtest,
+        where: b.status in [:pending, :running]
 
     pending_backtests = Repo.all(query)
 
@@ -401,16 +429,18 @@ defmodule Central.Backtest.Workers.BacktestRunner do
   end
 
   # Broadcasts intermediate progress updates to the UI
-  defp broadcast_progress(backtest_id, status, metadata \\ %{}) do
+  defp broadcast_progress(backtest_id, status, metadata) do
     # Get the current backtest
     backtest = Repo.get!(Backtest, backtest_id)
 
     # Update metadata with timestamps
     now = DateTime.utc_now()
-    status_metadata = Map.merge(metadata, %{
-      "#{status}_at" => DateTimeConfig.format(now),
-      "last_update" => DateTimeConfig.format(now)
-    })
+
+    status_metadata =
+      Map.merge(metadata, %{
+        "#{status}_at" => DateTimeConfig.format(now),
+        "last_update" => DateTimeConfig.format(now)
+      })
 
     # Merge with existing metadata
     updated_metadata = Map.merge(backtest.metadata || %{}, status_metadata)
@@ -426,6 +456,7 @@ defmodule Central.Backtest.Workers.BacktestRunner do
 
     # Send progress update to UI
     backtest_with_assocs = Repo.preload(updated_backtest, [:strategy, :trades])
+
     Phoenix.PubSub.broadcast(
       Central.PubSub,
       "backtest:#{backtest_id}",

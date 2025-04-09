@@ -20,7 +20,10 @@ defmodule Central.Backtest.Services.RiskManager do
 
     # Skip if not completed or no trades
     if backtest.status != :completed or Enum.empty?(backtest.trades) do
-      Logger.info("No risk metrics updated for backtest #{backtest_id}: status=#{backtest.status}, trades=#{length(backtest.trades)}")
+      Logger.info(
+        "No risk metrics updated for backtest #{backtest_id}: status=#{backtest.status}, trades=#{length(backtest.trades)}"
+      )
+
       :ok
     else
       # Make trades backward compatible with field names
@@ -48,15 +51,21 @@ defmodule Central.Backtest.Services.RiskManager do
   """
   def calculate_position_size(balance, backtest) do
     # Get position size percentage from backtest params or default to 2%
-    position_size_pct = case get_position_size(backtest) do
-      nil -> 0.02  # Default to 2%
-      size when is_number(size) -> size / 100.0
-      size ->
-        case Decimal.cast(size) do
-          {:ok, decimal} -> Decimal.to_float(decimal) / 100.0
-          :error -> 0.02
-        end
-    end
+    position_size_pct =
+      case get_position_size(backtest) do
+        # Default to 2%
+        nil ->
+          0.02
+
+        size when is_number(size) ->
+          size / 100.0
+
+        size ->
+          case Decimal.cast(size) do
+            {:ok, decimal} -> Decimal.to_float(decimal) / 100.0
+            :error -> 0.02
+          end
+      end
 
     # Calculate position size
     balance * position_size_pct
@@ -78,11 +87,13 @@ defmodule Central.Backtest.Services.RiskManager do
         MarketDataHandler.parse_decimal_or_float(backtest.metadata["position_size"])
 
       # Fall back to risk_per_trade from strategy config
-      backtest.strategy && is_map(backtest.strategy.config) && Map.has_key?(backtest.strategy.config, "risk_per_trade") ->
+      backtest.strategy && is_map(backtest.strategy.config) &&
+          Map.has_key?(backtest.strategy.config, "risk_per_trade") ->
         MarketDataHandler.parse_decimal_or_float(backtest.strategy.config["risk_per_trade"])
 
       # Otherwise use default
-      true -> 2.0
+      true ->
+        2.0
     end
   end
 
@@ -105,29 +116,40 @@ defmodule Central.Backtest.Services.RiskManager do
 
       # Calculate running peak and drawdown
       {_, _, max_dd, max_dd_pct, start_time, end_time} =
-        Enum.reduce(sorted_curve, {nil, nil, Decimal.new(0), Decimal.new(0), nil, nil},
-          fn %{timestamp: time, equity: equity}, {prev_peak, prev_time, max_dd, max_dd_pct, dd_start, dd_end} = acc ->
-            # Skip first point (no previous to compare with)
-            if is_nil(prev_peak) do
-              {equity, time, max_dd, max_dd_pct, nil, nil}
+        Enum.reduce(sorted_curve, {nil, nil, Decimal.new(0), Decimal.new(0), nil, nil}, fn %{
+                                                                                             timestamp:
+                                                                                               time,
+                                                                                             equity:
+                                                                                               equity
+                                                                                           },
+                                                                                           {prev_peak,
+                                                                                            prev_time,
+                                                                                            max_dd,
+                                                                                            max_dd_pct,
+                                                                                            dd_start,
+                                                                                            dd_end} =
+                                                                                             _acc ->
+          # Skip first point (no previous to compare with)
+          if is_nil(prev_peak) do
+            {equity, time, max_dd, max_dd_pct, nil, nil}
+          else
+            # If new equity is higher than peak, update peak
+            if Decimal.compare(equity, prev_peak) == :gt do
+              {equity, time, max_dd, max_dd_pct, dd_start, dd_end}
             else
-              # If new equity is higher than peak, update peak
-              if Decimal.compare(equity, prev_peak) == :gt do
-                {equity, time, max_dd, max_dd_pct, dd_start, dd_end}
-              else
-                # Calculate current drawdown
-                curr_dd = Decimal.sub(prev_peak, equity)
-                curr_dd_pct = Decimal.div(curr_dd, prev_peak)
+              # Calculate current drawdown
+              curr_dd = Decimal.sub(prev_peak, equity)
+              curr_dd_pct = Decimal.div(curr_dd, prev_peak)
 
-                # Check if this is a new maximum drawdown
-                if Decimal.compare(curr_dd, max_dd) == :gt do
-                  {prev_peak, prev_time, curr_dd, curr_dd_pct, prev_time, time}
-                else
-                  {prev_peak, prev_time, max_dd, max_dd_pct, dd_start, dd_end}
-                end
+              # Check if this is a new maximum drawdown
+              if Decimal.compare(curr_dd, max_dd) == :gt do
+                {prev_peak, prev_time, curr_dd, curr_dd_pct, prev_time, time}
+              else
+                {prev_peak, prev_time, max_dd, max_dd_pct, dd_start, dd_end}
               end
             end
-          end)
+          end
+        end)
 
       # Convert percentage to actual percentage value (multiply by 100)
       max_dd_pct_display = Decimal.mult(max_dd_pct, Decimal.new(100))
@@ -169,7 +191,8 @@ defmodule Central.Backtest.Services.RiskManager do
         |> Enum.sum()
         |> Kernel./(length(losing_trades))
       else
-        1  # Avoid division by zero
+        # Avoid division by zero
+        1
       end
 
     risk_reward_ratio =
@@ -182,7 +205,7 @@ defmodule Central.Backtest.Services.RiskManager do
     # Calculate expectancy
     win_rate = length(winning_trades) / max(length(trades), 1)
     loss_rate = length(losing_trades) / max(length(trades), 1)
-    expectancy = (win_rate * avg_win) - (loss_rate * avg_loss)
+    expectancy = win_rate * avg_win - loss_rate * avg_loss
 
     # Calculate maximum consecutive losses
     consecutive_losses = calculate_consecutive_losses(trades)
@@ -220,14 +243,15 @@ defmodule Central.Backtest.Services.RiskManager do
   # Update backtest with risk metrics
   defp update_backtest_risk_metrics(backtest, metrics) do
     # Update backtest metadata with risk metrics
-    metadata = Map.merge(backtest.metadata || %{}, %{
-      "risk_metrics" => %{
-        "win_loss_ratio" => metrics.win_loss_ratio,
-        "risk_reward_ratio" => metrics.risk_reward_ratio,
-        "expectancy" => metrics.expectancy,
-        "max_consecutive_losses" => metrics.max_consecutive_losses
-      }
-    })
+    metadata =
+      Map.merge(backtest.metadata || %{}, %{
+        "risk_metrics" => %{
+          "win_loss_ratio" => metrics.win_loss_ratio,
+          "risk_reward_ratio" => metrics.risk_reward_ratio,
+          "expectancy" => metrics.expectancy,
+          "max_consecutive_losses" => metrics.max_consecutive_losses
+        }
+      })
 
     # Update backtest
     backtest

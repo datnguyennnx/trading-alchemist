@@ -15,7 +15,12 @@ defmodule CentralWeb.AuthLive.UserConfirmationInstructionsLive do
         <:subtitle>We'll send a new confirmation link to your inbox</:subtitle>
       </.header>
 
-      <.form for={@form} id="resend_confirmation_form" phx-submit="send_instructions" class="space-y-6">
+      <.form
+        for={@form}
+        id="resend_confirmation_form"
+        phx-submit="send_instructions"
+        class="space-y-6"
+      >
         <.form_item>
           <.form_label>Email</.form_label>
           <.form_control>

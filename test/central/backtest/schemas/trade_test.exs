@@ -53,13 +53,14 @@ defmodule Central.Backtest.Schemas.TradeTest do
     test "changeset with invalid attributes" do
       changeset = Trade.changeset(%Trade{}, %{})
       refute changeset.valid?
+
       assert %{
-        entry_time: ["can't be blank"],
-        entry_price: ["can't be blank"],
-        quantity: ["can't be blank"],
-        side: ["can't be blank"],
-        backtest_id: ["can't be blank"]
-      } = errors_on(changeset)
+               entry_time: ["can't be blank"],
+               entry_price: ["can't be blank"],
+               quantity: ["can't be blank"],
+               side: ["can't be blank"],
+               backtest_id: ["can't be blank"]
+             } = errors_on(changeset)
     end
 
     test "changeset with negative entry price", %{valid_attrs: valid_attrs} do
@@ -136,14 +137,15 @@ defmodule Central.Backtest.Schemas.TradeTest do
 
     test "exit_changeset updates a trade with exit details correctly" do
       # First create a trade with just entry details
-      trade = BacktestFixtures.trade_fixture(%{
-        entry_time: ~U[2025-01-20 12:00:00Z],
-        entry_price: Decimal.new("48000.00"),
-        exit_time: nil,
-        exit_price: nil,
-        quantity: Decimal.new("0.1"),
-        side: :long
-      })
+      trade =
+        BacktestFixtures.trade_fixture(%{
+          entry_time: ~U[2025-01-20 12:00:00Z],
+          entry_price: Decimal.new("48000.00"),
+          exit_time: nil,
+          exit_price: nil,
+          quantity: Decimal.new("0.1"),
+          side: :long
+        })
 
       # Then update it with exit details
       exit_attrs = %{
@@ -164,19 +166,21 @@ defmodule Central.Backtest.Schemas.TradeTest do
       backtest = BacktestFixtures.backtest_fixture()
 
       # First create a trade with a valid entry time
-      {:ok, trade} = %Central.Backtest.Schemas.Trade{}
+      {:ok, trade} =
+        %Central.Backtest.Schemas.Trade{}
         |> Central.Backtest.Schemas.Trade.changeset(%{
-            entry_time: ~U[2025-01-20 12:00:00Z],
-            entry_price: Decimal.new("50000.00"),
-            quantity: Decimal.new("0.1"),
-            side: :long,
-            backtest_id: backtest.id
-          })
+          entry_time: ~U[2025-01-20 12:00:00Z],
+          entry_price: Decimal.new("50000.00"),
+          quantity: Decimal.new("0.1"),
+          side: :long,
+          backtest_id: backtest.id
+        })
         |> Repo.insert()
 
       # Now try to update with invalid exit time
       exit_attrs = %{
-        exit_time: ~U[2025-01-20 08:00:00Z], # Before entry time
+        # Before entry time
+        exit_time: ~U[2025-01-20 08:00:00Z],
         exit_price: Decimal.new("47000.00")
       }
 
@@ -238,10 +242,12 @@ defmodule Central.Backtest.Schemas.TradeTest do
       assert trade.tags == ["pullback", "oversold"]
       assert trade.entry_reason == "rsi_oversold"
       assert trade.exit_reason == "profit_target"
+
       assert trade.metadata == %{
-        "entry_signal_strength" => "strong",
-        "market_condition" => "downtrend"
-      }
+               "entry_signal_strength" => "strong",
+               "market_condition" => "downtrend"
+             }
+
       assert trade.backtest_id == backtest.id
     end
 

@@ -1,7 +1,6 @@
 defmodule CentralWeb.StrategyLive.FormLive do
   use CentralWeb, :live_view
   alias Central.Backtest.Contexts.StrategyContext
-  alias Central.Accounts
 
   import SaladUI.Card
   import SaladUI.Form
@@ -10,6 +9,7 @@ defmodule CentralWeb.StrategyLive.FormLive do
   import SaladUI.Textarea
   import SaladUI.Select
 
+  @impl true
   def mount(params, _session, socket) do
     socket =
       case socket.assigns.live_action do
@@ -21,6 +21,7 @@ defmodule CentralWeb.StrategyLive.FormLive do
 
         :edit ->
           strategy = StrategyContext.get_strategy!(params["id"])
+
           socket
           |> assign(:strategy, strategy)
           |> assign(:page_title, "Edit Strategy: #{strategy.name}")
@@ -63,7 +64,9 @@ defmodule CentralWeb.StrategyLive.FormLive do
 
     # Add entry rules
     entry_rules = strategy.entry_rules["conditions"] || []
-    form_data = Enum.with_index(entry_rules)
+
+    form_data =
+      Enum.with_index(entry_rules)
       |> Enum.reduce(form_data, fn {rule, i}, acc ->
         Map.merge(acc, %{
           "entry_strategy_#{i}" => rule["strategy"] || "",
@@ -75,22 +78,30 @@ defmodule CentralWeb.StrategyLive.FormLive do
 
     # Add exit rules
     exit_rules = strategy.exit_rules["conditions"] || []
+
     Enum.with_index(exit_rules)
-      |> Enum.reduce(form_data, fn {rule, i}, acc ->
-        Map.merge(acc, %{
-          "exit_strategy_#{i}" => rule["strategy"] || "",
-          "exit_indicator_#{i}" => rule["indicator"] || "",
-          "exit_condition_#{i}" => rule["comparison"] || "",
-          "exit_value_#{i}" => rule["value"] || "0",
-          "stop_loss_#{i}" => rule["stop_loss"] || "0.02",
-          "take_profit_#{i}" => rule["take_profit"] || "0.04"
-        })
-      end)
+    |> Enum.reduce(form_data, fn {rule, i}, acc ->
+      Map.merge(acc, %{
+        "exit_strategy_#{i}" => rule["strategy"] || "",
+        "exit_indicator_#{i}" => rule["indicator"] || "",
+        "exit_condition_#{i}" => rule["comparison"] || "",
+        "exit_value_#{i}" => rule["value"] || "0",
+        "stop_loss_#{i}" => rule["stop_loss"] || "0.02",
+        "take_profit_#{i}" => rule["take_profit"] || "0.04"
+      })
+    end)
   end
 
   defp assign_form(socket, form_data) do
-    entry_rules_count = (form_data |> Enum.filter(fn {k, _} -> String.starts_with?(k, "entry_strategy_") end) |> length())
-    exit_rules_count = (form_data |> Enum.filter(fn {k, _} -> String.starts_with?(k, "exit_strategy_") end) |> length())
+    entry_rules_count =
+      form_data
+      |> Enum.filter(fn {k, _} -> String.starts_with?(k, "entry_strategy_") end)
+      |> length()
+
+    exit_rules_count =
+      form_data
+      |> Enum.filter(fn {k, _} -> String.starts_with?(k, "exit_strategy_") end)
+      |> length()
 
     socket
     |> assign(:form, to_form(form_data))
@@ -98,25 +109,24 @@ defmodule CentralWeb.StrategyLive.FormLive do
     |> assign(:exit_rules_count, max(1, exit_rules_count))
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="container mx-auto px-4 py-8">
       <.card class="max-w-2xl mx-auto">
         <.card_header>
-          <.card_title><%= if @live_action == :new, do: "Create New Strategy", else: "Edit Strategy" %></.card_title>
+          <.card_title>
+            {if @live_action == :new, do: "Create New Strategy", else: "Edit Strategy"}
+          </.card_title>
           <.card_description>Define your trading strategy parameters</.card_description>
         </.card_header>
 
         <.card_content>
-          <.form for={@form} :let={f} phx-submit="save" class="space-y-6">
+          <.form :let={f} for={@form} phx-submit="save" class="space-y-6">
             <div class="space-y-4">
               <.form_item>
                 <.form_label>Strategy Name</.form_label>
-                <.input
-                  field={f[:name]}
-                  placeholder="e.g. RSI + SMA Crossover Strategy"
-                  required
-                />
+                <.input field={f[:name]} placeholder="e.g. RSI + SMA Crossover Strategy" required />
                 <.form_message field={f[:name]} />
               </.form_item>
 
@@ -137,8 +147,13 @@ defmodule CentralWeb.StrategyLive.FormLive do
                 <div class="grid grid-cols-2 gap-4">
                   <.form_item>
                     <.form_label>Timeframe</.form_label>
-                    <.select :let={select} field={f[:timeframe]} id="timeframe-select" placeholder="Select timeframe">
-                      <.select_trigger builder={select} class="w-full"/>
+                    <.select
+                      :let={select}
+                      field={f[:timeframe]}
+                      id="timeframe-select"
+                      placeholder="Select timeframe"
+                    >
+                      <.select_trigger builder={select} class="w-full" />
                       <.select_content class="w-full" builder={select}>
                         <.select_group>
                           <.select_item builder={select} value="1m">1 Minute</.select_item>
@@ -155,8 +170,13 @@ defmodule CentralWeb.StrategyLive.FormLive do
 
                   <.form_item>
                     <.form_label>Symbol</.form_label>
-                    <.select :let={select} field={f[:symbol]} id="symbol-select" placeholder="Select trading pair">
-                      <.select_trigger builder={select} class="w-full"/>
+                    <.select
+                      :let={select}
+                      field={f[:symbol]}
+                      id="symbol-select"
+                      placeholder="Select trading pair"
+                    >
+                      <.select_trigger builder={select} class="w-full" />
                       <.select_content class="w-full" builder={select}>
                         <.select_group>
                           <.select_item builder={select} value="BTCUSDT">BTC/USDT</.select_item>
@@ -219,8 +239,13 @@ defmodule CentralWeb.StrategyLive.FormLive do
                   <div class="space-y-4 p-4 border rounded-lg">
                     <.form_item>
                       <.form_label>Indicator</.form_label>
-                      <.select :let={select} field={f[:"entry_indicator_#{i}"]} id={"entry-indicator-#{i}"} placeholder="Select indicator">
-                        <.select_trigger builder={select} class="w-full"/>
+                      <.select
+                        :let={select}
+                        field={f[:"entry_indicator_#{i}"]}
+                        id={"entry-indicator-#{i}"}
+                        placeholder="Select indicator"
+                      >
+                        <.select_trigger builder={select} class="w-full" />
                         <.select_content class="w-full" builder={select}>
                           <.select_group>
                             <.select_item builder={select} value="price">Price</.select_item>
@@ -236,14 +261,23 @@ defmodule CentralWeb.StrategyLive.FormLive do
 
                     <.form_item>
                       <.form_label>Condition</.form_label>
-                      <.select :let={select} field={f[:"entry_condition_#{i}"]} id={"entry-condition-#{i}"} placeholder="Select condition">
-                        <.select_trigger builder={select} class="w-full"/>
+                      <.select
+                        :let={select}
+                        field={f[:"entry_condition_#{i}"]}
+                        id={"entry-condition-#{i}"}
+                        placeholder="Select condition"
+                      >
+                        <.select_trigger builder={select} class="w-full" />
                         <.select_content class="w-full" builder={select}>
                           <.select_group>
                             <.select_item builder={select} value="above">Above</.select_item>
                             <.select_item builder={select} value="below">Below</.select_item>
-                            <.select_item builder={select} value="crosses_above">Crosses Above</.select_item>
-                            <.select_item builder={select} value="crosses_below">Crosses Below</.select_item>
+                            <.select_item builder={select} value="crosses_above">
+                              Crosses Above
+                            </.select_item>
+                            <.select_item builder={select} value="crosses_below">
+                              Crosses Below
+                            </.select_item>
                           </.select_group>
                         </.select_content>
                       </.select>
@@ -307,8 +341,13 @@ defmodule CentralWeb.StrategyLive.FormLive do
 
                     <.form_item>
                       <.form_label>Indicator</.form_label>
-                      <.select :let={select} field={f[:"exit_indicator_#{i}"]} id={"exit-indicator-#{i}"} placeholder="Select indicator">
-                        <.select_trigger builder={select} class="w-full"/>
+                      <.select
+                        :let={select}
+                        field={f[:"exit_indicator_#{i}"]}
+                        id={"exit-indicator-#{i}"}
+                        placeholder="Select indicator"
+                      >
+                        <.select_trigger builder={select} class="w-full" />
                         <.select_content class="w-full" builder={select}>
                           <.select_group>
                             <.select_item builder={select} value="price">Price</.select_item>
@@ -324,14 +363,23 @@ defmodule CentralWeb.StrategyLive.FormLive do
 
                     <.form_item>
                       <.form_label>Condition</.form_label>
-                      <.select :let={select} field={f[:"exit_condition_#{i}"]} id={"exit-condition-#{i}"} placeholder="Select condition">
-                        <.select_trigger builder={select} class="w-full"/>
+                      <.select
+                        :let={select}
+                        field={f[:"exit_condition_#{i}"]}
+                        id={"exit-condition-#{i}"}
+                        placeholder="Select condition"
+                      >
+                        <.select_trigger builder={select} class="w-full" />
                         <.select_content class="w-full" builder={select}>
                           <.select_group>
                             <.select_item builder={select} value="above">Above</.select_item>
                             <.select_item builder={select} value="below">Below</.select_item>
-                            <.select_item builder={select} value="crosses_above">Crosses Above</.select_item>
-                            <.select_item builder={select} value="crosses_below">Crosses Below</.select_item>
+                            <.select_item builder={select} value="crosses_above">
+                              Crosses Above
+                            </.select_item>
+                            <.select_item builder={select} value="crosses_below">
+                              Crosses Below
+                            </.select_item>
                           </.select_group>
                         </.select_content>
                       </.select>
@@ -359,7 +407,7 @@ defmodule CentralWeb.StrategyLive.FormLive do
                 Cancel
               </.button>
               <.button type="submit">
-                <%= if @live_action == :new, do: "Create Strategy", else: "Update Strategy" %>
+                {if @live_action == :new, do: "Create Strategy", else: "Update Strategy"}
               </.button>
             </.card_footer>
           </.form>
@@ -369,62 +417,69 @@ defmodule CentralWeb.StrategyLive.FormLive do
     """
   end
 
+  @impl true
   def handle_event("add_entry_rule", _params, socket) do
     updated_socket = update(socket, :entry_rules_count, &(&1 + 1))
     count = updated_socket.assigns.entry_rules_count - 1
 
-    form_data = Map.merge(updated_socket.assigns.form.data, %{
-      "entry_indicator_#{count}" => "",
-      "entry_condition_#{count}" => "",
-      "entry_value_#{count}" => "0"
-    })
+    form_data =
+      Map.merge(updated_socket.assigns.form.data, %{
+        "entry_indicator_#{count}" => "",
+        "entry_condition_#{count}" => "",
+        "entry_value_#{count}" => "0"
+      })
 
     {:noreply, assign(updated_socket, :form, to_form(form_data))}
   end
 
+  @impl true
   def handle_event("add_exit_rule", _params, socket) do
     updated_socket = update(socket, :exit_rules_count, &(&1 + 1))
     count = updated_socket.assigns.exit_rules_count - 1
 
-    form_data = Map.merge(updated_socket.assigns.form.data, %{
-      "exit_indicator_#{count}" => "",
-      "exit_condition_#{count}" => "",
-      "exit_value_#{count}" => "0",
-      "stop_loss_#{count}" => "0.02",
-      "take_profit_#{count}" => "0.04"
-    })
+    form_data =
+      Map.merge(updated_socket.assigns.form.data, %{
+        "exit_indicator_#{count}" => "",
+        "exit_condition_#{count}" => "",
+        "exit_value_#{count}" => "0",
+        "stop_loss_#{count}" => "0.02",
+        "take_profit_#{count}" => "0.04"
+      })
 
     {:noreply, assign(updated_socket, :form, to_form(form_data))}
   end
 
+  @impl true
   def handle_event("save", params, socket) do
     current_user_id = socket.assigns.current_user.id
 
     # Collect entry rules
-    entry_conditions = Enum.map(0..(socket.assigns.entry_rules_count - 1), fn i ->
-      %{
-        "indicator" => params["entry_indicator_#{i}"],
-        "comparison" => params["entry_condition_#{i}"],
-        "value" => params["entry_value_#{i}"]
-      }
-    end)
-    |> Enum.filter(fn rule ->
-      rule["indicator"] != "" && rule["comparison"] != "" && rule["value"] != ""
-    end)
+    entry_conditions =
+      Enum.map(0..(socket.assigns.entry_rules_count - 1), fn i ->
+        %{
+          "indicator" => params["entry_indicator_#{i}"],
+          "comparison" => params["entry_condition_#{i}"],
+          "value" => params["entry_value_#{i}"]
+        }
+      end)
+      |> Enum.filter(fn rule ->
+        rule["indicator"] != "" && rule["comparison"] != "" && rule["value"] != ""
+      end)
 
     # Collect exit rules
-    exit_conditions = Enum.map(0..(socket.assigns.exit_rules_count - 1), fn i ->
-      %{
-        "indicator" => params["exit_indicator_#{i}"],
-        "comparison" => params["exit_condition_#{i}"],
-        "value" => params["exit_value_#{i}"],
-        "stop_loss" => params["stop_loss_#{i}"],
-        "take_profit" => params["take_profit_#{i}"]
-      }
-    end)
-    |> Enum.filter(fn rule ->
-      rule["indicator"] != "" && rule["comparison"] != "" && rule["value"] != ""
-    end)
+    exit_conditions =
+      Enum.map(0..(socket.assigns.exit_rules_count - 1), fn i ->
+        %{
+          "indicator" => params["exit_indicator_#{i}"],
+          "comparison" => params["exit_condition_#{i}"],
+          "value" => params["exit_value_#{i}"],
+          "stop_loss" => params["stop_loss_#{i}"],
+          "take_profit" => params["take_profit_#{i}"]
+        }
+      end)
+      |> Enum.filter(fn rule ->
+        rule["indicator"] != "" && rule["comparison"] != "" && rule["value"] != ""
+      end)
 
     # Create the config map
     config = %{
@@ -458,6 +513,17 @@ defmodule CentralWeb.StrategyLive.FormLive do
     save_strategy(socket, strategy_params)
   end
 
+  @impl true
+  def handle_event("cancel", _, socket) do
+    destination =
+      case socket.assigns do
+        %{live_action: :new} -> ~p"/strategies"
+        %{live_action: :edit, strategy: strategy} -> ~p"/strategies/#{strategy.id}"
+      end
+
+    {:noreply, redirect(socket, to: destination)}
+  end
+
   defp save_strategy(%{assigns: %{live_action: :new}} = socket, strategy_params) do
     case StrategyContext.create_strategy(strategy_params) do
       {:ok, strategy} ->
@@ -470,11 +536,17 @@ defmodule CentralWeb.StrategyLive.FormLive do
         {:noreply,
          socket
          |> put_flash(:error, "Failed to create strategy: #{inspect(changeset.errors)}")
-         |> assign(:form, to_form(Map.merge(socket.assigns.form.data, %{"_errors" => changeset.errors})))}
+         |> assign(
+           :form,
+           to_form(Map.merge(socket.assigns.form.data, %{"_errors" => changeset.errors}))
+         )}
     end
   end
 
-  defp save_strategy(%{assigns: %{live_action: :edit, strategy: strategy}} = socket, strategy_params) do
+  defp save_strategy(
+         %{assigns: %{live_action: :edit, strategy: strategy}} = socket,
+         strategy_params
+       ) do
     case StrategyContext.update_strategy(strategy, strategy_params) do
       {:ok, strategy} ->
         {:noreply,
@@ -486,16 +558,10 @@ defmodule CentralWeb.StrategyLive.FormLive do
         {:noreply,
          socket
          |> put_flash(:error, "Failed to update strategy: #{inspect(changeset.errors)}")
-         |> assign(:form, to_form(Map.merge(socket.assigns.form.data, %{"_errors" => changeset.errors})))}
+         |> assign(
+           :form,
+           to_form(Map.merge(socket.assigns.form.data, %{"_errors" => changeset.errors}))
+         )}
     end
-  end
-
-  def handle_event("cancel", _, socket) do
-    destination = case socket.assigns do
-      %{live_action: :new} -> ~p"/strategies"
-      %{live_action: :edit, strategy: strategy} -> ~p"/strategies/#{strategy.id}"
-    end
-
-    {:noreply, redirect(socket, to: destination)}
   end
 end

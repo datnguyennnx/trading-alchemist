@@ -14,29 +14,33 @@ defmodule Central.Backtest.Contexts.MarketDataTest do
       end
 
       # Create multiple market data records for different symbols and timeframes
-      btc_1h = BacktestFixtures.market_data_fixture(%{
-        symbol: "BTCUSDT",
-        timeframe: "1h",
-        timestamp: ~U[2025-01-01 00:00:00Z]
-      })
+      btc_1h =
+        BacktestFixtures.market_data_fixture(%{
+          symbol: "BTCUSDT",
+          timeframe: "1h",
+          timestamp: ~U[2025-01-01 00:00:00Z]
+        })
 
-      btc_1h_2 = BacktestFixtures.market_data_fixture(%{
-        symbol: "BTCUSDT",
-        timeframe: "1h",
-        timestamp: ~U[2025-01-01 01:00:00Z]
-      })
+      btc_1h_2 =
+        BacktestFixtures.market_data_fixture(%{
+          symbol: "BTCUSDT",
+          timeframe: "1h",
+          timestamp: ~U[2025-01-01 01:00:00Z]
+        })
 
-      btc_4h = BacktestFixtures.market_data_fixture(%{
-        symbol: "BTCUSDT",
-        timeframe: "4h",
-        timestamp: ~U[2025-01-01 00:00:00Z]
-      })
+      btc_4h =
+        BacktestFixtures.market_data_fixture(%{
+          symbol: "BTCUSDT",
+          timeframe: "4h",
+          timestamp: ~U[2025-01-01 00:00:00Z]
+        })
 
-      eth_1h = BacktestFixtures.market_data_fixture(%{
-        symbol: "ETHUSDT",
-        timeframe: "1h",
-        timestamp: ~U[2025-01-01 00:00:00Z]
-      })
+      eth_1h =
+        BacktestFixtures.market_data_fixture(%{
+          symbol: "ETHUSDT",
+          timeframe: "1h",
+          timestamp: ~U[2025-01-01 00:00:00Z]
+        })
 
       %{
         btc_1h: btc_1h,
@@ -87,7 +91,10 @@ defmodule Central.Backtest.Contexts.MarketDataTest do
       assert length(symbols3) == 3
     end
 
-    test "get_candles/4 returns candles for specified range", %{btc_1h: btc_1h, btc_1h_2: btc_1h_2} do
+    test "get_candles/4 returns candles for specified range", %{
+      btc_1h: btc_1h,
+      btc_1h_2: btc_1h_2
+    } do
       start_time = ~U[2025-01-01 00:00:00Z]
       end_time = ~U[2025-01-01 01:00:00Z]
 
@@ -137,7 +144,10 @@ defmodule Central.Backtest.Contexts.MarketDataTest do
       assert Decimal.equal?(oldest_candle.close, btc_1h.close)
     end
 
-    test "get_date_range/2 returns min and max dates for a symbol/timeframe", %{btc_1h: btc_1h, btc_1h_2: btc_1h_2} do
+    test "get_date_range/2 returns min and max dates for a symbol/timeframe", %{
+      btc_1h: btc_1h,
+      btc_1h_2: btc_1h_2
+    } do
       {min_date, max_date} = MarketData.get_date_range("BTCUSDT", "1h")
 
       assert min_date == btc_1h.timestamp

@@ -14,49 +14,39 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
       <.card>
         <.card_header>
           <.card_title>Backtest Configuration</.card_title>
-          <.card_description>Configure and run your backtest with the strategy parameters</.card_description>
+          <.card_description>
+            Configure and run your backtest with the strategy parameters
+          </.card_description>
         </.card_header>
 
         <.card_content>
-          <.form for={@form} :let={f} phx-submit="start_backtest" phx-target={@myself} class="space-y-4">
+          <.form
+            :let={f}
+            for={@form}
+            phx-submit="start_backtest"
+            phx-target={@myself}
+            class="space-y-4"
+          >
             <div class="grid grid-cols-1 gap-4">
               <.form_item>
                 <.form_label>Symbol</.form_label>
-                <.input
-                  id="backtest-symbol"
-                  value={@strategy.config["symbol"]}
-                  disabled
-                />
+                <.input id="backtest-symbol" value={@strategy.config["symbol"]} disabled />
               </.form_item>
 
               <.form_item>
                 <.form_label>Timeframe</.form_label>
-                <.input
-                  id="backtest-timeframe"
-                  value={@strategy.config["timeframe"]}
-                  disabled
-                />
+                <.input id="backtest-timeframe" value={@strategy.config["timeframe"]} disabled />
               </.form_item>
 
               <.form_item>
                 <.form_label>Start Time</.form_label>
-                <.input
-                  field={f[:start_time]}
-                  name="start_time"
-                  type="datetime-local"
-                  required
-                />
+                <.input field={f[:start_time]} name="start_time" type="datetime-local" required />
                 <.form_message field={f[:start_time]} />
               </.form_item>
 
               <.form_item>
                 <.form_label>End Time</.form_label>
-                <.input
-                  field={f[:end_time]}
-                  name="end_time"
-                  type="datetime-local"
-                  required
-                />
+                <.input field={f[:end_time]} name="end_time" type="datetime-local" required />
                 <.form_message field={f[:end_time]} />
               </.form_item>
 
@@ -109,18 +99,18 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
               <div class="flex justify-between">
                 <span class="text-gray-600">Status:</span>
                 <span class={status_class(@backtest.status)}>
-                  <%= String.capitalize(to_string(@backtest.status)) %>
+                  {String.capitalize(to_string(@backtest.status))}
                 </span>
               </div>
 
               <%= if @backtest.status == :completed do %>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Total Trades:</span>
-                  <span><%= length(@backtest.trades) %></span>
+                  <span>{length(@backtest.trades)}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Final Balance:</span>
-                  <span><%= format_balance(@backtest.final_balance) %></span>
+                  <span>{format_balance(@backtest.final_balance)}</span>
                 </div>
               <% end %>
             </div>
@@ -154,41 +144,67 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
     position_size = get_form_value(params, "position_size")
 
     # Debug info to verify what values we're receiving
-    Logger.debug("Form values received - start_time: #{start_time}, end_time: #{end_time}, initial_balance: #{initial_balance}, position_size: #{position_size}")
+    Logger.debug(
+      "Form values received - start_time: #{start_time}, end_time: #{end_time}, initial_balance: #{initial_balance}, position_size: #{position_size}"
+    )
 
     # Use the strategy's values for symbol and timeframe
     symbol = socket.assigns.strategy.config["symbol"]
     timeframe = socket.assigns.strategy.config["timeframe"]
 
     # Ensure initial_balance is a valid decimal
-    parsed_initial_balance = case initial_balance do
-      nil -> Decimal.new("10000.0")  # Default if missing
-      "" -> Decimal.new("10000.0")   # Default if empty string
-      val when is_binary(val) ->
-        case Decimal.parse(val) do
-          {decimal, ""} -> decimal  # Successfully parsed with no remainder
-          {:ok, decimal} -> decimal # Handle old format for completeness
-          :error -> Decimal.new("10000.0")  # Default on parse error
-          _ -> Decimal.new("10000.0")  # Handle any other unexpected return
-        end
-      val when is_number(val) -> Decimal.new(val)
-      _ -> Decimal.new("10000.0")  # Default for other cases
-    end
+    parsed_initial_balance =
+      case initial_balance do
+        # Default if missing
+        nil ->
+          Decimal.new("10000.0")
+
+        # Default if empty string
+        "" ->
+          Decimal.new("10000.0")
+
+        val when is_binary(val) ->
+          case Decimal.parse(val) do
+            # Successfully parsed with no remainder
+            {decimal, ""} -> decimal
+            # Default on parse error
+            _ -> Decimal.new("10000.0")
+          end
+
+        val when is_number(val) ->
+          Decimal.new(val)
+
+        # Default for other cases
+        _ ->
+          Decimal.new("10000.0")
+      end
 
     # Ensure position_size is a valid decimal
-    parsed_position_size = case position_size do
-      nil -> Decimal.new("2.0")     # Default if missing
-      "" -> Decimal.new("2.0")      # Default if empty string
-      val when is_binary(val) ->
-        case Decimal.parse(val) do
-          {decimal, ""} -> decimal  # Successfully parsed with no remainder
-          {:ok, decimal} -> decimal # Handle old format for completeness
-          :error -> Decimal.new("2.0")  # Default on parse error
-          _ -> Decimal.new("2.0")  # Handle any other unexpected return
-        end
-      val when is_number(val) -> Decimal.new(val)
-      _ -> Decimal.new("2.0")  # Default for other cases
-    end
+    parsed_position_size =
+      case position_size do
+        # Default if missing
+        nil ->
+          Decimal.new("2.0")
+
+        # Default if empty string
+        "" ->
+          Decimal.new("2.0")
+
+        val when is_binary(val) ->
+          case Decimal.parse(val) do
+            # Successfully parsed with no remainder
+            {decimal, ""} -> decimal
+            # Default on parse error
+            _ -> Decimal.new("2.0")
+          end
+
+        val when is_number(val) ->
+          Decimal.new(val)
+
+        # Default for other cases
+        _ ->
+          Decimal.new("2.0")
+      end
 
     # Create the backtest params
     backtest_params = %{
@@ -236,14 +252,16 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
   defp get_form_value(params, field) do
     cond do
       # Direct field access
-      Map.has_key?(params, field) -> Map.get(params, field)
+      Map.has_key?(params, field) ->
+        Map.get(params, field)
 
       # Nested under "backtest" key (common LiveView form structure)
       Map.has_key?(params, "backtest") && is_map(params["backtest"]) ->
         Map.get(params["backtest"], field)
 
       # Other form structures
-      true -> nil
+      true ->
+        nil
     end
   end
 
@@ -271,14 +289,18 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
   defp format_balance(balance) when is_number(balance) do
     :erlang.float_to_binary(balance, decimals: 2)
   end
+
   defp format_balance(balance), do: balance
 
   defp parse_datetime(nil), do: nil
   defp parse_datetime(""), do: nil
+
   defp parse_datetime(datetime_string) when is_binary(datetime_string) do
     # First try parsing as ISO 8601
     case DateTime.from_iso8601(datetime_string) do
-      {:ok, datetime, _} -> datetime
+      {:ok, datetime, _} ->
+        datetime
+
       _ ->
         # Then try parsing as datetime-local format
         try do
@@ -293,16 +315,8 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
         end
     end
   end
-  defp parse_datetime(_), do: nil
 
-  defp parse_decimal(value) when is_binary(value) do
-    case Decimal.parse(value) do
-      {decimal, ""} -> decimal  # Successfully parsed with no remainder
-      {:ok, decimal} -> decimal # Handle old format for completeness
-      _ -> nil
-    end
-  end
-  defp parse_decimal(value), do: value
+  defp parse_datetime(_), do: nil
 
   # Helper functions to set reasonable default times
   defp default_start_time do

@@ -58,7 +58,8 @@ defmodule Central.Backtest.Contexts.MarketData do
           :ets.new(@ets_table, [:set, :public, :named_table, read_concurrency: true])
           :ets.insert(@ets_table, {:symbols, symbols})
         rescue
-          _ -> :ok # Table might already exist in another process
+          # Table might already exist in another process
+          _ -> :ok
         end
 
         symbols
@@ -85,7 +86,11 @@ defmodule Central.Backtest.Contexts.MarketData do
         [] ->
           timeframes = Repo.all(timeframes_query)
           # Add default timeframes if none are found
-          timeframes = if Enum.empty?(timeframes), do: ["1m", "5m", "15m", "1h", "4h", "1d"], else: timeframes
+          timeframes =
+            if Enum.empty?(timeframes),
+              do: ["1m", "5m", "15m", "1h", "4h", "1d"],
+              else: timeframes
+
           :ets.insert(@ets_table, {:timeframes, timeframes})
           timeframes
       end
@@ -94,14 +99,16 @@ defmodule Central.Backtest.Contexts.MarketData do
       ArgumentError ->
         timeframes = Repo.all(timeframes_query)
         # Add default timeframes if none are found
-        timeframes = if Enum.empty?(timeframes), do: ["1m", "5m", "15m", "1h", "4h", "1d"], else: timeframes
+        timeframes =
+          if Enum.empty?(timeframes), do: ["1m", "5m", "15m", "1h", "4h", "1d"], else: timeframes
 
         # Try to create the table if it doesn't exist
         try do
           :ets.new(@ets_table, [:set, :public, :named_table, read_concurrency: true])
           :ets.insert(@ets_table, {:timeframes, timeframes})
         rescue
-          _ -> :ok # Table might already exist in another process
+          # Table might already exist in another process
+          _ -> :ok
         end
 
         timeframes
@@ -178,9 +185,10 @@ defmodule Central.Backtest.Contexts.MarketData do
       {nil, nil}
   """
   def get_date_range(symbol, timeframe) do
-    query = from m in MarketData,
-      where: m.symbol == ^symbol and m.timeframe == ^timeframe,
-      select: {min(m.timestamp), max(m.timestamp)}
+    query =
+      from m in MarketData,
+        where: m.symbol == ^symbol and m.timeframe == ^timeframe,
+        select: {min(m.timestamp), max(m.timestamp)}
 
     case Repo.one(query) do
       {nil, nil} -> {nil, nil}
@@ -256,7 +264,9 @@ defmodule Central.Backtest.Contexts.MarketData do
     symbol_count_query = from m in MarketData, select: count(fragment("DISTINCT ?", m.symbol))
     symbol_count = Repo.one(symbol_count_query)
 
-    timeframe_count_query = from m in MarketData, select: count(fragment("DISTINCT ?", m.timeframe))
+    timeframe_count_query =
+      from m in MarketData, select: count(fragment("DISTINCT ?", m.timeframe))
+
     timeframe_count = Repo.one(timeframe_count_query)
 
     min_date_query = from m in MarketData, select: min(m.timestamp)
@@ -294,13 +304,20 @@ defmodule Central.Backtest.Contexts.MarketData do
       pattern =
         case {symbol, timeframe} do
           {nil, nil} ->
-            :_ # Match everything (should not happen due to above check)
+            # Match everything (should not happen due to above check)
+            :_
+
           {nil, tf} ->
-            {:_, tf, :_, :_, :_, :_} # Match any symbol with specific timeframe
+            # Match any symbol with specific timeframe
+            {:_, tf, :_, :_, :_, :_}
+
           {sym, nil} ->
-            {sym, :_, :_, :_, :_, :_} # Match specific symbol with any timeframe
+            # Match specific symbol with any timeframe
+            {sym, :_, :_, :_, :_, :_}
+
           {sym, tf} ->
-            {sym, tf, :_, :_, :_, :_} # Match specific symbol and timeframe
+            # Match specific symbol and timeframe
+            {sym, tf, :_, :_, :_, :_}
         end
 
       # Find matching cache keys and delete them
@@ -322,6 +339,7 @@ defmodule Central.Backtest.Contexts.MarketData do
             :ets.match(@ets_table, {{:last_candle, symbol, :_}, :_, :_})
             |> Enum.each(fn [[_, _, tf], _, _] ->
               key = {:last_candle, symbol, tf}
+
               case :ets.lookup(@ets_table, key) do
                 [] -> :ok
                 objects -> Enum.each(objects, &:ets.delete_object(@ets_table, &1))

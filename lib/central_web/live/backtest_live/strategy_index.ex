@@ -10,10 +10,11 @@ defmodule CentralWeb.BacktestLive.StrategyIndex do
   def mount(_params, _session, socket) do
     strategies = StrategyContext.list_strategies()
 
-    {:ok, assign(socket,
-      page_title: "Trading Strategies",
-      strategies: strategies
-    )}
+    {:ok,
+     assign(socket,
+       page_title: "Trading Strategies",
+       strategies: strategies
+     )}
   end
 
   @impl true
@@ -35,10 +36,7 @@ defmodule CentralWeb.BacktestLive.StrategyIndex do
           <.card_content>
             <div class="flex flex-col items-center justify-center py-12">
               <p class="text-slate-600 mb-4">No strategies found.</p>
-              <.link
-                navigate={~p"/strategies/new"}
-                class="text-indigo-600 hover:text-indigo-500"
-              >
+              <.link navigate={~p"/strategies/new"} class="text-indigo-600 hover:text-indigo-500">
                 Create your first strategy
               </.link>
             </div>
@@ -50,21 +48,23 @@ defmodule CentralWeb.BacktestLive.StrategyIndex do
             <.card>
               <.card_header>
                 <.card_title>
-                  <%= strategy.name %>
+                  {strategy.name}
                 </.card_title>
                 <.card_description>
-                  <%= if strategy.description && strategy.description != "", do: strategy.description, else: "No description" %>
+                  {if strategy.description && strategy.description != "",
+                    do: strategy.description,
+                    else: "No description"}
                 </.card_description>
               </.card_header>
               <.card_content>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <p class="text-sm font-medium text-slate-500">Symbol</p>
-                    <p class="mt-1 text-sm text-slate-900"><%= strategy.config["symbol"] %></p>
+                    <p class="mt-1 text-sm text-slate-900">{strategy.config["symbol"]}</p>
                   </div>
                   <div>
                     <p class="text-sm font-medium text-slate-500">Timeframe</p>
-                    <p class="mt-1 text-sm text-slate-900"><%= strategy.config["timeframe"] %></p>
+                    <p class="mt-1 text-sm text-slate-900">{strategy.config["timeframe"]}</p>
                   </div>
                 </div>
 
@@ -74,13 +74,13 @@ defmodule CentralWeb.BacktestLive.StrategyIndex do
                     <div class="p-2 bg-slate-50 rounded-md">
                       <p class="text-xs font-medium text-slate-700">Entry</p>
                       <p class="text-sm text-slate-900">
-                        <%= summarize_rules(strategy.config["entry_rules"]) %>
+                        {summarize_rules(strategy.config["entry_rules"])}
                       </p>
                     </div>
                     <div class="p-2 bg-slate-50 rounded-md">
                       <p class="text-xs font-medium text-slate-700">Exit</p>
                       <p class="text-sm text-slate-900">
-                        <%= summarize_rules(strategy.config["exit_rules"]) %>
+                        {summarize_rules(strategy.config["exit_rules"])}
                       </p>
                     </div>
                   </div>
@@ -89,7 +89,7 @@ defmodule CentralWeb.BacktestLive.StrategyIndex do
                 <div class="mt-4">
                   <p class="text-sm font-medium text-slate-500">Backtests</p>
                   <p class="mt-1 text-sm text-slate-900">
-                    <%= length(strategy.backtests || []) %> backtest(s) performed
+                    {length(strategy.backtests || [])} backtest(s) performed
                   </p>
                 </div>
               </.card_content>
@@ -98,7 +98,7 @@ defmodule CentralWeb.BacktestLive.StrategyIndex do
                   <.button
                     phx-click="delete_strategy"
                     phx-value-id={strategy.id}
-                    variant="text"
+                    variant="ghost"
                     class="text-red-600 hover:text-red-900"
                   >
                     Delete

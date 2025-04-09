@@ -32,6 +32,7 @@ defmodule Central.Backtest.Services.Binance.Stream do
     case get_pid(symbol) do
       nil ->
         {:error, :stream_not_running}
+
       pid_stream ->
         GenServer.call(pid_stream, {:subscribe, pid})
     end
@@ -50,6 +51,7 @@ defmodule Central.Backtest.Services.Binance.Stream do
     case get_pid(symbol) do
       nil ->
         {:error, :stream_not_running}
+
       pid_stream ->
         GenServer.call(pid_stream, {:unsubscribe, pid})
     end
@@ -62,6 +64,7 @@ defmodule Central.Backtest.Services.Binance.Stream do
     case get_pid(symbol) do
       nil ->
         {:error, :stream_not_running}
+
       pid ->
         GenServer.call(pid, :get_state)
     end
@@ -78,16 +81,18 @@ defmodule Central.Backtest.Services.Binance.Stream do
     # This allows the GenServer to complete initialization quickly
     send(self(), :connect)
 
-    {:ok, %{
-      symbol: symbol,
-      connection: nil,
-      socket_url: "#{@stream_url}/#{symbol}@kline_1m", # Default to 1m candles
-      subscribers: MapSet.new(),
-      connection_attempts: 0,
-      connected: false,
-      backoff_index: 0,
-      last_message_at: nil
-    }}
+    {:ok,
+     %{
+       symbol: symbol,
+       connection: nil,
+       # Default to 1m candles
+       socket_url: "#{@stream_url}/#{symbol}@kline_1m",
+       subscribers: MapSet.new(),
+       connection_attempts: 0,
+       connected: false,
+       backoff_index: 0,
+       last_message_at: nil
+     }}
   end
 
   @impl GenServer
@@ -105,7 +110,8 @@ defmodule Central.Backtest.Services.Binance.Stream do
 
   @impl GenServer
   def handle_call(:get_state, _from, state) do
-    sanitized_state = Map.drop(state, [:connection]) # Don't expose socket details
+    # Don't expose socket details
+    sanitized_state = Map.drop(state, [:connection])
     {:reply, {:ok, sanitized_state}, state}
   end
 
@@ -124,19 +130,22 @@ defmodule Central.Backtest.Services.Binance.Stream do
     # Schedule heartbeat to monitor connection health
     schedule_heartbeat()
 
-    {:noreply, %{state |
-      connection: :simulated_connection,
-      connected: true,
-      connection_attempts: 0,
-      backoff_index: 0,
-      last_message_at: DateTime.utc_now()
-    }}
+    {:noreply,
+     %{
+       state
+       | connection: :simulated_connection,
+         connected: true,
+         connection_attempts: 0,
+         backoff_index: 0,
+         last_message_at: DateTime.utc_now()
+     }}
   end
 
   @impl GenServer
   def handle_info(:heartbeat, state) do
     # Check if we've received a message recently
     now = DateTime.utc_now()
+
     no_message_duration =
       case state.last_message_at do
         nil -> 0
@@ -145,7 +154,10 @@ defmodule Central.Backtest.Services.Binance.Stream do
 
     # If no message for more than 60 seconds, reconnect
     if no_message_duration > 60 do
-      Logger.warning("No messages received for #{no_message_duration} seconds, reconnecting to #{state.symbol} stream")
+      Logger.warning(
+        "No messages received for #{no_message_duration} seconds, reconnecting to #{state.symbol} stream"
+      )
+
       send(self(), :reconnect)
       {:noreply, state}
     else
@@ -162,17 +174,22 @@ defmodule Central.Backtest.Services.Binance.Stream do
     # WebSocketClient.close(state.connection)
 
     backoff_ms = get_backoff_time(state.backoff_index)
-    Logger.info("Reconnecting to #{state.symbol} stream in #{backoff_ms}ms (attempt #{state.connection_attempts + 1})")
+
+    Logger.info(
+      "Reconnecting to #{state.symbol} stream in #{backoff_ms}ms (attempt #{state.connection_attempts + 1})"
+    )
 
     # Schedule reconnection after backoff
     Process.send_after(self(), :connect, backoff_ms)
 
-    {:noreply, %{state |
-      connection: nil,
-      connected: false,
-      connection_attempts: state.connection_attempts + 1,
-      backoff_index: min(state.backoff_index + 1, length(@reconnect_backoff) - 1)
-    }}
+    {:noreply,
+     %{
+       state
+       | connection: nil,
+         connected: false,
+         connection_attempts: state.connection_attempts + 1,
+         backoff_index: min(state.backoff_index + 1, length(@reconnect_backoff) - 1)
+     }}
   end
 
   @impl GenServer
@@ -220,7 +237,8 @@ defmodule Central.Backtest.Services.Binance.Stream do
   end
 
   defp schedule_heartbeat do
-    Process.send_after(self(), :heartbeat, 30_000) # Check every 30 seconds
+    # Check every 30 seconds
+    Process.send_after(self(), :heartbeat, 30_000)
   end
 
   defp get_backoff_time(index) do
@@ -250,7 +268,8 @@ defmodule Central.Backtest.Services.Binance.Stream do
       try do
         send(subscriber, message)
       rescue
-        _ -> :ok # Skip failed sends
+        # Skip failed sends
+        _ -> :ok
       end
     end
   end

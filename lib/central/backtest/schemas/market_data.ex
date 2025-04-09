@@ -39,16 +39,21 @@ defmodule Central.Backtest.Schemas.MarketData do
   # Ensure datetime fields are properly truncated to seconds
   defp prepare_datetime_fields(changeset) do
     case get_change(changeset, :timestamp) do
-      nil -> changeset
+      nil ->
+        changeset
+
       timestamp when is_struct(timestamp, DateTime) ->
         # Ensure timestamp has no microseconds
         put_change(changeset, :timestamp, DateTime.truncate(timestamp, :second))
-      _ -> changeset
+
+      _ ->
+        changeset
     end
   end
 
   # Format a DateTime for display (dd/mm/yyyy HH:MM:SS)
   def format_datetime(nil), do: "N/A"
+
   def format_datetime(datetime) do
     Calendar.strftime(datetime, "%d/%m/%Y %H:%M:%S")
   end

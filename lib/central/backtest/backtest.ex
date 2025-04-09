@@ -8,11 +8,10 @@ defmodule Central.Backtest do
   """
 
   alias Central.Backtest.Services.{
-    StrategyExecutor,
     RiskManager,
-    Performance,
-    MarketDataHandler
+    Performance
   }
+
   alias Central.Backtest.Workers.BacktestRunner
 
   # Public API

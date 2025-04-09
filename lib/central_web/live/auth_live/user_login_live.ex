@@ -19,7 +19,13 @@ defmodule CentralWeb.AuthLive.UserLoginLive do
         </:subtitle>
       </.header>
 
-      <.form for={@form} id="login_form" action={~p"/users/log_in"} phx-update="ignore" class="space-y-6">
+      <.form
+        for={@form}
+        id="login_form"
+        action={~p"/users/log_in"}
+        phx-update="ignore"
+        class="space-y-6"
+      >
         <.form_item>
           <.form_label>Email</.form_label>
           <.form_control>

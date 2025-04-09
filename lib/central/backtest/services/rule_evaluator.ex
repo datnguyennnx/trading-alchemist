@@ -5,7 +5,7 @@ defmodule Central.Backtest.Services.RuleEvaluator do
   """
 
   require Logger
-  alias Central.Backtest.Services.{MarketDataHandler, Indicators}
+  alias Central.Backtest.Services.MarketDataHandler
 
   @doc """
   Extract entry rules from a strategy configuration.
@@ -17,34 +17,36 @@ defmodule Central.Backtest.Services.RuleEvaluator do
     - List of entry rule maps
   """
   def get_entry_rules(strategy) do
-    entry_rules = cond do
-      # Check if entry_rules is a field in the strategy and has "conditions" key
-      Map.has_key?(strategy, :entry_rules) &&
-      is_map(strategy.entry_rules) &&
-      Map.has_key?(strategy.entry_rules, "conditions") ->
-        strategy.entry_rules["conditions"]
+    entry_rules =
+      cond do
+        # Check if entry_rules is a field in the strategy and has "conditions" key
+        Map.has_key?(strategy, :entry_rules) &&
+          is_map(strategy.entry_rules) &&
+            Map.has_key?(strategy.entry_rules, "conditions") ->
+          strategy.entry_rules["conditions"]
 
-      # Check if entry_rules is directly in config in new format
-      is_map(strategy.config) &&
-      Map.has_key?(strategy.config, "entry_rules") &&
-      is_map(strategy.config["entry_rules"]) &&
-      Map.has_key?(strategy.config["entry_rules"], "conditions") ->
-        strategy.config["entry_rules"]["conditions"]
+        # Check if entry_rules is directly in config in new format
+        is_map(strategy.config) &&
+          Map.has_key?(strategy.config, "entry_rules") &&
+          is_map(strategy.config["entry_rules"]) &&
+            Map.has_key?(strategy.config["entry_rules"], "conditions") ->
+          strategy.config["entry_rules"]["conditions"]
 
-      # Check legacy format directly in entry_rules
-      Map.has_key?(strategy, :entry_rules) &&
-      is_map(strategy.entry_rules) ->
-        [strategy.entry_rules]
+        # Check legacy format directly in entry_rules
+        Map.has_key?(strategy, :entry_rules) &&
+            is_map(strategy.entry_rules) ->
+          [strategy.entry_rules]
 
-      # Check legacy format in config
-      is_map(strategy.config) &&
-      Map.has_key?(strategy.config, "entry_rules") ->
-        rules = strategy.config["entry_rules"]
-        if is_map(rules), do: [rules], else: rules
+        # Check legacy format in config
+        is_map(strategy.config) &&
+            Map.has_key?(strategy.config, "entry_rules") ->
+          rules = strategy.config["entry_rules"]
+          if is_map(rules), do: [rules], else: rules
 
-      # Default if nothing found
-      true -> [%{"indicator" => "price", "condition" => "crosses_above", "value" => "200"}]
-    end
+        # Default if nothing found
+        true ->
+          [%{"indicator" => "price", "condition" => "crosses_above", "value" => "200"}]
+      end
 
     # Ensure we always return a list
     case entry_rules do
@@ -65,34 +67,36 @@ defmodule Central.Backtest.Services.RuleEvaluator do
     - List of exit rule maps
   """
   def get_exit_rules(strategy) do
-    exit_rules = cond do
-      # Check if exit_rules is a field in the strategy and has "conditions" key
-      Map.has_key?(strategy, :exit_rules) &&
-      is_map(strategy.exit_rules) &&
-      Map.has_key?(strategy.exit_rules, "conditions") ->
-        strategy.exit_rules["conditions"]
+    exit_rules =
+      cond do
+        # Check if exit_rules is a field in the strategy and has "conditions" key
+        Map.has_key?(strategy, :exit_rules) &&
+          is_map(strategy.exit_rules) &&
+            Map.has_key?(strategy.exit_rules, "conditions") ->
+          strategy.exit_rules["conditions"]
 
-      # Check if exit_rules is directly in config in new format
-      is_map(strategy.config) &&
-      Map.has_key?(strategy.config, "exit_rules") &&
-      is_map(strategy.config["exit_rules"]) &&
-      Map.has_key?(strategy.config["exit_rules"], "conditions") ->
-        strategy.config["exit_rules"]["conditions"]
+        # Check if exit_rules is directly in config in new format
+        is_map(strategy.config) &&
+          Map.has_key?(strategy.config, "exit_rules") &&
+          is_map(strategy.config["exit_rules"]) &&
+            Map.has_key?(strategy.config["exit_rules"], "conditions") ->
+          strategy.config["exit_rules"]["conditions"]
 
-      # Check legacy format directly in exit_rules
-      Map.has_key?(strategy, :exit_rules) &&
-      is_map(strategy.exit_rules) ->
-        [strategy.exit_rules]
+        # Check legacy format directly in exit_rules
+        Map.has_key?(strategy, :exit_rules) &&
+            is_map(strategy.exit_rules) ->
+          [strategy.exit_rules]
 
-      # Check legacy format in config
-      is_map(strategy.config) &&
-      Map.has_key?(strategy.config, "exit_rules") ->
-        rules = strategy.config["exit_rules"]
-        if is_map(rules), do: [rules], else: rules
+        # Check legacy format in config
+        is_map(strategy.config) &&
+            Map.has_key?(strategy.config, "exit_rules") ->
+          rules = strategy.config["exit_rules"]
+          if is_map(rules), do: [rules], else: rules
 
-      # Default if nothing found
-      true -> [%{"indicator" => "price", "condition" => "crosses_below", "value" => "190"}]
-    end
+        # Default if nothing found
+        true ->
+          [%{"indicator" => "price", "condition" => "crosses_below", "value" => "190"}]
+      end
 
     # Ensure we always return a list
     case exit_rules do
@@ -114,7 +118,7 @@ defmodule Central.Backtest.Services.RuleEvaluator do
   ## Returns
     - Boolean indicating if entry should occur
   """
-  def evaluate_entry_rules(rules, candle, backtest) do
+  def evaluate_entry_rules(rules, candle, _backtest) do
     # Check if any rule is satisfied
     Enum.any?(rules, fn rule ->
       # Handle different keys used in rule configuration
@@ -123,11 +127,12 @@ defmodule Central.Backtest.Services.RuleEvaluator do
       value = rule["value"] || "0"
 
       # Convert value to float if needed
-      threshold = try do
-        MarketDataHandler.parse_decimal_or_float(value)
-      rescue
-        _ -> 0.0
-      end
+      threshold =
+        try do
+          MarketDataHandler.parse_decimal_or_float(value)
+        rescue
+          _ -> 0.0
+        end
 
       # Get indicator value (ensure it's a float)
       indicator_value = get_indicator_value(indicator, candle)
@@ -161,29 +166,31 @@ defmodule Central.Backtest.Services.RuleEvaluator do
     close_price = MarketDataHandler.parse_decimal_or_float(candle.close)
 
     # Always include take-profit and stop-loss checks
-    take_profit_reached = position && (close_price >= entry_price * (1 + take_profit_pct))
-    stop_loss_reached = position && (close_price <= entry_price * (1 - stop_loss_pct))
+    take_profit_reached = position && close_price >= entry_price * (1 + take_profit_pct)
+    stop_loss_reached = position && close_price <= entry_price * (1 - stop_loss_pct)
 
     # Check strategy-defined rules
-    rules_satisfied = Enum.any?(rules, fn rule ->
-      # Handle different keys used in rule configuration
-      indicator = rule["indicator"] || "price"
-      condition = rule["condition"] || rule["comparison"] || "less_than"
-      value = rule["value"] || "0"
+    rules_satisfied =
+      Enum.any?(rules, fn rule ->
+        # Handle different keys used in rule configuration
+        indicator = rule["indicator"] || "price"
+        condition = rule["condition"] || rule["comparison"] || "less_than"
+        value = rule["value"] || "0"
 
-      # Convert value to float if needed
-      threshold = try do
-        MarketDataHandler.parse_decimal_or_float(value)
-      rescue
-        _ -> 0.0
-      end
+        # Convert value to float if needed
+        threshold =
+          try do
+            MarketDataHandler.parse_decimal_or_float(value)
+          rescue
+            _ -> 0.0
+          end
 
-      # Get indicator value
-      indicator_value = get_indicator_value(indicator, candle)
+        # Get indicator value
+        indicator_value = get_indicator_value(indicator, candle)
 
-      # Evaluate condition (with safe comparison)
-      safe_compare(indicator_value, threshold, condition)
-    end)
+        # Evaluate condition (with safe comparison)
+        safe_compare(indicator_value, threshold, condition)
+      end)
 
     # Exit if any condition is met
     take_profit_reached || stop_loss_reached || rules_satisfied
@@ -192,8 +199,10 @@ defmodule Central.Backtest.Services.RuleEvaluator do
   # Extract stop loss and take profit values from rules or strategy config
   defp get_stop_loss_take_profit(rules, strategy) do
     # Default values
-    default_stop_loss = 0.03  # 3%
-    default_take_profit = 0.05  # 5%
+    # 3%
+    default_stop_loss = 0.03
+    # 5%
+    default_take_profit = 0.05
 
     # Try to find in the first rule with stop_loss/take_profit
     stop_loss =
@@ -209,8 +218,8 @@ defmodule Central.Backtest.Services.RuleEvaluator do
     # If not found in rules, check strategy config
     stop_loss =
       if stop_loss == default_stop_loss &&
-         is_map(strategy.config) &&
-         Map.has_key?(strategy.config, "risk_per_trade") do
+           is_map(strategy.config) &&
+           Map.has_key?(strategy.config, "risk_per_trade") do
         parse_percentage(strategy.config["risk_per_trade"])
       else
         stop_loss
@@ -223,20 +232,27 @@ defmodule Central.Backtest.Services.RuleEvaluator do
   defp parse_percentage(value) when is_binary(value) do
     case Float.parse(value) do
       {num, _} -> num / 100.0
-      :error -> 0.03  # Default to 3%
+      # Default to 3%
+      :error -> 0.03
     end
   end
+
   defp parse_percentage(value) when is_number(value), do: value / 100.0
-  defp parse_percentage(_), do: 0.03  # Default to 3%
+  # Default to 3%
+  defp parse_percentage(_), do: 0.03
 
   # Get indicator value for a specific indicator type
   defp get_indicator_value(indicator, candle) do
     case indicator do
       "price" -> candle.close
-      "moving_average" -> calculate_moving_average(candle, 50)  # 50-period MA as example
-      "sma" -> calculate_moving_average(candle, 50)  # Alias for moving_average
-      "rsi" -> calculate_rsi(candle, 14)  # 14-period RSI as example
-      _ -> candle.close  # Default to price
+      # 50-period MA as example
+      "moving_average" -> calculate_moving_average(candle, 50)
+      # Alias for moving_average
+      "sma" -> calculate_moving_average(candle, 50)
+      # 14-period RSI as example
+      "rsi" -> calculate_rsi(candle, 14)
+      # Default to price
+      _ -> candle.close
     end
   end
 
@@ -249,10 +265,14 @@ defmodule Central.Backtest.Services.RuleEvaluator do
     case operator do
       "greater_than" -> left_float > right_float
       "less_than" -> left_float < right_float
-      "crosses_above" -> left_float > right_float  # Simplified, should check previous value too
-      "crosses_below" -> left_float < right_float  # Simplified, should check previous value too
-      "above" -> left_float > right_float  # Alias for greater_than
-      "below" -> left_float < right_float  # Alias for less_than
+      # Simplified, should check previous value too
+      "crosses_above" -> left_float > right_float
+      # Simplified, should check previous value too
+      "crosses_below" -> left_float < right_float
+      # Alias for greater_than
+      "above" -> left_float > right_float
+      # Alias for less_than
+      "below" -> left_float < right_float
       "equals" -> left_float == right_float
       _ -> false
     end

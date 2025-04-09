@@ -37,16 +37,17 @@ defmodule Central.Backtest.Schemas.BacktestTest do
     test "changeset with invalid attributes" do
       changeset = Backtest.changeset(%Backtest{}, %{})
       refute changeset.valid?
+
       assert %{
-        start_time: ["can't be blank"],
-        end_time: ["can't be blank"],
-        symbol: ["can't be blank"],
-        timeframe: ["can't be blank"],
-        initial_balance: ["can't be blank"],
-        status: ["can't be blank"],
-        strategy_id: ["can't be blank"],
-        user_id: ["can't be blank"]
-      } = errors_on(changeset)
+               start_time: ["can't be blank"],
+               end_time: ["can't be blank"],
+               symbol: ["can't be blank"],
+               timeframe: ["can't be blank"],
+               initial_balance: ["can't be blank"],
+               status: ["can't be blank"],
+               strategy_id: ["can't be blank"],
+               user_id: ["can't be blank"]
+             } = errors_on(changeset)
     end
 
     test "changeset with negative initial balance", %{valid_attrs: valid_attrs} do
@@ -64,7 +65,20 @@ defmodule Central.Backtest.Schemas.BacktestTest do
     end
 
     test "timeframe validation accepts valid timeframes", %{valid_attrs: valid_attrs} do
-      valid_timeframes = ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "12h", "1d", "3d", "1w", "1M"]
+      valid_timeframes = [
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "4h",
+        "12h",
+        "1d",
+        "3d",
+        "1w",
+        "1M"
+      ]
 
       Enum.each(valid_timeframes, fn timeframe ->
         attrs = %{valid_attrs | timeframe: timeframe}
@@ -74,13 +88,21 @@ defmodule Central.Backtest.Schemas.BacktestTest do
     end
 
     test "validate_dates rejects when end_time is before start_time", %{valid_attrs: valid_attrs} do
-      attrs = %{valid_attrs | end_time: ~U[2025-01-15 00:00:00Z], start_time: ~U[2025-01-20 00:00:00Z]}
+      attrs = %{
+        valid_attrs
+        | end_time: ~U[2025-01-15 00:00:00Z],
+          start_time: ~U[2025-01-20 00:00:00Z]
+      }
+
       changeset = Backtest.changeset(%Backtest{}, attrs)
 
       # Get error map and check that end_time error is present
       errors = errors_on(changeset)
       assert Map.has_key?(errors, :end_time)
-      assert Enum.any?(errors.end_time, fn msg -> String.contains?(msg, "must be after start time") end)
+
+      assert Enum.any?(errors.end_time, fn msg ->
+               String.contains?(msg, "must be after start time")
+             end)
     end
 
     test "creating backtest with fixture" do
@@ -92,10 +114,12 @@ defmodule Central.Backtest.Schemas.BacktestTest do
       assert Decimal.compare(backtest.initial_balance, Decimal.new("10000.00")) == :eq
       assert Decimal.compare(backtest.final_balance, Decimal.new("11000.00")) == :eq
       assert backtest.status == :completed
+
       assert backtest.metadata == %{
-        "execution_time_ms" => 5000,
-        "candles_processed" => 744
-      }
+               "execution_time_ms" => 5000,
+               "candles_processed" => 744
+             }
+
       assert backtest.strategy_id
       assert backtest.user_id
     end
@@ -125,10 +149,12 @@ defmodule Central.Backtest.Schemas.BacktestTest do
       assert Decimal.compare(backtest.initial_balance, Decimal.new("2000.00")) == :eq
       assert Decimal.compare(backtest.final_balance, Decimal.new("2200.00")) == :eq
       assert backtest.status == :running
+
       assert backtest.metadata == %{
-        "execution_time_ms" => 1500,
-        "candles_processed" => 1440
-      }
+               "execution_time_ms" => 1500,
+               "candles_processed" => 1440
+             }
+
       assert backtest.strategy_id == strategy.id
       assert backtest.user_id == user.id
     end
@@ -146,7 +172,8 @@ defmodule Central.Backtest.Schemas.BacktestTest do
         final_balance: Decimal.new("11000.00"),
         status: :completed,
         metadata: %{"execution_time_ms" => 5000, "candles_processed" => 744},
-        strategy_id: "00000000-0000-0000-0000-000000000000", # Use a non-existent UUID
+        # Use a non-existent UUID
+        strategy_id: "00000000-0000-0000-0000-000000000000",
         user_id: user.id
       }
 

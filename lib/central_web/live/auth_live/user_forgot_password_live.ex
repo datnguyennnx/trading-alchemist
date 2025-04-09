@@ -7,7 +7,6 @@ defmodule CentralWeb.AuthLive.UserForgotPasswordLive do
   import CentralWeb.Components.Form
   import CentralWeb.Components.Button
 
-
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-center h-screen mx-auto max-w-sm">

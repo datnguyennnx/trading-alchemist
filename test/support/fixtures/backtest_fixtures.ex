@@ -167,8 +167,11 @@ defmodule Central.BacktestFixtures do
       |> Repo.insert()
 
     case result do
-      {:ok, trade} -> trade
-      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: :insert, changeset: changeset
+      {:ok, trade} ->
+        trade
+
+      {:error, changeset} ->
+        raise Ecto.InvalidChangesetError, action: :insert, changeset: changeset
     end
   end
 
@@ -217,8 +220,11 @@ defmodule Central.BacktestFixtures do
       |> Repo.insert()
 
     case result do
-      {:ok, performance_summary} -> performance_summary
-      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: :insert, changeset: changeset
+      {:ok, performance_summary} ->
+        performance_summary
+
+      {:error, changeset} ->
+        raise Ecto.InvalidChangesetError, action: :insert, changeset: changeset
     end
   end
 end

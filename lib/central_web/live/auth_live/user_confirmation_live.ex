@@ -6,7 +6,6 @@ defmodule CentralWeb.AuthLive.UserConfirmationLive do
   import CentralWeb.Components.Input
   import CentralWeb.Components.Button
 
-
   def render(%{live_action: :edit} = assigns) do
     ~H"""
     <div class="flex flex-col justify-center h-screen mx-auto max-w-sm">

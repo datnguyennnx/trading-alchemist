@@ -9,7 +9,6 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
   import SaladUI.Menu
   import SaladUI.Icon
 
-
   # Define the settings navigation items
   @settings_nav_items [
     %{
@@ -43,8 +42,8 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
               </div>
             </div>
           </div>
-
-          <!-- Settings Content -->
+          
+    <!-- Settings Content -->
           <div class="m-4 flex-1 p-6 bg-background text-foreground">
             <div class="flex flex-col gap-6">
               <div class="flex flex-col gap-2">
@@ -66,6 +65,7 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
 
   # Navigation item component
   attr :item, :map, required: true
+
   defp settings_nav_item(assigns) do
     ~H"""
     <.button
@@ -75,13 +75,14 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
       <span class="h-4 w-4 flex items-center">
         <.icon name={"hero-#{@item.icon}"} class="h-4 w-4" />
       </span>
-      <span><%= @item.title %></span>
+      <span>{@item.title}</span>
     </.button>
     """
   end
 
   # Theme selector component
   attr :current_theme, :string, required: true
+
   def theme_selector(assigns) do
     ~H"""
     <div id="theme-selector" phx-hook="ThemeUIUpdater">
@@ -101,7 +102,9 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
                   <.icon name="hero-moon" class="h-4 w-4" />
                 <% end %>
               </span>
-              <span class="theme-text"><%= if @current_theme == "light", do: "Light", else: "Dark" %></span>
+              <span class="theme-text">
+                {if @current_theme == "light", do: "Light", else: "Dark"}
+              </span>
             </.button>
           </div>
         </.dropdown_menu_trigger>
@@ -120,6 +123,7 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
 
   # Theme option menu item
   attr :theme, :string, required: true
+
   defp theme_option(assigns) do
     ~H"""
     <.menu_item
@@ -132,12 +136,12 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
     >
       <span class="mr-2 h-4 w-4 flex items-center">
         <%= if @theme == "light" do %>
-          <.icon name="hero-sun" class="h-4 w-4"/>
+          <.icon name="hero-sun" class="h-4 w-4" />
         <% else %>
-          <.icon name="hero-moon" class="h-4 w-4"/>
+          <.icon name="hero-moon" class="h-4 w-4" />
         <% end %>
       </span>
-      <span><%= String.capitalize(@theme) %></span>
+      <span>{String.capitalize(@theme)}</span>
     </.menu_item>
     """
   end

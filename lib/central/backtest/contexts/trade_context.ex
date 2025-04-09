@@ -15,10 +15,11 @@ defmodule Central.Backtest.Contexts.TradeContext do
     offset = Keyword.get(opts, :offset, 0)
 
     # Build base query
-    query = from(t in Trade,
-      where: t.backtest_id == ^backtest_id,
-      order_by: [desc: t.exit_time]
-    )
+    query =
+      from(t in Trade,
+        where: t.backtest_id == ^backtest_id,
+        order_by: [desc: t.exit_time]
+      )
 
     # Apply limit if specified, otherwise return all trades
     query = if limit, do: limit(query, ^limit), else: query
@@ -49,8 +50,10 @@ defmodule Central.Backtest.Contexts.TradeContext do
   Gets a trade by ID and ensures it belongs to the specified backtest.
   """
   def get_trade_for_backtest!(id, backtest_id) do
-    Repo.one!(from(t in Trade,
-      where: t.id == ^id and t.backtest_id == ^backtest_id
-    ))
+    Repo.one!(
+      from(t in Trade,
+        where: t.id == ^id and t.backtest_id == ^backtest_id
+      )
+    )
   end
 end

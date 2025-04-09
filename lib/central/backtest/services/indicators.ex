@@ -75,10 +75,11 @@ defmodule Central.Backtest.Services.Indicators do
 
   defp calculate_ema([price | rest], multiplier, prev_ema, results) do
     # EMA = Price * multiplier + Previous EMA * (1 - multiplier)
-    new_ema = Decimal.add(
-      Decimal.mult(price, multiplier),
-      Decimal.mult(prev_ema, Decimal.sub(Decimal.new(1), multiplier))
-    )
+    new_ema =
+      Decimal.add(
+        Decimal.mult(price, multiplier),
+        Decimal.mult(prev_ema, Decimal.sub(Decimal.new(1), multiplier))
+      )
 
     calculate_ema(rest, multiplier, new_ema, [new_ema | results])
   end
@@ -102,14 +103,15 @@ defmodule Central.Backtest.Services.Indicators do
     changes = calculate_changes(prices)
 
     # Separate gains and losses
-    {gains, losses} = Enum.map(changes, fn change ->
-      cond do
-        Decimal.compare(change, Decimal.new(0)) == :gt -> {change, Decimal.new(0)}
-        Decimal.compare(change, Decimal.new(0)) == :lt -> {Decimal.new(0), Decimal.abs(change)}
-        true -> {Decimal.new(0), Decimal.new(0)}
-      end
-    end)
-    |> Enum.unzip()
+    {gains, losses} =
+      Enum.map(changes, fn change ->
+        cond do
+          Decimal.compare(change, Decimal.new(0)) == :gt -> {change, Decimal.new(0)}
+          Decimal.compare(change, Decimal.new(0)) == :lt -> {Decimal.new(0), Decimal.abs(change)}
+          true -> {Decimal.new(0), Decimal.new(0)}
+        end
+      end)
+      |> Enum.unzip()
 
     # Calculate initial averages (simple averages for the first period)
     initial_avg_gain = Enum.take(gains, period) |> average()
@@ -142,43 +144,57 @@ defmodule Central.Backtest.Services.Indicators do
 
   defp calculate_rsi([], [], _avg_gain, _avg_loss, _period, results), do: results
 
-  defp calculate_rsi([gain | rest_gains], [loss | rest_losses], avg_gain, avg_loss, period, results) do
+  defp calculate_rsi(
+         [gain | rest_gains],
+         [loss | rest_losses],
+         avg_gain,
+         avg_loss,
+         period,
+         results
+       ) do
     # Calculate smoothed averages:
     # avgGain = ((previous avgGain) * (period - 1) + currentGain) / period
     # avgLoss = ((previous avgLoss) * (period - 1) + currentLoss) / period
-    new_avg_gain = Decimal.div(
-      Decimal.add(
-        Decimal.mult(avg_gain, Decimal.new(period - 1)),
-        gain
-      ),
-      Decimal.new(period)
-    )
+    new_avg_gain =
+      Decimal.div(
+        Decimal.add(
+          Decimal.mult(avg_gain, Decimal.new(period - 1)),
+          gain
+        ),
+        Decimal.new(period)
+      )
 
-    new_avg_loss = Decimal.div(
-      Decimal.add(
-        Decimal.mult(avg_loss, Decimal.new(period - 1)),
-        loss
-      ),
-      Decimal.new(period)
-    )
+    new_avg_loss =
+      Decimal.div(
+        Decimal.add(
+          Decimal.mult(avg_loss, Decimal.new(period - 1)),
+          loss
+        ),
+        Decimal.new(period)
+      )
 
     # Calculate RS = avgGain / avgLoss
-    rs = if Decimal.compare(new_avg_loss, Decimal.new(0)) == :gt do
-      Decimal.div(new_avg_gain, new_avg_loss)
-    else
-      Decimal.new(100) # If no losses, RS is maximal
-    end
+    rs =
+      if Decimal.compare(new_avg_loss, Decimal.new(0)) == :gt do
+        Decimal.div(new_avg_gain, new_avg_loss)
+      else
+        # If no losses, RS is maximal
+        Decimal.new(100)
+      end
 
     # Calculate RSI = 100 - (100 / (1 + RS))
-    rsi_value = Decimal.sub(
-      Decimal.new(100),
-      Decimal.div(
+    rsi_value =
+      Decimal.sub(
         Decimal.new(100),
-        Decimal.add(Decimal.new(1), rs)
+        Decimal.div(
+          Decimal.new(100),
+          Decimal.add(Decimal.new(1), rs)
+        )
       )
-    )
 
-    calculate_rsi(rest_gains, rest_losses, new_avg_gain, new_avg_loss, period, [rsi_value | results])
+    calculate_rsi(rest_gains, rest_losses, new_avg_gain, new_avg_loss, period, [
+      rsi_value | results
+    ])
   end
 
   @doc """
@@ -202,15 +218,17 @@ defmodule Central.Backtest.Services.Indicators do
     slow_ema = ema(candles, slow_period, price_key)
 
     # Calculate MACD line: fast_ema - slow_ema
-    macd_line = Enum.zip(fast_ema, slow_ema)
-    |> Enum.map(fn
-      {nil, _} -> nil
-      {_, nil} -> nil
-      {fast, slow} -> Decimal.sub(fast, slow)
-    end)
+    macd_line =
+      Enum.zip(fast_ema, slow_ema)
+      |> Enum.map(fn
+        {nil, _} -> nil
+        {_, nil} -> nil
+        {fast, slow} -> Decimal.sub(fast, slow)
+      end)
 
     # Get the valid MACD values (non-nil)
-    valid_macd_start = slow_period - 1 # Index where MACD values start
+    # Index where MACD values start
+    valid_macd_start = slow_period - 1
     valid_macd = Enum.drop(macd_line, valid_macd_start)
 
     # Calculate signal line: EMA of MACD line
@@ -222,8 +240,12 @@ defmodule Central.Backtest.Services.Indicators do
     # Calculate histogram: MACD line - signal line
     Enum.zip(macd_line, signal_line)
     |> Enum.map(fn
-      {nil, _} -> nil
-      {_, nil} -> nil
+      {nil, _} ->
+        nil
+
+      {_, nil} ->
+        nil
+
       {macd, signal} ->
         histogram = Decimal.sub(macd, signal)
         %{macd: macd, signal: signal, histogram: histogram}
@@ -270,7 +292,9 @@ defmodule Central.Backtest.Services.Indicators do
     # Calculate upper and lower bands
     Enum.zip([sma_values, std_devs])
     |> Enum.map(fn
-      {nil, _} -> nil
+      {nil, _} ->
+        nil
+
       {sma, std_dev} ->
         upper = Decimal.add(sma, Decimal.mult(std_dev, Decimal.new(deviations)))
         lower = Decimal.sub(sma, Decimal.mult(std_dev, Decimal.new(deviations)))
@@ -287,12 +311,13 @@ defmodule Central.Backtest.Services.Indicators do
         nil
       else
         # Calculate variance: sum of squared differences from mean, divided by period
-        variance = Enum.reduce(window, Decimal.new(0), fn price, acc ->
-          diff = Decimal.sub(price, sma)
-          squared_diff = Decimal.mult(diff, diff)
-          Decimal.add(acc, squared_diff)
-        end)
-        |> Decimal.div(Decimal.new(period))
+        variance =
+          Enum.reduce(window, Decimal.new(0), fn price, acc ->
+            diff = Decimal.sub(price, sma)
+            squared_diff = Decimal.mult(diff, diff)
+            Decimal.add(acc, squared_diff)
+          end)
+          |> Decimal.div(Decimal.new(period))
 
         # Standard deviation is square root of variance
         decimal_sqrt(variance)

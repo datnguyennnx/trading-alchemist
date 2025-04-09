@@ -25,8 +25,28 @@ defmodule Central.Backtest.Schemas.Backtest do
   @doc false
   def changeset(backtest, attrs) do
     backtest
-    |> cast(attrs, [:start_time, :end_time, :symbol, :timeframe, :initial_balance, :final_balance, :status, :metadata, :strategy_id, :user_id])
-    |> validate_required([:start_time, :end_time, :symbol, :timeframe, :initial_balance, :status, :strategy_id, :user_id])
+    |> cast(attrs, [
+      :start_time,
+      :end_time,
+      :symbol,
+      :timeframe,
+      :initial_balance,
+      :final_balance,
+      :status,
+      :metadata,
+      :strategy_id,
+      :user_id
+    ])
+    |> validate_required([
+      :start_time,
+      :end_time,
+      :symbol,
+      :timeframe,
+      :initial_balance,
+      :status,
+      :strategy_id,
+      :user_id
+    ])
     |> validate_number(:initial_balance, greater_than: 0)
     |> validate_timeframe()
     |> validate_dates()
@@ -36,13 +56,27 @@ defmodule Central.Backtest.Schemas.Backtest do
 
   defp validate_timeframe(changeset) do
     # Validate that timeframe is one of the allowed values
-    validate_inclusion(changeset, :timeframe, ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "12h", "1d", "3d", "1w", "1M"])
+    validate_inclusion(changeset, :timeframe, [
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "4h",
+      "12h",
+      "1d",
+      "3d",
+      "1w",
+      "1M"
+    ])
   end
 
   defp validate_dates(changeset) do
     changeset
     |> validate_change(:start_time, fn :start_time, start_time ->
       now = DateTime.utc_now()
+
       if DateTime.compare(start_time, now) == :gt do
         [start_time: "cannot be in the future"]
       else
@@ -51,7 +85,9 @@ defmodule Central.Backtest.Schemas.Backtest do
     end)
     |> validate_change(:end_time, fn :end_time, end_time ->
       case get_field(changeset, :start_time) do
-        nil -> []
+        nil ->
+          []
+
         start_time ->
           if DateTime.compare(end_time, start_time) == :lt do
             [end_time: "must be after start time"]

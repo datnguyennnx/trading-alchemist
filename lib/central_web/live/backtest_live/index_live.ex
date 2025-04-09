@@ -38,16 +38,22 @@ defmodule CentralWeb.BacktestLive.IndexLive do
               <% else %>
                 <div class="space-y-4">
                   <%= for strategy <- @strategies do %>
-                    <div class="border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors" phx-click="select_strategy" phx-value-id={strategy.id}>
+                    <div
+                      class="border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors"
+                      phx-click="select_strategy"
+                      phx-value-id={strategy.id}
+                    >
                       <div class="flex justify-between items-center">
                         <div>
-                          <h3 class="font-medium text-lg"><%= strategy.name %></h3>
-                          <p class="text-muted-foreground text-sm"><%= truncate_description(strategy.description) %></p>
+                          <h3 class="font-medium text-lg">{strategy.name}</h3>
+                          <p class="text-muted-foreground text-sm">
+                            {truncate_description(strategy.description)}
+                          </p>
                         </div>
                         <div class="flex space-x-2 items-center">
                           <div class="text-right text-sm">
-                            <div><%= strategy.config["symbol"] %></div>
-                            <div class="text-muted-foreground"><%= strategy.config["timeframe"] %></div>
+                            <div>{strategy.config["symbol"]}</div>
+                            <div class="text-muted-foreground">{strategy.config["timeframe"]}</div>
                           </div>
                         </div>
                       </div>
@@ -57,7 +63,10 @@ defmodule CentralWeb.BacktestLive.IndexLive do
               <% end %>
             </.card_content>
             <.card_footer>
-              <.link navigate={~p"/strategies"} class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <.link
+                navigate={~p"/strategies"}
+                class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
                 View all strategies →
               </.link>
             </.card_footer>
@@ -80,24 +89,24 @@ defmodule CentralWeb.BacktestLive.IndexLive do
                   <%= for backtest <- @recent_backtests do %>
                     <div class="border rounded-lg p-3">
                       <div class="flex justify-between mb-2">
-                        <div class="font-medium"><%= backtest.strategy.name %></div>
+                        <div class="font-medium">{backtest.strategy.name}</div>
                         <div class={status_class(backtest.status)}>
-                          <%= String.capitalize(to_string(backtest.status)) %>
+                          {String.capitalize(to_string(backtest.status))}
                         </div>
                       </div>
                       <div class="text-sm text-muted-foreground mb-2 flex justify-between">
-                        <div><%= backtest.symbol %> (<%= backtest.timeframe %>)</div>
-                        <div><%= format_date(backtest.inserted_at) %></div>
+                        <div>{backtest.symbol} ({backtest.timeframe})</div>
+                        <div>{format_date(backtest.inserted_at)}</div>
                       </div>
                       <div class="flex justify-between text-sm">
                         <div>
-                          Initial: <%= format_balance(backtest.initial_balance) %>
+                          Initial: {format_balance(backtest.initial_balance)}
                         </div>
                         <div>
                           <%= if backtest.status == :completed do %>
-                            Final: <%= format_balance(backtest.final_balance) %>
+                            Final: {format_balance(backtest.final_balance)}
                           <% else %>
-                            Trades: <%= length(backtest.trades || []) %>
+                            Trades: {length(backtest.trades || [])}
                           <% end %>
                         </div>
                       </div>
@@ -126,6 +135,7 @@ defmodule CentralWeb.BacktestLive.IndexLive do
   end
 
   defp truncate_description(nil), do: "No description provided"
+
   defp truncate_description(description) do
     if String.length(description) > 100 do
       String.slice(description, 0..97) <> "..."
@@ -143,6 +153,7 @@ defmodule CentralWeb.BacktestLive.IndexLive do
   defp format_balance(balance) when is_number(balance) do
     :erlang.float_to_binary(balance, decimals: 2)
   end
+
   defp format_balance(balance), do: balance
 
   defp format_date(datetime) do

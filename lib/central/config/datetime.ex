@@ -20,6 +20,7 @@ defmodule Central.Config.DateTime do
       "N/A"
   """
   def format(nil), do: "N/A"
+
   def format(datetime) do
     Calendar.strftime(datetime, "%d/%m/%Y %H:%M:%S")
   end
@@ -33,6 +34,7 @@ defmodule Central.Config.DateTime do
       "15/01/2023 12:30:45 UTC"
   """
   def format_with_timezone(nil), do: "N/A"
+
   def format_with_timezone(datetime) do
     "#{format(datetime)} UTC"
   end
@@ -51,6 +53,7 @@ defmodule Central.Config.DateTime do
   def truncate(datetime) when is_struct(datetime, DateTime) do
     DateTime.truncate(datetime, :second)
   end
+
   def truncate(nil), do: nil
   def truncate(datetime), do: datetime
 
@@ -64,11 +67,12 @@ defmodule Central.Config.DateTime do
       {:ok, ~U[2023-01-15 12:30:45Z]}
   """
   def parse(nil, _format), do: {:error, :invalid_datetime}
+
   def parse(datetime_string, _format) do
     case DateTime.from_naive(
-      NaiveDateTime.from_iso8601!(datetime_string),
-      timezone()
-    ) do
+           NaiveDateTime.from_iso8601!(datetime_string),
+           timezone()
+         ) do
       {:ok, datetime} -> {:ok, datetime}
       error -> error
     end

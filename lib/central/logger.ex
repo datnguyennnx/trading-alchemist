@@ -99,6 +99,7 @@ defmodule Central.Logger do
       true -> :info
     end
   end
+
   defp determine_api_log_level(_), do: :error
 
   defp unit_string(nil), do: ""

@@ -56,38 +56,40 @@ defmodule Central.Backtest.Schemas.PerformanceSummaryTest do
     test "changeset with invalid attributes" do
       changeset = PerformanceSummary.changeset(%PerformanceSummary{}, %{})
       refute changeset.valid?
+
       assert %{
-        total_trades: ["can't be blank"],
-        winning_trades: ["can't be blank"],
-        losing_trades: ["can't be blank"],
-        backtest_id: ["can't be blank"]
-      } = errors_on(changeset)
+               total_trades: ["can't be blank"],
+               winning_trades: ["can't be blank"],
+               losing_trades: ["can't be blank"],
+               backtest_id: ["can't be blank"]
+             } = errors_on(changeset)
     end
 
     test "changeset with negative trade counts", %{valid_attrs: valid_attrs} do
       attrs = %{
-        valid_attrs |
-        total_trades: -10,
-        winning_trades: -5,
-        losing_trades: -5
+        valid_attrs
+        | total_trades: -10,
+          winning_trades: -5,
+          losing_trades: -5
       }
 
       changeset = PerformanceSummary.changeset(%PerformanceSummary{}, attrs)
       refute changeset.valid?
+
       assert %{
-        total_trades: ["must be greater than or equal to 0"],
-        winning_trades: ["must be greater than or equal to 0"],
-        losing_trades: ["must be greater than or equal to 0"]
-      } = errors_on(changeset)
+               total_trades: ["must be greater than or equal to 0"],
+               winning_trades: ["must be greater than or equal to 0"],
+               losing_trades: ["must be greater than or equal to 0"]
+             } = errors_on(changeset)
     end
 
     test "changeset with inconsistent trade counts", %{valid_attrs: valid_attrs} do
       # Total trades should equal winning + losing trades
       attrs = %{
-        valid_attrs |
-        total_trades: 100,
-        winning_trades: 45,
-        losing_trades: 30
+        valid_attrs
+        | total_trades: 100,
+          winning_trades: 45,
+          losing_trades: 30
       }
 
       changeset = PerformanceSummary.changeset(%PerformanceSummary{}, attrs)
@@ -109,19 +111,27 @@ defmodule Central.Backtest.Schemas.PerformanceSummaryTest do
       assert Decimal.compare(performance_summary.win_rate, Decimal.new("60.00")) == :eq
       assert Decimal.compare(performance_summary.profit_factor, Decimal.new("1.67")) == :eq
       assert Decimal.compare(performance_summary.max_drawdown, Decimal.new("500.00")) == :eq
-      assert Decimal.compare(performance_summary.max_drawdown_percentage, Decimal.new("5.00")) == :eq
+
+      assert Decimal.compare(performance_summary.max_drawdown_percentage, Decimal.new("5.00")) ==
+               :eq
+
       assert Decimal.compare(performance_summary.sharpe_ratio, Decimal.new("1.20")) == :eq
       assert Decimal.compare(performance_summary.sortino_ratio, Decimal.new("1.50")) == :eq
       assert Decimal.compare(performance_summary.total_pnl, Decimal.new("1000.00")) == :eq
-      assert Decimal.compare(performance_summary.total_pnl_percentage, Decimal.new("10.00")) == :eq
+
+      assert Decimal.compare(performance_summary.total_pnl_percentage, Decimal.new("10.00")) ==
+               :eq
+
       assert Decimal.compare(performance_summary.average_win, Decimal.new("66.67")) == :eq
       assert Decimal.compare(performance_summary.average_loss, Decimal.new("25.00")) == :eq
       assert Decimal.compare(performance_summary.largest_win, Decimal.new("200.00")) == :eq
       assert Decimal.compare(performance_summary.largest_loss, Decimal.new("100.00")) == :eq
+
       assert performance_summary.metrics == %{
-        "average_holding_time_hours" => 12,
-        "trades_per_day" => 1.67
-      }
+               "average_holding_time_hours" => 12,
+               "trades_per_day" => 1.67
+             }
+
       assert performance_summary.backtest_id
     end
 
@@ -158,21 +168,29 @@ defmodule Central.Backtest.Schemas.PerformanceSummaryTest do
       assert Decimal.compare(performance_summary.win_rate, Decimal.new("66.67")) == :eq
       assert Decimal.compare(performance_summary.profit_factor, Decimal.new("2.50")) == :eq
       assert Decimal.compare(performance_summary.max_drawdown, Decimal.new("1200.00")) == :eq
-      assert Decimal.compare(performance_summary.max_drawdown_percentage, Decimal.new("12.00")) == :eq
+
+      assert Decimal.compare(performance_summary.max_drawdown_percentage, Decimal.new("12.00")) ==
+               :eq
+
       assert Decimal.compare(performance_summary.sharpe_ratio, Decimal.new("1.80")) == :eq
       assert Decimal.compare(performance_summary.sortino_ratio, Decimal.new("2.20")) == :eq
       assert Decimal.compare(performance_summary.total_pnl, Decimal.new("3000.00")) == :eq
-      assert Decimal.compare(performance_summary.total_pnl_percentage, Decimal.new("30.00")) == :eq
+
+      assert Decimal.compare(performance_summary.total_pnl_percentage, Decimal.new("30.00")) ==
+               :eq
+
       assert Decimal.compare(performance_summary.average_win, Decimal.new("75.00")) == :eq
       assert Decimal.compare(performance_summary.average_loss, Decimal.new("50.00")) == :eq
       assert Decimal.compare(performance_summary.largest_win, Decimal.new("500.00")) == :eq
       assert Decimal.compare(performance_summary.largest_loss, Decimal.new("200.00")) == :eq
+
       assert performance_summary.metrics == %{
-        "average_holding_time_hours" => 6,
-        "trades_per_day" => 4,
-        "consecutive_wins" => 8,
-        "consecutive_losses" => 3
-      }
+               "average_holding_time_hours" => 6,
+               "trades_per_day" => 4,
+               "consecutive_wins" => 8,
+               "consecutive_losses" => 3
+             }
+
       assert performance_summary.backtest_id == backtest.id
     end
 
@@ -182,14 +200,17 @@ defmodule Central.Backtest.Schemas.PerformanceSummaryTest do
       end
     end
 
-    test "cannot create multiple performance summaries for the same backtest", %{backtest: _backtest, valid_attrs: valid_attrs} do
+    test "cannot create multiple performance summaries for the same backtest", %{
+      backtest: _backtest,
+      valid_attrs: valid_attrs
+    } do
       # First one should succeed
       {:ok, _} = PerformanceSummary.changeset(%PerformanceSummary{}, valid_attrs) |> Repo.insert()
 
       # Second one should fail due to unique constraint on backtest_id
       assert {:error, changeset} =
-        PerformanceSummary.changeset(%PerformanceSummary{}, valid_attrs)
-        |> Repo.insert()
+               PerformanceSummary.changeset(%PerformanceSummary{}, valid_attrs)
+               |> Repo.insert()
 
       errors = errors_on(changeset)
       assert errors[:backtest_id] == ["has already been taken"]

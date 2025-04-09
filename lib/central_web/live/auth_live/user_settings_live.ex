@@ -9,13 +9,11 @@ defmodule CentralWeb.AuthLive.UserSettingsLive do
 
   def render(assigns) do
     ~H"""
-
-
     <div class="flex flex-col justify-center h-screen mx-auto max-w-sm">
-    <.header class="text-center">
-      Account Settings
-      <:subtitle>Manage your account email address and password settings</:subtitle>
-    </.header>
+      <.header class="text-center">
+        Account Settings
+        <:subtitle>Manage your account email address and password settings</:subtitle>
+      </.header>
       <div>
         <.form
           for={@email_form}

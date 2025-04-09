@@ -5,12 +5,10 @@ defmodule Central.Backtest.Services.Performance do
   """
 
   require Logger
-  alias Central.Backtest.Schemas.{Trade, Backtest, PerformanceSummary}
+  alias Central.Backtest.Schemas.Backtest
   alias Central.Backtest.Services.RiskManager
   alias Central.Utils.TradeAdapter
   alias Central.Repo
-
-  import Ecto.Query
 
   @doc """
   Generates a performance summary for a completed backtest.
@@ -22,7 +20,10 @@ defmodule Central.Backtest.Services.Performance do
 
     # Skip if no trades or not completed
     if backtest.status != :completed or Enum.empty?(backtest.trades) do
-      Logger.info("No performance summary generated for backtest #{backtest_id}: status=#{backtest.status}, trades=#{length(backtest.trades)}")
+      Logger.info(
+        "No performance summary generated for backtest #{backtest_id}: status=#{backtest.status}, trades=#{length(backtest.trades)}"
+      )
+
       :ok
     else
       # Make trades backward compatible with field names
@@ -50,13 +51,15 @@ defmodule Central.Backtest.Services.Performance do
     break_even_trades = total_trades - winning_trades - losing_trades
 
     # Profit metrics
-    total_profit = Enum.reduce(trades, 0, fn t, acc ->
-      if t.pnl > 0, do: acc + t.pnl, else: acc
-    end)
+    total_profit =
+      Enum.reduce(trades, 0, fn t, acc ->
+        if t.pnl > 0, do: acc + t.pnl, else: acc
+      end)
 
-    total_loss = Enum.reduce(trades, 0, fn t, acc ->
-      if t.pnl < 0, do: acc + abs(t.pnl), else: acc
-    end)
+    total_loss =
+      Enum.reduce(trades, 0, fn t, acc ->
+        if t.pnl < 0, do: acc + abs(t.pnl), else: acc
+      end)
 
     net_profit = total_profit - total_loss
     profit_factor = if total_loss > 0, do: total_profit / total_loss, else: total_profit
@@ -110,7 +113,10 @@ defmodule Central.Backtest.Services.Performance do
 
     # Track equity curve and drawdown
     {_, _, max_drawdown, max_drawdown_pct} =
-      Enum.reduce(sorted_trades, {initial_balance, initial_balance, 0, 0}, fn trade, {equity, peak, max_dd, max_dd_pct} ->
+      Enum.reduce(sorted_trades, {initial_balance, initial_balance, 0, 0}, fn trade,
+                                                                              {equity, peak,
+                                                                               max_dd,
+                                                                               max_dd_pct} ->
         # Update equity
         new_equity = equity + trade.pnl
 
@@ -150,14 +156,15 @@ defmodule Central.Backtest.Services.Performance do
     }
 
     # Update the backtest metadata with summary info
-    metadata = Map.merge(backtest.metadata || %{}, %{
-      "performance_summary" => %{
-        "win_rate" => metrics.win_rate,
-        "profit_factor" => metrics.profit_factor,
-        "max_drawdown_pct" => metrics.max_drawdown_pct,
-        "percent_return" => metrics.percent_return
-      }
-    })
+    metadata =
+      Map.merge(backtest.metadata || %{}, %{
+        "performance_summary" => %{
+          "win_rate" => metrics.win_rate,
+          "profit_factor" => metrics.profit_factor,
+          "max_drawdown_pct" => metrics.max_drawdown_pct,
+          "percent_return" => metrics.percent_return
+        }
+      })
 
     # Save changes
     Repo.transaction(fn ->
@@ -224,28 +231,32 @@ defmodule Central.Backtest.Services.Performance do
       # Calculate profit factor
       total_gains = calculate_total_pnl(winning_trades)
       total_losses = calculate_total_pnl(losing_trades) |> Decimal.abs()
-      profit_factor = if Decimal.compare(total_losses, Decimal.new(0)) == :gt do
-        Decimal.div(total_gains, total_losses)
-      else
-        # Avoid division by zero
-        Decimal.new("999.99")
-      end
+
+      profit_factor =
+        if Decimal.compare(total_losses, Decimal.new(0)) == :gt do
+          Decimal.div(total_gains, total_losses)
+        else
+          # Avoid division by zero
+          Decimal.new("999.99")
+        end
 
       # Calculate total PnL percentage
       total_pnl_percentage = Decimal.div(total_pnl, backtest.initial_balance)
 
       # Calculate average win/loss
-      average_win = if winning_count > 0 do
-        Decimal.div(total_gains, Decimal.new(winning_count))
-      else
-        Decimal.new(0)
-      end
+      average_win =
+        if winning_count > 0 do
+          Decimal.div(total_gains, Decimal.new(winning_count))
+        else
+          Decimal.new(0)
+        end
 
-      average_loss = if losing_count > 0 do
-        Decimal.div(total_losses, Decimal.new(losing_count))
-      else
-        Decimal.new(0)
-      end
+      average_loss =
+        if losing_count > 0 do
+          Decimal.div(total_losses, Decimal.new(losing_count))
+        else
+          Decimal.new(0)
+        end
 
       # Find largest win/loss
       largest_win =
@@ -260,10 +271,13 @@ defmodule Central.Backtest.Services.Performance do
 
       # Calculate equity curve and drawdown
       equity_curve = calculate_equity_curve(backtest.initial_balance, completed_trades)
-      {max_drawdown, max_drawdown_percentage, _, _} = RiskManager.calculate_max_drawdown(equity_curve)
+
+      {max_drawdown, max_drawdown_percentage, _, _} =
+        RiskManager.calculate_max_drawdown(equity_curve)
 
       # Calculate Sharpe and Sortino ratios
-      {sharpe_ratio, sortino_ratio} = calculate_risk_adjusted_returns(completed_trades, backtest.initial_balance)
+      {sharpe_ratio, sortino_ratio} =
+        calculate_risk_adjusted_returns(completed_trades, backtest.initial_balance)
 
       # Calculate additional metrics
       additional_metrics = %{
@@ -310,16 +324,17 @@ defmodule Central.Backtest.Services.Performance do
     sorted_trades = Enum.sort_by(trades, & &1.exit_time, DateTime)
 
     # Calculate running equity curve
-    {curve, _} = Enum.reduce(sorted_trades, {[], initial_balance}, fn trade, {points, balance} ->
-      new_balance = Decimal.add(balance, trade.pnl)
+    {curve, _} =
+      Enum.reduce(sorted_trades, {[], initial_balance}, fn trade, {points, balance} ->
+        new_balance = Decimal.add(balance, trade.pnl)
 
-      point = %{
-        timestamp: trade.exit_time,
-        equity: new_balance
-      }
+        point = %{
+          timestamp: trade.exit_time,
+          equity: new_balance
+        }
 
-      {[point | points], new_balance}
-    end)
+        {[point | points], new_balance}
+      end)
 
     # Add initial balance point
     first_trade = List.first(sorted_trades)
@@ -352,10 +367,12 @@ defmodule Central.Backtest.Services.Performance do
 
       # Calculate downside deviation (for Sortino)
       negative_returns = Enum.filter(daily_returns, fn r -> r < 0 end)
+
       downside_dev =
         if Enum.empty?(negative_returns) do
           # No negative returns
-          1.0 # To avoid division by zero
+          # To avoid division by zero
+          1.0
         else
           # Calculate downside deviation
           calculate_standard_deviation(negative_returns, 0)
@@ -413,7 +430,7 @@ defmodule Central.Backtest.Services.Performance do
     sum_squared_diff =
       Enum.reduce(values, 0, fn value, acc ->
         diff = value - mean
-        acc + (diff * diff)
+        acc + diff * diff
       end)
 
     # Variance is average of squared differences
@@ -467,7 +484,7 @@ defmodule Central.Backtest.Services.Performance do
     avg_loss_float = Decimal.to_float(Decimal.abs(average_loss))
 
     # Calculate expectancy
-    expectancy = (win_rate_float * avg_win_float) - ((1 - win_rate_float) * avg_loss_float)
+    expectancy = win_rate_float * avg_win_float - (1 - win_rate_float) * avg_loss_float
 
     Decimal.from_float(expectancy)
   end

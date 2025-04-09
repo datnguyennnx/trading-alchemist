@@ -24,9 +24,11 @@ defmodule Central.Backtest.Contexts.StrategyContext do
   def list_strategies(opts \\ []) do
     user_id = Keyword.get(opts, :user_id)
 
-    query = from(s in Strategy,
-      order_by: [desc: s.inserted_at],
-      preload: [:backtests])
+    query =
+      from(s in Strategy,
+        order_by: [desc: s.inserted_at],
+        preload: [:backtests]
+      )
 
     query = if user_id, do: where(query, [s], s.user_id == ^user_id), else: query
 

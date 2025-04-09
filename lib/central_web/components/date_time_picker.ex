@@ -34,14 +34,16 @@ defmodule CentralWeb.Components.DateTimePicker do
     ~H"""
     <div class="date-picker">
       <%= if @label do %>
-        <label for={@id}><%= @label %></label>
+        <label for={@id}>{@label}</label>
       <% end %>
-      <input type="date"
-             id={@id}
-             name={@name}
-             class={@class}
-             value={format_date(@value, @display_format)}
-             phx-hook="DatePickerHook" />
+      <input
+        type="date"
+        id={@id}
+        name={@name}
+        class={@class}
+        value={format_date(@value, @display_format)}
+        phx-hook="DatePickerHook"
+      />
       <!--
         The phx-hook is optional and can be used if you wish to attach
         some JavaScript behavior to enhance the native date-picker.
@@ -79,13 +81,15 @@ defmodule CentralWeb.Components.DateTimePicker do
 
     ~H"""
     <div class="datetime-picker">
-      <input type="datetime-local"
-             id={@id}
-             name={@name}
-             class={@class}
-             value={format_datetime(@value)}
-             required={@required}
-             phx-hook="DateTimePickerHook" />
+      <input
+        type="datetime-local"
+        id={@id}
+        name={@name}
+        class={@class}
+        value={format_datetime(@value)}
+        required={@required}
+        phx-hook="DateTimePickerHook"
+      />
     </div>
     """
   end
@@ -116,6 +120,7 @@ defmodule CentralWeb.Components.DateTimePicker do
   defp format_datetime(%NaiveDateTime{} = ndt) do
     # Format as "YYYY-MM-DDTHH:MM" for datetime-local input
     NaiveDateTime.to_iso8601(ndt)
-    |> String.replace(~r/\:\d{2}\.\d+Z?$/, "") # Remove seconds and timezone
+    # Remove seconds and timezone
+    |> String.replace(~r/\:\d{2}\.\d+Z?$/, "")
   end
 end

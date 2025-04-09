@@ -20,11 +20,13 @@ defmodule Central.Backtest.Services.TradeManager do
   ## Returns
     - Updated state with position closed and trade recorded
   """
-  def close_position(state, exit_price, reason, backtest) do
+  def close_position(state, exit_price, reason, _backtest) do
     position = state.position
 
     # Log for debugging
-    Logger.debug("Closing position: entry_price=#{inspect(position.entry_price)}, exit_price=#{inspect(exit_price)}, size=#{inspect(position.size)}")
+    Logger.debug(
+      "Closing position: entry_price=#{inspect(position.entry_price)}, exit_price=#{inspect(exit_price)}, size=#{inspect(position.size)}"
+    )
 
     # Calculate profit/loss
     profit_loss = calculate_profit_loss(position, exit_price)
@@ -47,14 +49,16 @@ defmodule Central.Backtest.Services.TradeManager do
     balance = MarketDataHandler.parse_decimal_or_float(state.balance)
     new_balance = balance + profit_loss
 
-    Logger.debug("Updated balance: #{inspect(balance)} + #{inspect(profit_loss)} = #{inspect(new_balance)}")
+    Logger.debug(
+      "Updated balance: #{inspect(balance)} + #{inspect(profit_loss)} = #{inspect(new_balance)}"
+    )
 
     # Return updated state
     %{
-      state |
-      balance: new_balance,
-      position: nil,
-      trades: [trade | state.trades]
+      state
+      | balance: new_balance,
+        position: nil,
+        trades: [trade | state.trades]
     }
   end
 
@@ -75,14 +79,18 @@ defmodule Central.Backtest.Services.TradeManager do
     size = MarketDataHandler.parse_decimal_or_float(position.size)
 
     # Log the values for debugging
-    Logger.debug("Calculating profit/loss: entry_price=#{entry_price}, exit_price=#{exit_price_float}, size=#{size}")
+    Logger.debug(
+      "Calculating profit/loss: entry_price=#{entry_price}, exit_price=#{exit_price_float}, size=#{size}"
+    )
 
-    result = case position.direction do
-      :long ->
-        size * (exit_price_float - entry_price) / entry_price
-      :short ->
-        size * (entry_price - exit_price_float) / entry_price
-    end
+    result =
+      case position.direction do
+        :long ->
+          size * (exit_price_float - entry_price) / entry_price
+
+        :short ->
+          size * (entry_price - exit_price_float) / entry_price
+      end
 
     Logger.debug("Profit/loss result: #{result}")
     result

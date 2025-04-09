@@ -52,23 +52,26 @@ defmodule Central.Backtest.Workers.MarketSync do
     sync_interval = Keyword.get(opts, :sync_interval, @default_sync_interval)
 
     # Schedule initial sync
-    schedule_sync(0) # Start immediately
+    # Start immediately
+    schedule_sync(0)
 
-    {:ok, %{
-      symbols: symbols,
-      timeframes: timeframes,
-      sync_interval: sync_interval,
-      last_sync_time: nil,
-      next_sync_time: DateTimeConfig.now(),
-      sync_running: false,
-      last_sync_result: nil,
-      syncing_markets: %{}
-    }}
+    {:ok,
+     %{
+       symbols: symbols,
+       timeframes: timeframes,
+       sync_interval: sync_interval,
+       last_sync_time: nil,
+       next_sync_time: DateTimeConfig.now(),
+       sync_running: false,
+       last_sync_result: nil,
+       syncing_markets: %{}
+     }}
   end
 
   @impl GenServer
   def handle_call(:get_status, _from, state) do
-    {:reply, Map.take(state, [:last_sync_time, :next_sync_time, :sync_running, :last_sync_result]), state}
+    {:reply,
+     Map.take(state, [:last_sync_time, :next_sync_time, :sync_running, :last_sync_result]), state}
   end
 
   @impl GenServer
@@ -81,7 +84,9 @@ defmodule Central.Backtest.Workers.MarketSync do
       updated_state = %{state | sync_running: true, last_sync_time: DateTimeConfig.now()}
 
       # Log the symbols and timeframes being synced
-      Logger.info("Syncing market data for symbols: #{inspect(state.symbols)}, timeframes: #{inspect(state.timeframes)}")
+      Logger.info(
+        "Syncing market data for symbols: #{inspect(state.symbols)}, timeframes: #{inspect(state.timeframes)}"
+      )
 
       # Start the sync process
       Task.start(fn ->
@@ -111,7 +116,9 @@ defmodule Central.Backtest.Workers.MarketSync do
     timeframes = if timeframe, do: [timeframe], else: state.timeframes
 
     unless state.sync_running do
-      Logger.info("Starting manual market data sync - symbols: #{inspect(symbols)}, timeframes: #{inspect(timeframes)}")
+      Logger.info(
+        "Starting manual market data sync - symbols: #{inspect(symbols)}, timeframes: #{inspect(timeframes)}"
+      )
 
       # Mark sync as running
       updated_state = %{state | sync_running: true, last_sync_time: DateTimeConfig.now()}
@@ -140,20 +147,22 @@ defmodule Central.Backtest.Workers.MarketSync do
   @impl GenServer
   def handle_cast({:sync_complete, status, results}, state) do
     # Update state with sync results
-    new_state = %{state |
-      sync_running: false,
-      last_sync_result: {status, results}
-    }
+    new_state = %{state | sync_running: false, last_sync_result: {status, results}}
 
     case status do
       :ok ->
         sync_counts = count_synced_items(results)
+
         duration_ms =
           case state.last_sync_time do
             nil -> 0
             start_time -> DateTime.diff(DateTimeConfig.now(), start_time, :millisecond)
           end
-        Logger.info("Market data sync completed successfully - candles: #{sync_counts.total}, duration: #{duration_ms}ms")
+
+        Logger.info(
+          "Market data sync completed successfully - candles: #{sync_counts.total}, duration: #{duration_ms}ms"
+        )
+
       :error ->
         Logger.error("Market data sync failed: #{inspect(results)}")
     end
@@ -183,14 +192,18 @@ defmodule Central.Backtest.Workers.MarketSync do
         # Return a map with market_key and result
         %{
           market_key: {symbol, timeframe},
-          result: case sync_result do
-            {:noreply, _state} -> {:ok, 0} # No error but no data processed
-            other -> other # Pass through any other results
-          end
+          result:
+            case sync_result do
+              # No error but no data processed
+              {:noreply, _state} -> {:ok, 0}
+              # Pass through any other results
+              other -> other
+            end
         }
       end)
     end
-    |> Task.await_many(300_000) # 5 minute timeout for all tasks
+    # 5 minute timeout for all tasks
+    |> Task.await_many(300_000)
   end
 
   defp sync_single_market({symbol, timeframe} = market_key, state) do
@@ -231,7 +244,8 @@ defmodule Central.Backtest.Workers.MarketSync do
             case upsert_market_data(market_data) do
               {:ok, count} ->
                 # Calculate duration in milliseconds
-                sync_duration_ms = DateTime.diff(DateTimeConfig.now(), sync_start_time, :millisecond)
+                sync_duration_ms =
+                  DateTime.diff(DateTimeConfig.now(), sync_start_time, :millisecond)
 
                 # Send a message back to the GenServer that sync is complete
                 send(self(), {:sync_complete, market_key, :success, count, sync_duration_ms})
@@ -242,6 +256,7 @@ defmodule Central.Backtest.Workers.MarketSync do
                   timeframe: timeframe,
                   error: inspect(reason)
                 )
+
                 send(self(), {:sync_complete, market_key, :error, reason, 0})
             end
 
@@ -252,6 +267,7 @@ defmodule Central.Backtest.Workers.MarketSync do
               timeframe: timeframe,
               error: inspect(reason)
             )
+
             send(self(), {:sync_complete, market_key, :error, reason, 0})
         end
       end)
@@ -265,11 +281,14 @@ defmodule Central.Backtest.Workers.MarketSync do
       {:ok, market_data} ->
         # Validate data completeness with more lenient threshold
         case validate_data_completeness(market_data, timeframe, start_time, end_time) do
-          :ok -> {:ok, market_data}
+          :ok ->
+            {:ok, market_data}
+
           {:error, reason} ->
             if retries > 0 do
               Logger.warning("Data validation failed, retrying... (#{retries} attempts left)")
-              Process.sleep(2000) # Increased wait time between retries
+              # Increased wait time between retries
+              Process.sleep(2000)
               fetch_with_retries(symbol, timeframe, start_time, end_time, retries - 1)
             else
               # Even if validation fails, return partial data
@@ -281,7 +300,8 @@ defmodule Central.Backtest.Workers.MarketSync do
       {:error, reason} ->
         if retries > 0 do
           Logger.warning("Fetch failed, retrying... (#{retries} attempts left)")
-          Process.sleep(2000) # Increased wait time between retries
+          # Increased wait time between retries
+          Process.sleep(2000)
           fetch_with_retries(symbol, timeframe, start_time, end_time, retries - 1)
         else
           {:error, reason}
@@ -312,17 +332,19 @@ defmodule Central.Backtest.Workers.MarketSync do
       "1h" -> div(total_seconds, 3600)
       "4h" -> div(total_seconds, 14400)
       "1d" -> div(total_seconds, 86400)
-      _ -> div(total_seconds, 3600) # Default to 1h
+      # Default to 1h
+      _ -> div(total_seconds, 3600)
     end
   end
 
   defp get_sync_time_range(symbol, timeframe) do
     # Query the database for the latest timestamp for this symbol/timeframe
-    query = from m in MarketData,
-      where: m.symbol == ^symbol and m.timeframe == ^timeframe,
-      order_by: [desc: m.timestamp],
-      limit: 1,
-      select: m.timestamp
+    query =
+      from m in MarketData,
+        where: m.symbol == ^symbol and m.timeframe == ^timeframe,
+        order_by: [desc: m.timestamp],
+        limit: 1,
+        select: m.timestamp
 
     latest_timestamp = Repo.one(query)
 
@@ -332,6 +354,7 @@ defmodule Central.Backtest.Workers.MarketSync do
         nil ->
           # If no data exists, start from a reasonable past date (30 days ago)
           DateTimeConfig.add(DateTimeConfig.now(), -30, :day)
+
         timestamp ->
           # If data exists, start from the last timestamp we have
           # Add a timeframe-specific buffer to avoid duplicate data
@@ -355,7 +378,8 @@ defmodule Central.Backtest.Workers.MarketSync do
       "1h" -> {1, :hour}
       "4h" -> {4, :hour}
       "1d" -> {1, :day}
-      _ -> {1, :hour} # Default to 1 hour if unknown
+      # Default to 1 hour if unknown
+      _ -> {1, :hour}
     end
   end
 
@@ -365,33 +389,39 @@ defmodule Central.Backtest.Workers.MarketSync do
       now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
       # Convert string price values to Decimal before insert and add timestamps
-      market_data_with_decimals = Enum.map(market_data, fn item ->
-        case item do
-          nil -> nil  # Skip nil items
-          _ ->
-            # Create a new map with all required fields
-            %{
-              id: Ecto.UUID.generate(),
-              symbol: item.symbol,
-              timeframe: item.timeframe,
-              timestamp: item.timestamp,
-              open: parse_decimal(item.open),
-              high: parse_decimal(item.high),
-              low: parse_decimal(item.low),
-              close: parse_decimal(item.close),
-              volume: parse_decimal(item.volume),
-              source: item.source || "binance",
-              inserted_at: now
-            }
-        end
-      end)
-      |> Enum.reject(&is_nil/1)  # Remove any nil values
+      market_data_with_decimals =
+        Enum.map(market_data, fn item ->
+          case item do
+            # Skip nil items
+            nil ->
+              nil
+
+            _ ->
+              # Create a new map with all required fields
+              %{
+                id: Ecto.UUID.generate(),
+                symbol: item.symbol,
+                timeframe: item.timeframe,
+                timestamp: item.timestamp,
+                open: parse_decimal(item.open),
+                high: parse_decimal(item.high),
+                low: parse_decimal(item.low),
+                close: parse_decimal(item.close),
+                volume: parse_decimal(item.volume),
+                source: item.source || "binance",
+                inserted_at: now
+              }
+          end
+        end)
+        # Remove any nil values
+        |> Enum.reject(&is_nil/1)
 
       # Batch insert in chunks of 1000
-      total_count = Enum.reduce(Enum.chunk_every(market_data_with_decimals, 1000), 0, fn chunk, acc ->
-        {count, _} = Repo.insert_all(MarketData, chunk, on_conflict: :nothing)
-        acc + count
-      end)
+      total_count =
+        Enum.reduce(Enum.chunk_every(market_data_with_decimals, 1000), 0, fn chunk, acc ->
+          {count, _} = Repo.insert_all(MarketData, chunk, on_conflict: :nothing)
+          acc + count
+        end)
 
       {:ok, total_count}
     rescue

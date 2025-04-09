@@ -22,7 +22,16 @@ defmodule Central.Backtest.Schemas.Strategy do
   @doc false
   def changeset(strategy, attrs) do
     strategy
-    |> cast(attrs, [:name, :description, :config, :entry_rules, :exit_rules, :is_active, :is_public, :user_id])
+    |> cast(attrs, [
+      :name,
+      :description,
+      :config,
+      :entry_rules,
+      :exit_rules,
+      :is_active,
+      :is_public,
+      :user_id
+    ])
     |> validate_required([:name, :config, :entry_rules, :exit_rules, :user_id])
     |> validate_length(:name, min: 3, max: 100)
     |> validate_config()
