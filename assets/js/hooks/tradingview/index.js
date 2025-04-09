@@ -1,20 +1,9 @@
-/**
- * TradingView Chart LiveView Hook
- * 
- * This hook integrates the lightweight-charts library with Phoenix LiveView.
- * It manages chart rendering, data updates, theme changes, and responsive behavior.
- */
-
 import { themes } from './themes';
 import { initializeChart, destroyChart } from './chart';
 import { setupEventHandlers } from './events';
 
-// Cache for chart data to prevent unnecessary re-parsing
 const chartDataCache = new WeakMap();
 
-/**
- * TradingView Chart Phoenix LiveView Hook - Optimized for performance
- */
 const TradingViewChart = {
   mounted() {
     console.log("TradingView Chart hook mounted");

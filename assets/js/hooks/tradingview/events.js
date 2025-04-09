@@ -1,19 +1,6 @@
-/**
- * Event handlers for TradingView chart
- */
-
 import { debounce } from './utils';
 import { updateChartSeries } from './series';
 
-/**
- * Set up all event handlers for the chart
- * @param {Object} hook - The LiveView hook
- * @param {Object} chart - The chart instance
- * @param {Object} candleSeries - The candlestick series
- * @param {Object} volumeSeries - The volume series (optional)
- * @param {Object} themes - Available themes
- * @param {string} currentTheme - Current theme name
- */
 export const setupEventHandlers = (hook, chart, candleSeries, volumeSeries, themes, currentTheme) => {
   // Set up resize handler
   const resizeHandler = createResizeHandler(hook, chart);
@@ -42,12 +29,6 @@ export const setupEventHandlers = (hook, chart, candleSeries, volumeSeries, them
   };
 };
 
-/**
- * Create a debounced resize handler
- * @param {Object} hook - The LiveView hook
- * @param {Object} chart - The chart instance
- * @returns {Function} - Debounced resize handler
- */
 const createResizeHandler = (hook, chart) => {
   return debounce(() => {
     const container = hook.el;
@@ -56,15 +37,9 @@ const createResizeHandler = (hook, chart) => {
       height: container.clientHeight || 600,
       timeScale: {
         ...chart.options().timeScale,
-        visible: true,
-        borderVisible: true,
-        ticksVisible: true,
       },
       rightPriceScale: {
         ...chart.options().rightPriceScale,
-        visible: true,
-        borderVisible: true,
-        ticksVisible: true,
       }
     });
     // Re-fit content after resize for better UX
@@ -72,14 +47,6 @@ const createResizeHandler = (hook, chart) => {
   }, 100); // 100ms debounce
 };
 
-/**
- * Set up handler for chart data updates
- * @param {Object} hook - The LiveView hook
- * @param {Object} chart - The chart instance
- * @param {Object} candleSeries - The candlestick series
- * @param {Object} volumeSeries - The volume series (optional)
- * @param {Object} themes - Available themes
- */
 const setupChartDataHandler = (hook, chart, candleSeries, volumeSeries, themes) => {
   hook.handleEvent("chart-data-updated", ({ data, symbol, timeframe, append }) => {
     if (!data || !Array.isArray(data) || data.length === 0) {
@@ -136,18 +103,6 @@ const setupChartDataHandler = (hook, chart, candleSeries, volumeSeries, themes) 
         }
       }
       
-      // Update watermark if symbol changed
-      if (symbol && symbol !== hook.el.dataset.symbol) {
-        hook.el.dataset.symbol = symbol;
-        chart.applyOptions({
-          watermark: {
-            ...chart.options().watermark,
-            visible: true,
-            text: symbol,
-          }
-        });
-      }
-      
       // Update the timeframe if it changed
       if (timeframe && timeframe !== hook.el.dataset.timeframe) {
         // Store previous timeframe before updating
@@ -174,14 +129,6 @@ const setupChartDataHandler = (hook, chart, candleSeries, volumeSeries, themes) 
   });
 };
 
-/**
- * Set up handler for theme updates
- * @param {Object} hook - The LiveView hook
- * @param {Object} chart - The chart instance
- * @param {Object} candleSeries - The candlestick series
- * @param {Object} volumeSeries - The volume series (optional)
- * @param {Object} themes - Available themes
- */
 const setupThemeUpdateHandler = (hook, chart, candleSeries, volumeSeries, themes) => {
   hook.handleEvent("chart-theme-updated", ({ theme }) => {
     console.log("Chart received theme-updated event:", theme);
@@ -204,17 +151,9 @@ const setupThemeUpdateHandler = (hook, chart, candleSeries, volumeSeries, themes
         },
         timeScale: {
           borderColor: newTheme.borderColor,
-          textColor: newTheme.textColor,
-          borderVisible: true,
-          ticksVisible: true,
-          visible: true
         },
         rightPriceScale: {
           borderColor: newTheme.borderColor,
-          textColor: newTheme.textColor,
-          borderVisible: true,
-          ticksVisible: true,
-          visible: true
         },
         crosshair: {
           vertLine: {
@@ -279,12 +218,6 @@ const setupThemeUpdateHandler = (hook, chart, candleSeries, volumeSeries, themes
   });
 };
 
-/**
- * Set up handler for visible range changes
- * @param {Object} hook - The LiveView hook
- * @param {Object} candleSeries - The candlestick series
- * @param {Object} volumeSeries - The volume series (optional) 
- */
 const setupRangeChangeHandler = (hook, candleSeries, volumeSeries, rangeHandlerContext) => {
   let isFetching = false;
   let lastFetchTimestamp = null;

@@ -1,41 +1,18 @@
-/**
- * Chart series management for TradingView
- */
-
 import { CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 import { getCandlestickOptions, getVolumeOptions } from './themes';
 import { validateChartData, fixChartData, formatTimestamps } from './utils';
 
-/**
- * Creates and configures a candlestick series
- * @param {Object} chart - The chart instance
- * @param {Object} activeTheme - Active theme settings
- * @param {boolean} isCrypto - Whether the symbol is a cryptocurrency
- * @param {number} price - Sample price for precision calculation
- * @returns {Object} - The candlestick series
- */
 export const createCandlestickSeries = (chart, activeTheme, isCrypto, price) => {
   const options = getCandlestickOptions(activeTheme, isCrypto, price);
   return chart.addSeries(CandlestickSeries, options);
 };
 
-/**
- * Creates and configures a volume series
- * @param {Object} chart - The chart instance
- * @param {Object} activeTheme - Active theme settings
- * @returns {Object} - The volume series
- */
+
 export const createVolumeSeries = (chart, activeTheme) => {
   const options = getVolumeOptions(activeTheme);
   return chart.addSeries(HistogramSeries, options);
 };
 
-/**
- * Prepare volume data with appropriate coloring - optimized for large datasets
- * @param {Array} formattedData - Candle data array 
- * @param {Object} activeTheme - Active theme settings
- * @returns {Array} - Formatted volume data
- */
 export const prepareVolumeData = (formattedData, activeTheme) => {
   // For large datasets, optimize by reusing color objects
   const upColor = activeTheme.volumeColor;
@@ -56,11 +33,6 @@ export const prepareVolumeData = (formattedData, activeTheme) => {
   return result;
 };
 
-/**
- * Process and validate chart data for display - optimized for performance
- * @param {Array} chartData - Raw chart data
- * @returns {Object} - Processed data and validation status
- */
 export const processChartData = (chartData) => {
   if (!Array.isArray(chartData) || chartData.length === 0) {
     return { isValid: false, data: [], hasVolume: false };
@@ -98,13 +70,6 @@ export const processChartData = (chartData) => {
   };
 };
 
-/**
- * Update chart series with new data - optimized for continuous updates
- * @param {Object} candleSeries - The candlestick series
- * @param {Object} volumeSeries - The volume series (optional)
- * @param {Array} chartData - The chart data
- * @param {Object} activeTheme - Active theme settings
- */
 export const updateChartSeries = (candleSeries, volumeSeries, chartData, activeTheme) => {
   if (!Array.isArray(chartData) || chartData.length === 0) {
     console.warn("No chart data to display");

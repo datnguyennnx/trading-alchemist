@@ -1,13 +1,4 @@
-/**
- * Utility functions for TradingView chart implementation
- */
 
-/**
- * Debounce function to limit how often a function is called
- * @param {Function} fn - The function to debounce
- * @param {number} delay - Delay in milliseconds
- * @returns {Function} - Debounced function
- */
 export const debounce = (fn, delay) => {
   let timeout;
   return (...args) => {
@@ -16,41 +7,25 @@ export const debounce = (fn, delay) => {
   };
 };
 
-/**
- * Format price based on cryptocurrency rules with consistent 2 decimal places
- * @param {number} price - The price to format
- * @returns {string} - Formatted price string
- */
+
 export const formatCryptoPrice = (price) => {
   // Always use 2 decimal places for consistency
   return '$' + price.toFixed(2);
 };
 
-/**
- * Determine precision for cryptocurrency price formatting
- * @param {number} price - Sample price to base precision on
- * @returns {number} - Precision (number of decimal places)
- */
+
 export const getCryptoPricePrecision = (price) => {
   // Always use 2 decimal places for consistency
   return 2;
 };
 
-/**
- * Get minimum price movement for cryptocurrency
- * @param {number} price - Sample price to base precision on
- * @returns {number} - Minimum price movement value
- */
+
 export const getCryptoMinMove = (price) => {
   // Always use 0.01 for consistent 2 decimal place movement
   return 0.01;
 };
 
-/**
- * Check if a symbol is likely a cryptocurrency
- * @param {string} symbol - The trading symbol
- * @returns {boolean} - True if likely crypto
- */
+
 export const isCryptoSymbol = (symbol) => {
   if (!symbol) return false;
   return symbol.includes('BTC') || 
@@ -59,11 +34,6 @@ export const isCryptoSymbol = (symbol) => {
          symbol.endsWith('USD');
 };
 
-/**
- * Transform millisecond timestamps to seconds if needed
- * @param {Array} data - Chart data array
- * @returns {Array} - Data with corrected timestamps
- */
 export const formatTimestamps = (data) => {
   return data.map(item => {
     const newItem = { ...item };
@@ -74,11 +44,6 @@ export const formatTimestamps = (data) => {
   });
 };
 
-/**
- * Validates the format of chart data
- * @param {Array} chartData - The chart data to validate
- * @returns {boolean} - True if data is valid
- */
 export const validateChartData = (chartData) => {
   if (!Array.isArray(chartData) || chartData.length === 0) {
     console.error("Chart data is not valid or empty");
@@ -113,11 +78,6 @@ export const validateChartData = (chartData) => {
   return true;
 };
 
-/**
- * Fix invalid chart data by converting strings to numbers
- * @param {Array} chartData - The chart data to fix
- * @returns {Array} - Fixed chart data
- */
 export const fixChartData = (chartData) => {
   return chartData.map(item => ({
     time: typeof item.time === 'number' ? item.time : parseInt(item.time) || Math.floor(Date.now() / 1000),

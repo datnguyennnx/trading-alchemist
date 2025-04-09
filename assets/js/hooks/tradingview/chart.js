@@ -1,7 +1,3 @@
-/**
- * Main chart initialization and management
- */
-
 import { createChart } from 'lightweight-charts';
 import { themes, getChartOptions } from './themes';
 import { isCryptoSymbol } from './utils';
@@ -13,15 +9,7 @@ import {
 } from './series';
 import { setupEventHandlers } from './events';
 
-/**
- * Initialize the TradingView chart
- * @param {HTMLElement} container - The container element
- * @param {Array} chartData - The chart data
- * @param {string} themeName - Theme name ('dark' or 'light')
- * @param {string} symbol - Trading symbol
- * @param {string} timeframe - Chart timeframe
- * @returns {Object} - The chart instance and configuration
- */
+
 export const initializeChart = (container, chartData, themeName, symbol, timeframe) => {
   const theme = themeName || 'dark';
   const activeTheme = themes[theme];
@@ -82,11 +70,7 @@ export const initializeChart = (container, chartData, themeName, symbol, timefra
   return { chart, candleSeries, volumeSeries };
 };
 
-/**
- * Clean up chart resources
- * @param {Object} chart - The chart instance
- * @param {Function} resizeHandler - The resize event handler to remove
- */
+
 export const destroyChart = (chart, resizeHandler) => {
   if (resizeHandler) {
     window.removeEventListener('resize', resizeHandler);

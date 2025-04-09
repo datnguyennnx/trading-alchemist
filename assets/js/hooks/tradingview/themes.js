@@ -1,10 +1,3 @@
-/**
- * Theme configurations for TradingView chart
- */
-
-/**
- * The available chart themes
- */
 export const themes = {
   dark: {
     background: { type: 'solid', color: 'hsl(var(--card))' },
@@ -56,16 +49,7 @@ export const themes = {
   }
 };
 
-/**
- * Get chart options for the specified theme
- * @param {Object} activeTheme - The active theme configuration
- * @param {string} symbol - The symbol being displayed
- * @param {string} timeframe - The timeframe being displayed
- * @param {number} clientWidth - The container width
- * @param {number} clientHeight - The container height
- * @param {boolean} isCrypto - Whether the symbol is a cryptocurrency
- * @returns {Object} - Chart configuration options
- */
+
 export const getChartOptions = (activeTheme, symbol, timeframe, clientWidth, clientHeight, isCrypto) => {
   return {
     width: clientWidth || 800,
@@ -182,13 +166,6 @@ export const getChartOptions = (activeTheme, symbol, timeframe, clientWidth, cli
   };
 };
 
-/**
- * Get series options for candlestick chart
- * @param {Object} activeTheme - The active theme configuration
- * @param {boolean} isCrypto - Whether the symbol is a cryptocurrency
- * @param {number} price - Sample price for formatting
- * @returns {Object} - Series configuration options
- */
 export const getCandlestickOptions = (activeTheme, isCrypto, price) => {
   return {
     upColor: activeTheme.upColor,
@@ -213,11 +190,7 @@ export const getCandlestickOptions = (activeTheme, isCrypto, price) => {
   };
 };
 
-/**
- * Get volume histogram options
- * @param {Object} activeTheme - The active theme configuration
- * @returns {Object} - Volume series configuration
- */
+
 export const getVolumeOptions = (activeTheme) => {
   return {
     color: activeTheme.volumeColor,
