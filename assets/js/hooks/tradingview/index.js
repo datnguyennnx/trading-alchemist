@@ -6,8 +6,6 @@ const chartDataCache = new WeakMap();
 
 const TradingViewChart = {
   mounted() {
-    console.log("TradingView Chart hook mounted");
-    
     try {
       // Clear any potential "Loading" overlay
       const loadingElements = this.el.querySelectorAll('.absolute');
@@ -25,20 +23,7 @@ const TradingViewChart = {
           chartData = JSON.parse(this.el.dataset.chartData);
           // Cache the parsed data for future use
           chartDataCache.set(this.el, chartData);
-          
-          // For production, reduce logging
-          if (process.env.NODE_ENV !== 'production') {
-            console.log("Chart data parsed successfully, first item:", chartData[0]);
-            console.log("Chart data length:", chartData.length);
-            
-            // Log debugging info
-            if (this.el.dataset.debug) {
-              console.log("Debug info:", JSON.parse(this.el.dataset.debug));
-            }
-          }
         } catch (e) {
-          console.error("Error parsing chart data:", e);
-          console.error("Raw chart data:", this.el.dataset.chartData);
           chartData = [];
         }
       }
@@ -48,7 +33,6 @@ const TradingViewChart = {
       const globalTheme = localStorage.getItem('theme') || 
                         (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
       const theme = globalTheme || this.el.dataset.theme || 'dark';
-      console.log("TradingView initializing with theme:", theme);
       
       const symbol = this.el.dataset.symbol || '';
       const timeframe = this.el.dataset.timeframe || '';
@@ -84,8 +68,6 @@ const TradingViewChart = {
         if (event.detail?.theme && themes[event.detail.theme]) {
           // Only update if theme is different from current
           if (event.detail.theme !== this.theme) {
-            console.log("TradingView chart: Detected global theme change to", event.detail.theme);
-            
             // Push event to server to update theme
             this.pushEvent("chart-theme-updated", { theme: event.detail.theme });
             
@@ -106,7 +88,6 @@ const TradingViewChart = {
       this.el.dataset.connected = "true";
       
     } catch (error) {
-      console.error("Error initializing TradingView chart:", error);
     }
   },
   
@@ -128,8 +109,6 @@ const TradingViewChart = {
       
       // Clear data cache when inputs change
       chartDataCache.delete(this.el);
-      
-      console.log("Chart data updated, triggering rerender");
     }
   },
   

@@ -1,4 +1,3 @@
-
 export const debounce = (fn, delay) => {
   let timeout;
   return (...args) => {
@@ -46,7 +45,6 @@ export const formatTimestamps = (data) => {
 
 export const validateChartData = (chartData) => {
   if (!Array.isArray(chartData) || chartData.length === 0) {
-    console.error("Chart data is not valid or empty");
     return false;
   }
 
@@ -57,20 +55,17 @@ export const validateChartData = (chartData) => {
   const missingFields = requiredFields.filter(field => sample[field] === undefined);
   
   if (missingFields.length > 0) {
-    console.error(`Data missing required fields: ${missingFields.join(', ')}`);
     return false;
   }
   
   // Check types
   if (typeof sample.time !== 'number') {
-    console.error(`Invalid time format, expected number but got ${typeof sample.time}`);
     return false;
   }
   
   const numericFields = ['open', 'high', 'low', 'close'];
   for (const field of numericFields) {
     if (typeof sample[field] !== 'number') {
-      console.error(`Invalid ${field} format, expected number but got ${typeof sample[field]}`);
       return false;
     }
   }

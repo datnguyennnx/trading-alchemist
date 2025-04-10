@@ -51,22 +51,6 @@ export const initializeChart = (container, chartData, themeName, symbol, timefra
     chart.timeScale().fitContent();
   }
   
-  // Force a resize after a short delay to ensure proper rendering
-  setTimeout(() => {
-    chart.applyOptions({
-      width: container.clientWidth || 800,
-      height: container.clientHeight || 600,
-      rightPriceScale: {
-        ...chart.options().rightPriceScale,
-        // Ensure price formatting is consistent
-        formatPrice: (price) => {
-          return '$' + price.toFixed(2);
-        }
-      }
-    });
-    chart.timeScale().fitContent();
-  }, 300);
-  
   return { chart, candleSeries, volumeSeries };
 };
 

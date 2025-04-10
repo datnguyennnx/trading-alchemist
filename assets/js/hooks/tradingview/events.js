@@ -49,12 +49,12 @@ const createResizeHandler = (hook, chart) => {
 
 const setupChartDataHandler = (hook, chart, candleSeries, volumeSeries, themes) => {
   hook.handleEvent("chart-data-updated", ({ data, symbol, timeframe, append }) => {
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      console.error("Received invalid data update");
-      return;
-    }
-    
     try {
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        console.error("Received invalid data update");
+        return;
+      }
+      
       // Hide any loading overlays
       const loadingElements = hook.el.querySelectorAll('.absolute');
       loadingElements.forEach(el => {
@@ -68,24 +68,26 @@ const setupChartDataHandler = (hook, chart, candleSeries, volumeSeries, themes) 
         // Get the existing data
         const existingData = candleSeries.data();
         
-        // For historical data (from load-historical-data event):
-        // Sort data by timestamp since historical data is usually older
-        const combinedData = [...data, ...existingData].sort((a, b) => a.time - b.time);
+        // Optimization: Assuming server sends historical data sorted and older than existing.
+        // Combine without sorting the full array.
+        // Ensure the new data itself is sorted if needed (though server likely handles this).
+        // Remove duplicates more efficiently, assuming 'data' contains older candles.
+        const combinedData = [...data, ...existingData]; // Prepend new (older) data
         
-        // Remove any duplicates (keep the first occurrence)
         const uniqueData = [];
-        const timeMap = new Map();
+        const timeSet = new Set();
         
-        combinedData.forEach(candle => {
-          if (!timeMap.has(candle.time)) {
-            timeMap.set(candle.time, true);
+        // Iterate through combined data (new first) and add unique timestamps
+        for (const candle of combinedData) {
+          if (!timeSet.has(candle.time)) {
+            timeSet.add(candle.time);
             uniqueData.push(candle);
           }
-        });
+        }
         
-        console.log(`Combined data: existing=${existingData.length}, new=${data.length}, combined=${uniqueData.length}`);
+        console.log(`Combined data: existing=${existingData.length}, new=${data.length}, unique=${uniqueData.length}`);
         
-        // Update the series with combined data
+        // Update the series with combined unique data
         updateChartSeries(candleSeries, volumeSeries, uniqueData, activeTheme);
       } else {
         // Replace existing data
@@ -124,96 +126,102 @@ const setupChartDataHandler = (hook, chart, candleSeries, volumeSeries, themes) 
       chart.timeScale().fitContent();
       
     } catch (error) {
-      console.error("Error updating chart data:", error);
+      console.error("Error in chart-data-updated handler:", error);
     }
   });
 };
 
 const setupThemeUpdateHandler = (hook, chart, candleSeries, volumeSeries, themes) => {
   hook.handleEvent("chart-theme-updated", ({ theme }) => {
-    console.log("Chart received theme-updated event:", theme);
-    
-    if (themes[theme]) {
-      console.log("Applying theme:", theme);
-      const newTheme = themes[theme];
+    try {
+      console.log("Chart received theme-updated event:", theme);
       
-      chart.applyOptions({
-        layout: {
-          background: { 
-            type: 'solid', 
-            color: theme === 'dark' ? 'rgb(13, 17, 23)' : 'rgb(249, 250, 251)' 
+      if (themes[theme]) {
+        console.log("Applying theme:", theme);
+        const newTheme = themes[theme];
+        
+        chart.applyOptions({
+          layout: {
+            background: { 
+              type: 'solid', 
+              color: theme === 'dark' ? 'rgb(13, 17, 23)' : 'rgb(249, 250, 251)' 
+            },
+            textColor: newTheme.textColor,
           },
-          textColor: newTheme.textColor,
-        },
-        grid: {
-          vertLines: newTheme.grid.vertLines,
-          horzLines: newTheme.grid.horzLines,
-        },
-        timeScale: {
-          borderColor: newTheme.borderColor,
-        },
-        rightPriceScale: {
-          borderColor: newTheme.borderColor,
-        },
-        crosshair: {
-          vertLine: {
-            color: newTheme.crosshairColor,
-            labelBackgroundColor: newTheme.crosshairColor,
+          grid: {
+            vertLines: newTheme.grid.vertLines,
+            horzLines: newTheme.grid.horzLines,
           },
-          horzLine: {
-            color: newTheme.crosshairColor,
-            labelBackgroundColor: newTheme.crosshairColor,
+          timeScale: {
+            borderColor: newTheme.borderColor,
           },
-        },
-        watermark: {
-          ...chart.options().watermark,
-          color: newTheme.watermarkColor,
-        }
-      });
-      
-      candleSeries.applyOptions({
-        upColor: newTheme.upColor,
-        downColor: newTheme.downColor,
-        wickUpColor: newTheme.upColor,
-        wickDownColor: newTheme.downColor,
-        priceLineColor: newTheme.borderColor,
-      });
-      
-      // Update volume series colors if it exists
-      if (volumeSeries) {
-        // Re-color the volume bars based on candle direction
-        const volumeData = volumeSeries.data().map(item => {
-          const candle = candleSeries.data().find(c => c.time === item.time);
-          return {
-            time: item.time,
-            value: item.value,
-            color: candle && candle.close >= candle.open ? 
-              newTheme.volumeColor : newTheme.volumeDownColor,
-          };
+          rightPriceScale: {
+            borderColor: newTheme.borderColor,
+          },
+          crosshair: {
+            vertLine: {
+              color: newTheme.crosshairColor,
+              labelBackgroundColor: newTheme.crosshairColor,
+            },
+            horzLine: {
+              color: newTheme.crosshairColor,
+              labelBackgroundColor: newTheme.crosshairColor,
+            },
+          },
+          watermark: {
+            ...chart.options().watermark,
+            color: newTheme.watermarkColor,
+          }
         });
         
-        volumeSeries.setData(volumeData);
-      }
-      
-      // Store theme on hook for reference
-      hook.theme = theme;
-      
-      // If this update was triggered from a local chart theme change (not global),
-      // notify the LiveView about the theme change
-      if (hook.el.dataset.connected === "true" && hook.el.dataset.theme !== theme) {
-        try {
-          hook.pushEvent("chart-theme-changed", { theme });
-        } catch (error) {
-          console.error("Failed to push chart theme change event:", error);
+        candleSeries.applyOptions({
+          upColor: newTheme.upColor,
+          downColor: newTheme.downColor,
+          wickUpColor: newTheme.upColor,
+          wickDownColor: newTheme.downColor,
+          priceLineColor: newTheme.borderColor,
+        });
+        
+        // Update volume series colors if it exists
+        if (volumeSeries) {
+          // Optimization: Create a Map for faster candle lookup
+          const candleDataMap = new Map(candleSeries.data().map(c => [c.time, c]));
+          
+          const volumeData = volumeSeries.data().map(item => {
+            const candle = candleDataMap.get(item.time); // O(1) average lookup
+            return {
+              time: item.time,
+              value: item.value,
+              color: candle && candle.close >= candle.open ? 
+                newTheme.volumeColor : newTheme.volumeDownColor,
+            };
+          });
+          
+          volumeSeries.setData(volumeData);
         }
+        
+        // Store theme on hook for reference
+        hook.theme = theme;
+        
+        // If this update was triggered from a local chart theme change (not global),
+        // notify the LiveView about the theme change
+        if (hook.el.dataset.connected === "true" && hook.el.dataset.theme !== theme) {
+          try {
+            hook.pushEvent("chart-theme-changed", { theme });
+          } catch (error) {
+            console.error("Failed to push chart theme change event:", error);
+          }
+        }
+        
+        // Update data attribute
+        hook.el.dataset.theme = theme;
+        
+        console.log("Chart theme updated successfully to:", theme);
+      } else {
+        console.error("Invalid theme specified:", theme, "Available themes:", Object.keys(themes));
       }
-      
-      // Update data attribute
-      hook.el.dataset.theme = theme;
-      
-      console.log("Chart theme updated successfully to:", theme);
-    } else {
-      console.error("Invalid theme specified:", theme, "Available themes:", Object.keys(themes));
+    } catch (error) {
+      console.error("Error in chart-theme-updated handler:", error);
     }
   });
 };

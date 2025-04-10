@@ -33,21 +33,16 @@ defmodule CentralWeb.BacktestLive.Utils.MarketDataLoader do
   Fetch market data using direct query for reliability
   """
   def fetch_market_data(symbol, timeframe) do
-    # Calculate time range for the last 200 candles
-    end_time = DateTime.utc_now()
-    start_time = calculate_start_time(end_time, timeframe, 200)
-
-    # Skip the context and use direct query for reliability
+    # Fetch the latest 200 candles directly
     query =
       from m in MarketDataSchema,
         where: m.symbol == ^symbol,
         where: m.timeframe == ^timeframe,
-        where: m.timestamp >= ^start_time,
-        where: m.timestamp <= ^end_time,
-        order_by: [asc: m.timestamp],
+        order_by: [desc: m.timestamp],
         limit: 200
 
-    candles = Repo.all(query)
+    # Fetch and reverse to get ascending order for chart
+    candles = Repo.all(query) |> Enum.reverse()
 
     if Enum.empty?(candles) do
       # No data found, trigger a sync for this symbol/timeframe

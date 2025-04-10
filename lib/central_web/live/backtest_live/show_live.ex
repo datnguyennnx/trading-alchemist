@@ -68,7 +68,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-4 py-8 w-full">
       <div class="flex items-center justify-between mb-6">
         <div>
           <h1 class="text-2xl font-bold">Backtest: {@strategy.name}</h1>
@@ -84,41 +84,36 @@ defmodule CentralWeb.BacktestLive.ShowLive do
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div class="lg:col-span-3">
-          <div class="bg-background rounded-lg border border-border p-4">
-            <div class="h-[500px]">
-              <div class="flex flex-col h-full w-full bg-background p-4 gap-4">
-                <!-- Market data stats -->
-                <ChartStats.chart_stats chart_data={@chart_data} />
+          <div class="bg-background rounded-lg border border-border p-4 flex flex-col">
+            <div class="mb-4">
+              <ChartStats.chart_stats chart_data={@chart_data} />
+            </div>
 
-    <!-- Chart container -->
-                <div
-                  id="tradingview-chart"
-                  phx-hook="TradingViewChart"
-                  data-chart-data={Jason.encode!(@chart_data)}
-                  data-theme={@chart_theme}
-                  data-symbol={@symbol}
-                  data-timeframe={@timeframe}
-                  data-debug={
-                    Jason.encode!(%{count: length(@chart_data), timestamp: DateTime.utc_now()})
-                  }
-                  class="w-full h-[70vh] rounded-lg border border-border bg-card"
-                  phx-update="ignore"
-                  style="position: relative;"
-                >
-                  <div class="h-full w-full flex items-center justify-center">
-                    <p id="loading-text" class="text-muted-foreground">
-                      {if @loading, do: "Loading market data...", else: "Chart will render here"}
-                    </p>
-                  </div>
-                </div>
+            <div
+              id="tradingview-chart"
+              phx-hook="TradingViewChart"
+              data-chart-data={Jason.encode!(@chart_data)}
+              data-theme={@chart_theme}
+              data-symbol={@symbol}
+              data-timeframe={@timeframe}
+              data-debug={
+                Jason.encode!(%{count: length(@chart_data), timestamp: DateTime.utc_now()})
+              }
+              class="w-full h-[50vh] rounded-lg border border-border bg-card flex-grow"
+              phx-update="ignore"
+              style="position: relative;"
+            >
+              <div class="h-full w-full flex items-center justify-center">
+                <p id="loading-text" class="text-muted-foreground">
+                  {if @loading, do: "Loading market data...", else: "Chart will render here"}
+                </p>
               </div>
             </div>
           </div>
 
-    <!-- Backtests and Trades Accordion -->
-          <div class="mt-8">
+          <div class="mt-6">
             <h2 class="text-xl font-semibold mb-4">Backtest History</h2>
             <%= if Enum.empty?(@backtests) do %>
               <div class="bg-card rounded-md p-6 border border-border text-center">

@@ -72,7 +72,6 @@ export const processChartData = (chartData) => {
 
 export const updateChartSeries = (candleSeries, volumeSeries, chartData, activeTheme) => {
   if (!Array.isArray(chartData) || chartData.length === 0) {
-    console.warn("No chart data to display");
     return;
   }
   
@@ -92,7 +91,6 @@ export const updateChartSeries = (candleSeries, volumeSeries, chartData, activeT
   const { data, hasVolume } = processChartData(chartData);
   
   if (data.length === 0) {
-    console.error("No valid data to display");
     return;
   }
   
