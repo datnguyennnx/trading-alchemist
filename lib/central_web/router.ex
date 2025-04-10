@@ -72,9 +72,9 @@ defmodule CentralWeb.Router do
 
       # Strategy management routes
       live "/strategies", StrategyLive.IndexLive, :index
-      live "/strategies/new", StrategyLive.FormLive, :new
+      live "/strategies/new", StrategyLive.NewFormLive, :new
       live "/strategies/:id", StrategyLive.ShowLive, :show
-      live "/strategies/:id/edit", StrategyLive.FormLive, :edit
+      live "/strategies/:id/edit", StrategyLive.EditFormLive, :edit
 
       # Backtest routes
       live "/backtest", BacktestLive.IndexLive, :index
