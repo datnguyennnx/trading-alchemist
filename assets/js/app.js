@@ -24,6 +24,7 @@ import {LiveSocket} from "phoenix_live_view"
 // Import hooks
 import FlickeringGrid from "./hooks/flickering_grid"
 import ThemeSwitcher, { ThemeUIUpdater, themeUtils } from "./hooks/theme-switcher"
+import DateTimePicker from "./hooks/date_time_picker"
 import TradingViewChart from "./hooks/tradingview"
 
 // Run theme initialization BEFORE LiveView connects
@@ -36,7 +37,8 @@ const Hooks = {
   FlickeringGrid,
   ThemeSwitcher,
   ThemeUIUpdater,
-  TradingViewChart
+  TradingViewChart,
+  DateTimePicker
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

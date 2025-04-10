@@ -7,7 +7,9 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
   import SaladUI.Form
   import SaladUI.Input
   import SaladUI.Button
+  import CentralWeb.Components.DateTimePicker, only: [date_time_picker: 1]
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
@@ -40,14 +42,24 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
 
               <.form_item>
                 <.form_label>Start Time</.form_label>
-                <.input field={f[:start_time]} name="start_time" type="datetime-local" required />
-                <.form_message field={f[:start_time]} />
+                <div phx-update="ignore" id="start_time_container">
+                  <.date_time_picker
+                    id="backtest-start-time"
+                    name="start_time"
+                    value={@start_time}
+                  />
+                </div>
               </.form_item>
 
               <.form_item>
                 <.form_label>End Time</.form_label>
-                <.input field={f[:end_time]} name="end_time" type="datetime-local" required />
-                <.form_message field={f[:end_time]} />
+                <div phx-update="ignore" id="end_time_container">
+                  <.date_time_picker
+                    id="backtest-end-time"
+                    name="end_time"
+                    value={@end_time}
+                  />
+                </div>
               </.form_item>
 
               <.form_item>
@@ -121,11 +133,22 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
     """
   end
 
+  @impl true
   def update(assigns, socket) do
+    # Get default dates as DateTime objects
+    start_time = assigns[:start_time] || default_start_time_datetime()
+    end_time = assigns[:end_time] || default_end_time_datetime()
+
+    # Handle date time picker updates if present
+    socket =
+      if assigns[:date_time_picker_event] do
+        handle_date_time_picker_event(assigns[:date_time_picker_event], socket)
+      else
+        socket
+      end
+
     # Initialize form with default values
     default_values = %{
-      "start_time" => default_start_time(),
-      "end_time" => default_end_time(),
       "initial_balance" => "10000.0",
       "position_size" => "2.0"
     }
@@ -133,19 +156,47 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:form, to_form(default_values))}
+     |> assign(:form, to_form(default_values))
+     |> assign(:start_time, start_time)
+     |> assign(:end_time, end_time)}
   end
 
+  defp handle_date_time_picker_event(%{"name" => "start_time", "value" => value}, socket) when is_binary(value) do
+    # Parse datetime safely
+    case DateTime.from_iso8601(value) do
+      {:ok, datetime, _offset} ->
+        assign(socket, :start_time, datetime)
+
+      {:error, _reason} ->
+        socket
+    end
+  end
+
+  defp handle_date_time_picker_event(%{"name" => "end_time", "value" => value}, socket) when is_binary(value) do
+    # Parse datetime safely
+    case DateTime.from_iso8601(value) do
+      {:ok, datetime, _offset} ->
+        assign(socket, :end_time, datetime)
+
+      {:error, _reason} ->
+        socket
+    end
+  end
+
+  defp handle_date_time_picker_event(_params, socket) do
+    socket
+  end
+
+  @impl true
   def handle_event("start_backtest", params, socket) do
-    # Extract the correct form values from the params
-    start_time = get_form_value(params, "start_time")
-    end_time = get_form_value(params, "end_time")
+    # Extract the values from params (position_size and initial_balance)
+    # and from assigns (start_time and end_time from the DateTimePicker)
     initial_balance = get_form_value(params, "initial_balance")
     position_size = get_form_value(params, "position_size")
 
     # Debug info to verify what values we're receiving
     Logger.debug(
-      "Form values received - start_time: #{start_time}, end_time: #{end_time}, initial_balance: #{initial_balance}, position_size: #{position_size}"
+      "Form values received - start_time: #{inspect(socket.assigns.start_time)}, end_time: #{inspect(socket.assigns.end_time)}, initial_balance: #{initial_balance}, position_size: #{position_size}"
     )
 
     # Use the strategy's values for symbol and timeframe
@@ -211,8 +262,8 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
       strategy_id: socket.assigns.strategy.id,
       symbol: symbol,
       timeframe: timeframe,
-      start_time: parse_datetime(start_time),
-      end_time: parse_datetime(end_time),
+      start_time: socket.assigns.start_time,
+      end_time: socket.assigns.end_time,
       initial_balance: parsed_initial_balance,
       position_size: parsed_position_size,
       status: :pending,
@@ -248,6 +299,61 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
     end
   end
 
+  # --- Moved handle_event clauses for date_time_picker_change ---
+  @impl true
+  def handle_event("date_time_picker_change", %{"name" => "start_time", "value" => value}, socket) when is_binary(value) do
+    # Parse datetime safely
+    case DateTime.from_iso8601(value) do
+      {:ok, datetime, _offset} ->
+        {:noreply, assign(socket, :start_time, datetime)}
+
+      {:error, _reason} ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("date_time_picker_change", %{"name" => "end_time", "value" => value}, socket) when is_binary(value) do
+    # Parse datetime safely
+    case DateTime.from_iso8601(value) do
+      {:ok, datetime, _offset} ->
+        {:noreply, assign(socket, :end_time, datetime)}
+
+      {:error, _reason} ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("date_time_picker_change", _params, socket) do
+    {:noreply, socket}
+  end
+  # --- End of moved clauses ---
+
+  # Group handle_info clauses together
+  def handle_info({:datetime_updated, %{name: "start_time", datetime: datetime}}, socket) when not is_nil(datetime) do
+    require Logger
+    Logger.debug("Received datetime_updated for start_time: #{inspect(datetime)}")
+    # Directly assign the DateTime value
+    {:noreply, assign(socket, :start_time, datetime)}
+  end
+
+  def handle_info({:datetime_updated, %{name: "end_time", datetime: datetime}}, socket) when not is_nil(datetime) do
+    require Logger
+    Logger.debug("Received datetime_updated for end_time: #{inspect(datetime)}")
+    # Directly assign the DateTime value
+    {:noreply, assign(socket, :end_time, datetime)}
+  end
+
+  def handle_info({:backtest_update, backtest}, socket) do
+    {:noreply, assign(socket, :backtest, backtest)}
+  end
+
+  # Catch-all handler for unhandled datetime updates
+  def handle_info({:datetime_updated, _}, socket) do
+    {:noreply, socket}
+  end
+
   # Helper to extract form values from different form structures
   defp get_form_value(params, field) do
     cond do
@@ -276,10 +382,6 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
     |> Enum.join("; ")
   end
 
-  def handle_info({:backtest_update, backtest}, socket) do
-    {:noreply, assign(socket, :backtest, backtest)}
-  end
-
   defp status_class(:pending), do: "text-yellow-600"
   defp status_class(:running), do: "text-blue-600"
   defp status_class(:completed), do: "text-green-600"
@@ -292,45 +394,17 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
 
   defp format_balance(balance), do: balance
 
-  defp parse_datetime(nil), do: nil
-  defp parse_datetime(""), do: nil
-
-  defp parse_datetime(datetime_string) when is_binary(datetime_string) do
-    # First try parsing as ISO 8601
-    case DateTime.from_iso8601(datetime_string) do
-      {:ok, datetime, _} ->
-        datetime
-
-      _ ->
-        # Then try parsing as datetime-local format
-        try do
-          [date_str, time_str] = String.split(datetime_string, "T")
-          [year, month, day] = String.split(date_str, "-") |> Enum.map(&String.to_integer/1)
-          [hour, minute] = String.split(time_str, ":") |> Enum.map(&String.to_integer/1)
-
-          {:ok, datetime} = NaiveDateTime.new(year, month, day, hour, minute, 0)
-          DateTime.from_naive!(datetime, "Etc/UTC")
-        rescue
-          _ -> nil
-        end
-    end
-  end
-
-  defp parse_datetime(_), do: nil
-
-  # Helper functions to set reasonable default times
-  defp default_start_time do
+  # Helper functions to set reasonable default times as DateTime objects
+  defp default_start_time_datetime do
     # Default to 30 days ago
     DateTime.utc_now()
     |> DateTime.add(-30, :day)
-    |> DateTime.to_iso8601()
-    |> String.replace("Z", "")
+    |> DateTime.truncate(:second)
   end
 
-  defp default_end_time do
+  defp default_end_time_datetime do
     # Default to now
     DateTime.utc_now()
-    |> DateTime.to_iso8601()
-    |> String.replace("Z", "")
+    |> DateTime.truncate(:second)
   end
 end

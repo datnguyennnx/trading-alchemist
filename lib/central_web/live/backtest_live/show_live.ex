@@ -91,7 +91,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
               <div class="flex flex-col h-full w-full bg-background p-4 gap-4">
                 <!-- Market data stats -->
                 <ChartStats.chart_stats chart_data={@chart_data} />
-                
+
     <!-- Chart container -->
                 <div
                   id="tradingview-chart"
@@ -116,7 +116,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
               </div>
             </div>
           </div>
-          
+
     <!-- Backtests and Trades Accordion -->
           <div class="mt-8">
             <h2 class="text-xl font-semibold mb-4">Backtest History</h2>
@@ -166,7 +166,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
                             <p class="font-semibold">{format_datetime(backtest.end_time)}</p>
                           </div>
                         </div>
-                        
+
     <!-- Trades using Table component -->
                         <h3 class="text-md font-semibold mb-2">Trades</h3>
                         <%= if Enum.empty?(backtest.trades) do %>
@@ -366,6 +366,17 @@ defmodule CentralWeb.BacktestLive.ShowLive do
        has_more: has_more,
        batchSize: recommended_batch_size
      }, socket}
+  end
+
+  @impl true
+  def handle_event("date_time_picker_change", params, socket) do
+    # Forward the event to the BacktestConfig component
+    send_update(CentralWeb.BacktestLive.Components.BacktestConfig,
+      id: "backtest-config",
+      date_time_picker_event: params
+    )
+
+    {:noreply, socket}
   end
 
   @impl true
