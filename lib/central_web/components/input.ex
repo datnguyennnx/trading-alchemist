@@ -46,7 +46,7 @@ defmodule CentralWeb.Components.Input do
         classes([
           if(@type == "checkbox",
             do:
-              "h-4 w-4 rounded border-input bg-background text-primary focus:ring-1 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
+              "h-4 w-4 rounded border-input bg-background text-primary focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
             else:
               "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-input dark:bg-background dark:text-foreground dark:placeholder:text-muted-foreground dark:focus-visible:ring-ring"
           ),

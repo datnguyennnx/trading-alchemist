@@ -4,8 +4,8 @@ defmodule CentralWeb.AuthLive.UserConfirmationInstructionsLive do
   alias Central.Accounts
   import CentralWeb.CoreComponents
   import CentralWeb.Components.Input
-  import CentralWeb.Components.Form
-  import CentralWeb.Components.Button
+  import SaladUI.Form
+  import SaladUI.Button
 
   def render(assigns) do
     ~H"""
@@ -28,6 +28,11 @@ defmodule CentralWeb.AuthLive.UserConfirmationInstructionsLive do
           </.form_control>
           <.form_message field={@form[:email]} />
         </.form_item>
+        <div>
+          <.error :if={@flash_error}>
+            <%= @flash_error %>
+          </.error>
+        </div>
 
         <div class="mt-6 flex justify-end">
           <.button phx-disable-with="Sending..." class="w-full">
@@ -40,7 +45,8 @@ defmodule CentralWeb.AuthLive.UserConfirmationInstructionsLive do
   end
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: "user"))}
+    flash_error = Phoenix.Flash.get(socket.assigns.flash, :error)
+    {:ok, assign(socket, form: to_form(%{}, as: "user"), flash_error: flash_error)}
   end
 
   def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do

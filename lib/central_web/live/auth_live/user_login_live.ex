@@ -2,8 +2,8 @@ defmodule CentralWeb.AuthLive.UserLoginLive do
   use CentralWeb, :live_view
   import CentralWeb.CoreComponents
   import CentralWeb.Components.Input
-  import CentralWeb.Components.Form
-  import CentralWeb.Components.Button
+  import SaladUI.Form
+  import SaladUI.Button
 
   def render(assigns) do
     ~H"""
@@ -42,6 +42,12 @@ defmodule CentralWeb.AuthLive.UserLoginLive do
           <.form_message field={@form[:password]} />
         </.form_item>
 
+        <div>
+          <.error :if={@flash_error}>
+            <%= @flash_error %>
+          </.error>
+        </div>
+
         <.form_item>
           <div class="flex items-center justify-between">
             <label class="flex items-center gap-2">
@@ -66,7 +72,8 @@ defmodule CentralWeb.AuthLive.UserLoginLive do
 
   def mount(_params, _session, socket) do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
+    flash_error = Phoenix.Flash.get(socket.assigns.flash, :error)
     form = to_form(%{"email" => email}, as: "user")
-    {:ok, assign(socket, form: form), temporary_assigns: [form: form]}
+    {:ok, assign(socket, form: form, flash_error: flash_error), temporary_assigns: [form: form]}
   end
 end

@@ -2,8 +2,8 @@ defmodule CentralWeb.AuthLive.UserSettingsLive do
   use CentralWeb, :live_view
   import CentralWeb.CoreComponents
   import CentralWeb.Components.Input
-  import CentralWeb.Components.Form
-  import CentralWeb.Components.Button
+  import SaladUI.Form
+  import SaladUI.Button
 
   alias Central.Accounts
 
@@ -11,45 +11,9 @@ defmodule CentralWeb.AuthLive.UserSettingsLive do
     ~H"""
     <div class="flex flex-col justify-center h-screen mx-auto max-w-sm">
       <.header class="text-center">
-        Account Settings
-        <:subtitle>Manage your account email address and password settings</:subtitle>
+        Password Settings
+        <:subtitle>Update your account password</:subtitle>
       </.header>
-      <div>
-        <.form
-          for={@email_form}
-          id="email_form"
-          phx-submit="update_email"
-          phx-change="validate_email"
-          class="space-y-6"
-        >
-          <.form_item>
-            <.form_label>Email</.form_label>
-            <.form_control>
-              <.input field={@email_form[:email]} type="email" required />
-            </.form_control>
-            <.form_message field={@email_form[:email]} />
-          </.form_item>
-
-          <.form_item>
-            <.form_label>Current password</.form_label>
-            <.form_control>
-              <.input
-                field={@email_form[:current_password]}
-                name="current_password"
-                id="current_password_for_email"
-                type="password"
-                value={@email_form_current_password}
-                required
-              />
-            </.form_control>
-            <.form_message field={@email_form[:current_password]} />
-          </.form_item>
-
-          <div class="mt-6">
-            <.button phx-disable-with="Changing...">Change Email</.button>
-          </div>
-        </.form>
-      </div>
       <div>
         <.form
           for={@password_form}
@@ -99,6 +63,12 @@ defmodule CentralWeb.AuthLive.UserSettingsLive do
             <.form_message field={@password_form[:current_password]} />
           </.form_item>
 
+          <div>
+            <.error :if={@flash_error}>
+              <%= @flash_error %>
+            </.error>
+          </div>
+
           <div class="mt-6">
             <.button phx-disable-with="Changing...">Change Password</.button>
           </div>
@@ -108,66 +78,25 @@ defmodule CentralWeb.AuthLive.UserSettingsLive do
     """
   end
 
-  def mount(%{"token" => token}, _session, socket) do
-    socket =
-      case Accounts.update_user_email(socket.assigns.current_user, token) do
-        :ok ->
-          put_flash(socket, :info, "Email changed successfully.")
-
-        :error ->
-          put_flash(socket, :error, "Email change link is invalid or it has expired.")
-      end
-
+  def mount(%{"token" => _token}, _session, socket) do
+    socket = put_flash(socket, :error, "Invalid request.")
     {:ok, push_navigate(socket, to: ~p"/users/settings")}
   end
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    email_changeset = Accounts.change_user_email(user)
     password_changeset = Accounts.change_user_password(user)
+    flash_error = Phoenix.Flash.get(socket.assigns.flash, :error)
 
     socket =
       socket
       |> assign(:current_password, nil)
-      |> assign(:email_form_current_password, nil)
       |> assign(:current_email, user.email)
-      |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
       |> assign(:trigger_submit, false)
+      |> assign(:flash_error, flash_error)
 
     {:ok, socket}
-  end
-
-  def handle_event("validate_email", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
-
-    email_form =
-      socket.assigns.current_user
-      |> Accounts.change_user_email(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
-
-    {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
-  end
-
-  def handle_event("update_email", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_user
-
-    case Accounts.apply_user_email(user, password, user_params) do
-      {:ok, applied_user} ->
-        Accounts.deliver_user_update_email_instructions(
-          applied_user,
-          user.email,
-          &url(~p"/users/settings/confirm_email/#{&1}")
-        )
-
-        info = "A link to confirm your email change has been sent to the new address."
-        {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
-
-      {:error, changeset} ->
-        {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}
-    end
   end
 
   def handle_event("validate_password", params, socket) do
@@ -196,7 +125,11 @@ defmodule CentralWeb.AuthLive.UserSettingsLive do
         {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
 
       {:error, changeset} ->
-        {:noreply, assign(socket, password_form: to_form(changeset))}
+        {:noreply,
+         socket
+         |> assign(password_form: to_form(changeset))
+         |> assign(flash_error: "Failed to update password. Please check the form for errors.")
+        }
     end
   end
 end

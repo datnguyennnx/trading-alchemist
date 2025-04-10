@@ -5,8 +5,8 @@ defmodule CentralWeb.AuthLive.UserRegistrationLive do
   alias Central.Accounts.User
   import CentralWeb.CoreComponents
   import CentralWeb.Components.Input
-  import CentralWeb.Components.Form
-  import CentralWeb.Components.Button
+  import SaladUI.Form
+  import SaladUI.Button
 
   def render(assigns) do
     ~H"""
@@ -52,6 +52,12 @@ defmodule CentralWeb.AuthLive.UserRegistrationLive do
           <.form_message field={@form[:password]} />
         </.form_item>
 
+        <div>
+          <.error :if={@flash_error}>
+            <%= @flash_error %>
+          </.error>
+        </div>
+
         <div class="mt-6">
           <.button phx-disable-with="Creating account..." class="w-full">Create an account</.button>
         </div>
@@ -62,10 +68,11 @@ defmodule CentralWeb.AuthLive.UserRegistrationLive do
 
   def mount(_params, _session, socket) do
     changeset = Accounts.change_user_registration(%User{})
+    flash_error = Phoenix.Flash.get(socket.assigns.flash, :error)
 
     socket =
       socket
-      |> assign(trigger_submit: false, check_errors: false)
+      |> assign(trigger_submit: false, check_errors: false, flash_error: flash_error)
       |> assign_form(changeset)
 
     {:ok, socket, temporary_assigns: [form: nil]}

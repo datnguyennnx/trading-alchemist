@@ -2,8 +2,8 @@ defmodule CentralWeb.AuthLive.UserResetPasswordLive do
   use CentralWeb, :live_view
   import CentralWeb.CoreComponents
   import CentralWeb.Components.Input
-  import CentralWeb.Components.Form
-  import CentralWeb.Components.Button
+  import SaladUI.Form
+  import SaladUI.Button
 
   alias Central.Accounts
 
@@ -19,10 +19,6 @@ defmodule CentralWeb.AuthLive.UserResetPasswordLive do
         phx-change="validate"
         class="space-y-6"
       >
-        <.error :if={@form.errors != []}>
-          Oops, something went wrong! Please check the errors below.
-        </.error>
-
         <.form_item>
           <.form_label>New password</.form_label>
           <.form_control>
@@ -38,6 +34,10 @@ defmodule CentralWeb.AuthLive.UserResetPasswordLive do
           </.form_control>
           <.form_message field={@form[:password_confirmation]} />
         </.form_item>
+
+        <.error :if={@form.errors != []}>
+          Oops, something went wrong! Please check the errors below.
+        </.error>
 
         <div class="mt-6">
           <.button phx-disable-with="Resetting..." class="w-full">Reset Password</.button>

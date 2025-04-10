@@ -4,8 +4,8 @@ defmodule CentralWeb.AuthLive.UserForgotPasswordLive do
   alias Central.Accounts
   import CentralWeb.CoreComponents
   import CentralWeb.Components.Input
-  import CentralWeb.Components.Form
-  import CentralWeb.Components.Button
+  import SaladUI.Form
+  import SaladUI.Button
 
   def render(assigns) do
     ~H"""
@@ -24,6 +24,12 @@ defmodule CentralWeb.AuthLive.UserForgotPasswordLive do
           <.form_message field={@form[:email]} />
         </.form_item>
 
+        <div>
+          <.error :if={@flash_error}>
+            <%= @flash_error %>
+          </.error>
+        </div>
+
         <div class="mt-6">
           <.button phx-disable-with="Sending..." class="w-full">
             Send password reset instructions
@@ -35,7 +41,8 @@ defmodule CentralWeb.AuthLive.UserForgotPasswordLive do
   end
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: "user"))}
+    flash_error = Phoenix.Flash.get(socket.assigns.flash, :error)
+    {:ok, assign(socket, form: to_form(%{}, as: "user"), flash_error: flash_error)}
   end
 
   def handle_event("send_email", %{"user" => %{"email" => email}}, socket) do

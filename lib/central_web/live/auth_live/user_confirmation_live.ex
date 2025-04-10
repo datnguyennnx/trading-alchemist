@@ -4,7 +4,7 @@ defmodule CentralWeb.AuthLive.UserConfirmationLive do
   alias Central.Accounts
   import CentralWeb.CoreComponents
   import CentralWeb.Components.Input
-  import CentralWeb.Components.Button
+  import SaladUI.Button
 
   def render(%{live_action: :edit} = assigns) do
     ~H"""
@@ -13,6 +13,11 @@ defmodule CentralWeb.AuthLive.UserConfirmationLive do
 
       <.form for={@form} id="confirmation_form" phx-submit="confirm_account" class="space-y-6">
         <.input type="hidden" name={@form[:token].name} value={@form[:token].value} />
+        <div>
+          <.error :if={@flash_error}>
+            <%= @flash_error %>
+          </.error>
+        </div>
         <div class="mt-6">
           <.button phx-disable-with="Confirming..." class="w-full">Confirm my account</.button>
         </div>
@@ -22,8 +27,9 @@ defmodule CentralWeb.AuthLive.UserConfirmationLive do
   end
 
   def mount(%{"token" => token}, _session, socket) do
+    flash_error = Phoenix.Flash.get(socket.assigns.flash, :error)
     form = to_form(%{"token" => token}, as: "user")
-    {:ok, assign(socket, form: form), temporary_assigns: [form: nil]}
+    {:ok, assign(socket, form: form, flash_error: flash_error), temporary_assigns: [form: nil]}
   end
 
   # Do not log in the user after confirmation to avoid a
