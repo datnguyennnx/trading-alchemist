@@ -3,7 +3,6 @@ defmodule CentralWeb.Components.UI.Dialog do
   Implement of Dialog components from https://ui.shadcn.com/docs/components/dialog
   """
   use CentralWeb.Component
-  import Phoenix.LiveView.JS
   alias CentralWeb.Components.UI.Icon
 
   # Icon component

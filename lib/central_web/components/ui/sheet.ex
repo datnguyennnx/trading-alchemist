@@ -38,7 +38,6 @@ defmodule CentralWeb.Components.UI.Sheet do
       </.sheet>
   """
   use CentralWeb.Component
-  import Phoenix.LiveView.JS
   alias CentralWeb.Components.UI.Icon
 
   # Icon component
