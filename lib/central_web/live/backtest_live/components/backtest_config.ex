@@ -28,6 +28,8 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
             phx-submit="start_backtest"
             phx-target={@myself}
             class="space-y-4"
+            id="backtest-config-form"
+            phx-hook="BacktestForm"
           >
             <div class="grid grid-cols-1 gap-4">
               <.form_item>
@@ -43,14 +45,14 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
               <.form_item>
                 <.form_label>Start Time</.form_label>
                 <div phx-update="ignore" id="start_time_container">
-                  <.date_time_picker id="backtest-start-time" name="start_time" value={@start_time} />
+                  <.date_time_picker id="backtest-start-time" name="start_time" value={@start_time} suppress_events={true} />
                 </div>
               </.form_item>
 
               <.form_item>
                 <.form_label>End Time</.form_label>
                 <div phx-update="ignore" id="end_time_container">
-                  <.date_time_picker id="backtest-end-time" name="end_time" value={@end_time} />
+                  <.date_time_picker id="backtest-end-time" name="end_time" value={@end_time} suppress_events={true} />
                 </div>
               </.form_item>
 
@@ -131,10 +133,13 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
     start_time = assigns[:start_time] || default_start_time_datetime()
     end_time = assigns[:end_time] || default_end_time_datetime()
 
-    # Handle date time picker updates if present
+    # Completely ignore date time picker updates to prevent accidental backtests
     socket =
       if assigns[:date_time_picker_event] do
-        handle_date_time_picker_event(assigns[:date_time_picker_event], socket)
+        # Intentionally ignoring date_time_picker_event to prevent automatic backtests
+        require Logger
+        Logger.debug("Ignoring date_time_picker_event in update/2 (preventing auto-backtest)")
+        socket
       else
         socket
       end
@@ -153,44 +158,37 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
      |> assign(:end_time, end_time)}
   end
 
-  defp handle_date_time_picker_event(%{"name" => "start_time", "value" => value}, socket)
-       when is_binary(value) do
-    # Parse datetime safely
-    case DateTime.from_iso8601(value) do
-      {:ok, datetime, _offset} ->
-        assign(socket, :start_time, datetime)
-
-      {:error, _reason} ->
-        socket
-    end
-  end
-
-  defp handle_date_time_picker_event(%{"name" => "end_time", "value" => value}, socket)
-       when is_binary(value) do
-    # Parse datetime safely
-    case DateTime.from_iso8601(value) do
-      {:ok, datetime, _offset} ->
-        assign(socket, :end_time, datetime)
-
-      {:error, _reason} ->
-        socket
-    end
-  end
-
-  defp handle_date_time_picker_event(_params, socket) do
-    socket
-  end
-
   @impl true
   def handle_event("start_backtest", params, socket) do
     # Extract the values from params (position_size and initial_balance)
-    # and from assigns (start_time and end_time from the DateTimePicker)
+    # and also get the start_time and end_time from params instead of assigns
     initial_balance = get_form_value(params, "initial_balance")
     position_size = get_form_value(params, "position_size")
 
+    # Try to get date values from params first, fallback to assigns
+    start_time =
+      case get_form_value(params, "start_time") do
+        value when is_binary(value) and value != "" ->
+          case DateTime.from_iso8601(value) do
+            {:ok, datetime, _} -> datetime
+            _ -> socket.assigns.start_time
+          end
+        _ -> socket.assigns.start_time
+      end
+
+    end_time =
+      case get_form_value(params, "end_time") do
+        value when is_binary(value) and value != "" ->
+          case DateTime.from_iso8601(value) do
+            {:ok, datetime, _} -> datetime
+            _ -> socket.assigns.end_time
+          end
+        _ -> socket.assigns.end_time
+      end
+
     # Debug info to verify what values we're receiving
     Logger.debug(
-      "Form values received - start_time: #{inspect(socket.assigns.start_time)}, end_time: #{inspect(socket.assigns.end_time)}, initial_balance: #{initial_balance}, position_size: #{position_size}"
+      "Form values received - start_time: #{inspect(start_time)}, end_time: #{inspect(end_time)}, initial_balance: #{initial_balance}, position_size: #{position_size}"
     )
 
     # Use the strategy's values for symbol and timeframe
@@ -256,8 +254,8 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
       strategy_id: socket.assigns.strategy.id,
       symbol: symbol,
       timeframe: timeframe,
-      start_time: socket.assigns.start_time,
-      end_time: socket.assigns.end_time,
+      start_time: start_time,
+      end_time: end_time,
       initial_balance: parsed_initial_balance,
       position_size: parsed_position_size,
       status: :pending,
@@ -292,40 +290,6 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
          |> assign(:form, to_form(changeset))}
     end
   end
-
-  # --- Moved handle_event clauses for date_time_picker_change ---
-  @impl true
-  def handle_event("date_time_picker_change", %{"name" => "start_time", "value" => value}, socket)
-      when is_binary(value) do
-    # Parse datetime safely
-    case DateTime.from_iso8601(value) do
-      {:ok, datetime, _offset} ->
-        {:noreply, assign(socket, :start_time, datetime)}
-
-      {:error, _reason} ->
-        {:noreply, socket}
-    end
-  end
-
-  @impl true
-  def handle_event("date_time_picker_change", %{"name" => "end_time", "value" => value}, socket)
-      when is_binary(value) do
-    # Parse datetime safely
-    case DateTime.from_iso8601(value) do
-      {:ok, datetime, _offset} ->
-        {:noreply, assign(socket, :end_time, datetime)}
-
-      {:error, _reason} ->
-        {:noreply, socket}
-    end
-  end
-
-  @impl true
-  def handle_event("date_time_picker_change", _params, socket) do
-    {:noreply, socket}
-  end
-
-  # --- End of moved clauses ---
 
   # Group handle_info clauses together
   def handle_info({:datetime_updated, %{name: "start_time", datetime: datetime}}, socket)

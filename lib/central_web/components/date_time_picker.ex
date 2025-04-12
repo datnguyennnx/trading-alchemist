@@ -13,6 +13,7 @@ defmodule CentralWeb.Components.DateTimePicker do
   attr :placeholder, :string, default: "Select date and time"
   attr :disabled, :boolean, default: false
   attr :label, :string, default: nil
+  attr :suppress_events, :boolean, default: true
 
   def date_time_picker(assigns) do
     ~H"""
@@ -29,6 +30,7 @@ defmodule CentralWeb.Components.DateTimePicker do
         data-placeholder={@placeholder}
         data-disabled={@disabled}
         data-period={selected_period(@value)}
+        data-suppress-events={@suppress_events}
       >
         <div class="relative">
           <.input
@@ -71,7 +73,7 @@ defmodule CentralWeb.Components.DateTimePicker do
             </div>
 
             <div class="calendar-days">
-              <!-- Days will be dynamically inserted by the hook -->
+              <!-- Days will be dynamically inserted by the JS hook -->
             </div>
           </div>
 

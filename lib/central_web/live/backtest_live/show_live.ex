@@ -159,7 +159,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
                             <p class="font-semibold">{format_datetime(backtest.end_time)}</p>
                           </div>
                         </div>
-                        
+
     <!-- Trades using Table component -->
                         <h3 class="text-md font-semibold mb-2">Trades</h3>
                         <%= if Enum.empty?(backtest.trades) do %>
@@ -363,12 +363,9 @@ defmodule CentralWeb.BacktestLive.ShowLive do
 
   @impl true
   def handle_event("date_time_picker_change", params, socket) do
-    # Forward the event to the BacktestConfig component
-    send_update(CentralWeb.BacktestLive.Components.BacktestConfig,
-      id: "backtest-config",
-      date_time_picker_event: params
-    )
-
+    # Don't forward the event to the BacktestConfig component to prevent accidental backtests
+    require Logger
+    Logger.debug("Ignoring date_time_picker_change in show_live (preventing auto-backtest)")
     {:noreply, socket}
   end
 

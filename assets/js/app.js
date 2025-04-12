@@ -22,10 +22,9 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 
 // Import hooks
-import FlickeringGrid from "./hooks/flickering_grid"
-import ThemeSwitcher, { ThemeUIUpdater, themeUtils } from "./hooks/theme-switcher"
-import DateTimePicker from "./hooks/date_time_picker"
-import TradingViewChart from "./hooks/tradingview"
+import { FlickeringGrid, ThemeSwitcher, DatePicker, BacktestForm } from "./hooks";
+import { ThemeUIUpdater, themeUtils } from "./hooks/theme-switcher";
+import TradingViewChart from "./hooks/tradingview";
 
 // Run theme initialization BEFORE LiveView connects
 document.addEventListener('DOMContentLoaded', () => {
@@ -33,12 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
   themeUtils.applyTheme(theme);
 });
 
+// Register all hooks
 const Hooks = {
   FlickeringGrid,
   ThemeSwitcher,
   ThemeUIUpdater,
   TradingViewChart,
-  DateTimePicker
+  DateTimePicker: DatePicker,
+  BacktestForm
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
@@ -46,7 +47,6 @@ let liveSocket = new LiveSocket("/live", Socket, {
   params: {_csrf_token: csrfToken},
   hooks: Hooks
 })
-
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()
@@ -56,7 +56,6 @@ liveSocket.connect()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
-
 
 // Allows to execute JS commands from the server
 window.addEventListener("phx:js-exec", ({detail}) => {
