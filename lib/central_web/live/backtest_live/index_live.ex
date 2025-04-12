@@ -39,7 +39,7 @@ defmodule CentralWeb.BacktestLive.IndexLive do
                 <div class="space-y-4">
                   <%= for strategy <- @strategies do %>
                     <div
-                      class="border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors"
+                      class="border rounded-lg p-4 hover:border-primary hover:bg-accent cursor-pointer transition-colors"
                       phx-click="select_strategy"
                       phx-value-id={strategy.id}
                     >

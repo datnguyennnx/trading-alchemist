@@ -49,11 +49,12 @@ defmodule CentralWeb.Components.UI.Accordion do
   end
 
   attr :class, :string, default: nil
+  attr :disabled, :boolean, default: false
   slot :inner_block, required: true
 
   def accordion_item(assigns) do
     ~H"""
-    <div class={classes(["border-b", @class])}>
+    <div class={classes(["group/item mb-2", @class])}>
       {render_slot(@inner_block)}
     </div>
     """
@@ -62,14 +63,18 @@ defmodule CentralWeb.Components.UI.Accordion do
   attr :group, :string, default: nil
   attr :class, :string, default: nil
   attr :open, :boolean, default: false
+  attr :disabled, :boolean, default: false
   slot :inner_block, required: true
+  attr :rest, :global
 
   def accordion_trigger(assigns) do
     ~H"""
-    <details name={@group} class="group/accordion peer/accordion" open={@open}>
+    <details {@rest} name={@group} class={classes(["group/accordion peer/accordion", @disabled && "opacity-50 pointer-events-none"])} open={@open} disabled={@disabled}>
       <summary class={
         classes([
-          "flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline",
+          "flex flex-1 items-center justify-between p-4 font-medium transition-all rounded-md border border-input bg-background shadow-sm",
+          !@disabled && "hover:bg-accent hover:text-accent-foreground",
+          !@disabled && "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           @class
         ])
       }>
@@ -77,10 +82,15 @@ defmodule CentralWeb.Components.UI.Accordion do
           {render_slot(@inner_block)}
         </p>
 
-        <.icon
-          name="hero-chevron-down"
-          class="h-4 w-4 shrink-0 transition-transform duration-200 group-open/accordion:rotate-180"
-        />
+        <div :if={!@disabled}>
+          <.icon
+            name="hero-chevron-down"
+            class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open/accordion:rotate-180"
+          />
+        </div>
+        <div :if={@disabled}>
+          <.icon name="hero-no-symbol" class="h-4 w-4 shrink-0 text-muted-foreground" />
+        </div>
       </summary>
     </details>
     """
@@ -93,7 +103,7 @@ defmodule CentralWeb.Components.UI.Accordion do
     ~H"""
     <div class="text-sm overflow-hidden grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 peer-open/accordion:grid-rows-[1fr]">
       <div class="overflow-hidden">
-        <div class={classes(["pb-4 pt-0", @class])}>
+        <div class={classes(["my-4", @class])}>
           {render_slot(@inner_block)}
         </div>
       </div>

@@ -7,7 +7,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
   # Add necessary imports
   import CentralWeb.Components.UI.Button
   import CentralWeb.Components.UI.Accordion
-  import CentralWeb.Components.UI.Table
+  import CentralWeb.Components.UI.DataTable, except: [status_color: 1]
 
   # Add necessary aliases for the chart
   alias CentralWeb.BacktestLive.Utils.MarketDataLoader
@@ -17,19 +17,21 @@ defmodule CentralWeb.BacktestLive.ShowLive do
   def mount(%{"strategy_id" => strategy_id}, session, socket) do
     strategy = StrategyContext.get_strategy!(strategy_id)
 
-    # Get all backtests for the strategy with preloaded trades
-    # Use Repo.preload to efficiently load all trades at once
+    # Get all backtests for the strategy
     backtests =
       BacktestContext.list_backtests_for_strategy(strategy_id)
       |> Enum.map(fn backtest ->
-        trades = TradeContext.list_trades_for_backtest(backtest.id)
-        # Log the number of trades found for debugging
-        IO.puts("Loaded #{length(trades)} trades for backtest #{backtest.id}")
-        Map.put(backtest, :trades, trades)
-      end)
+        # Get total count for pagination
+        total_trades = TradeContext.count_trades_for_backtest(backtest.id)
 
-    # Log the number of backtests found for debugging
-    IO.puts("Loaded #{length(backtests)} backtests for strategy #{strategy_id}")
+        # Get trades for just the first page
+        trades = TradeContext.list_trades_for_backtest_paginated(backtest.id, 1, 50)
+
+        # Store trades and total count in the backtest map
+        backtest
+        |> Map.put(:trades, trades)
+        |> Map.put(:total_trades, total_trades)
+      end)
 
     # Get initial backtest (most recent one or nil)
     backtest = List.first(backtests)
@@ -47,6 +49,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
       |> assign(:backtests, backtests)
       |> assign(:backtest, backtest)
       |> assign(:page_title, "Backtest: #{strategy.name}")
+      |> assign(:page_size, 50) # Default page size for trade tables
       |> assign(
         chart_data: [],
         loading: true,
@@ -54,7 +57,10 @@ defmodule CentralWeb.BacktestLive.ShowLive do
         symbol: symbol,
         symbols: MarketDataLoader.get_symbols(),
         timeframes: ["1m", "5m", "15m", "1h", "4h", "1d"],
-        chart_theme: theme
+        chart_theme: theme,
+        trade_pages: %{}, # Map to store current page for each backtest
+        open_accordions: %{}, # Map to track which accordion items are open
+        selected_trades_map: %{} # NEW: Map to store selected trades per backtest id
       )
 
     # Load data immediately for the initial view
@@ -75,8 +81,8 @@ defmodule CentralWeb.BacktestLive.ShowLive do
           <p class="text-muted-foreground mt-1">{@strategy.description}</p>
         </div>
         <div class="flex space-x-3">
-          <.button phx-click="debug_backtests" variant="outline" class="mr-2">
-            Refresh Backtests
+          <.button phx-click="refresh_backtests" variant="outline" class="mr-2">
+            Refresh
           </.button>
           <.link navigate={~p"/strategies/#{@strategy.id}"}>
             <.button variant="outline">Strategy Details</.button>
@@ -98,7 +104,6 @@ defmodule CentralWeb.BacktestLive.ShowLive do
               data-theme={@chart_theme}
               data-symbol={@symbol}
               data-timeframe={@timeframe}
-              data-debug={Jason.encode!(%{count: length(@chart_data), timestamp: DateTime.utc_now()})}
               class="w-full h-[50vh] rounded-lg border border-border bg-card flex-grow"
               phx-update="ignore"
               style="position: relative;"
@@ -124,77 +129,98 @@ defmodule CentralWeb.BacktestLive.ShowLive do
               <.accordion>
                 <%= for backtest <- @backtests do %>
                   <.accordion_item>
-                    <.accordion_trigger group="backtests">
-                      <div class="flex justify-between w-full">
-                        <span>{format_datetime(backtest.inserted_at)}</span>
-                        <span class="flex items-center">
-                          <span class="mr-2 px-2 py-1 rounded-md text-xs">
-                            <span class={status_color(backtest.status)}>
-                              {String.upcase(to_string(backtest.status))}
-                            </span>
+                    <.accordion_trigger
+                      group="backtests"
+                      open={Map.get(@open_accordions, backtest.id, false)}
+                      phx-click="toggle_accordion"
+                      phx-value-backtest_id={backtest.id}
+                    >
+                      <div class="flex justify-between items-center w-full">
+                        <span class="text-sm font-medium">{format_datetime(backtest.inserted_at)}</span>
+                        <span class="flex items-center space-x-2 mx-2">
+                          <span
+                            class={"px-2 py-0.5 rounded text-xs font-medium #{status_color(backtest.status)}"}
+                          >
+                            {String.upcase(to_string(backtest.status))}
                           </span>
-                          <span class="text-muted-foreground">
+                          <span class="text-sm text-muted-foreground">
                             {backtest.symbol} / {backtest.timeframe}
                           </span>
                         </span>
                       </div>
                     </.accordion_trigger>
                     <.accordion_content>
-                      <div class="bg-card rounded-md p-4 mb-4">
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <p class="text-sm text-muted-foreground">Initial Balance</p>
-                            <p class="font-semibold">{backtest.initial_balance} USDT</p>
+                      <%# Only render content if the accordion item is open %>
+                      <%= if Map.get(@open_accordions, backtest.id, false) do %>
+                        <div class="bg-card">
+                          <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <p class="text-sm text-muted-foreground">Initial Balance</p>
+                              <p class="font-semibold">{backtest.initial_balance} USDT</p>
+                            </div>
+                            <div>
+                              <p class="text-sm text-muted-foreground">Final Balance</p>
+                              <p class="font-semibold">{backtest.final_balance || "N/A"} USDT</p>
+                            </div>
+                            <div>
+                              <p class="text-sm text-muted-foreground">Start Time</p>
+                              <p class="font-semibold">{format_datetime(backtest.start_time)}</p>
+                            </div>
+                            <div>
+                              <p class="text-sm text-muted-foreground">End Time</p>
+                              <p class="font-semibold">{format_datetime(backtest.end_time)}</p>
+                            </div>
+                            <%= if backtest.status == :completed do %>
+                              <div>
+                                <p class="text-sm text-muted-foreground">Total Trades</p>
+                                <p class="font-semibold">{backtest.total_trades || "N/A"}</p>
+                              </div>
+                            <% end %>
                           </div>
-                          <div>
-                            <p class="text-sm text-muted-foreground">Final Balance</p>
-                            <p class="font-semibold">{backtest.final_balance || "N/A"} USDT</p>
-                          </div>
-                          <div>
-                            <p class="text-sm text-muted-foreground">Start Time</p>
-                            <p class="font-semibold">{format_datetime(backtest.start_time)}</p>
-                          </div>
-                          <div>
-                            <p class="text-sm text-muted-foreground">End Time</p>
-                            <p class="font-semibold">{format_datetime(backtest.end_time)}</p>
-                          </div>
-                        </div>
 
-    <!-- Trades using Table component -->
-                        <h3 class="text-md font-semibold mb-2">Trades</h3>
-                        <%= if Enum.empty?(backtest.trades) do %>
-                          <p class="text-muted-foreground">No trades for this backtest</p>
-                        <% else %>
-                          <.table>
-                            <.table_header>
-                              <.table_row>
-                                <.table_head>Entry Time</.table_head>
-                                <.table_head>Side</.table_head>
-                                <.table_head>Entry Price</.table_head>
-                                <.table_head>Exit Price</.table_head>
-                                <.table_head>PnL</.table_head>
-                                <.table_head>PnL %</.table_head>
-                              </.table_row>
-                            </.table_header>
-                            <.table_body>
-                              <%= for trade <- backtest.trades do %>
-                                <.table_row>
-                                  <.table_cell>{format_datetime(trade.entry_time)}</.table_cell>
-                                  <.table_cell class={side_color(trade.side)}>
-                                    {trade.side}
-                                  </.table_cell>
-                                  <.table_cell>{trade.entry_price}</.table_cell>
-                                  <.table_cell>{trade.exit_price}</.table_cell>
-                                  <.table_cell class={pnl_color(trade.pnl)}>{trade.pnl}</.table_cell>
-                                  <.table_cell class={pnl_color(trade.pnl_percentage)}>
-                                    {format_percentage(trade.pnl_percentage)}
-                                  </.table_cell>
-                                </.table_row>
-                              <% end %>
-                            </.table_body>
-                          </.table>
-                        <% end %>
-                      </div>
+                          <%= if Enum.empty?(backtest.trades) do %>
+                            <p class="text-muted-foreground">No trades for this backtest</p>
+                          <% else %>
+                            <%# Explicitly create the table ID %>
+                            <% table_id = "trades-table-#{backtest.id}" %>
+                            <.data_table
+                              id={table_id}
+                              rows={backtest.trades}
+                              row_id={fn trade -> trade.id end}
+                              row_numbers
+                              selectable
+                              selected_rows={@selected_trades_map[backtest.id] || []}
+                              page={@trade_pages[backtest.id] || 1}
+                              page_size={@page_size}
+                              total_entries={backtest.total_trades}
+                              on_page_change="trade_page_changed"
+                              on_select="select_trade"
+                              phx_value_keys={%{backtest_id: backtest.id}}
+                            >
+                              <:col :let={trade} field={:entry_time} label="Entry Time">
+                                {format_datetime(trade.entry_time)}
+                              </:col>
+                              <:col :let={trade} field={:side} label="Side">
+                                <span class={side_color(trade.side)}>{trade.side}</span>
+                              </:col>
+                              <:col :let={trade} field={:entry_price} label="Entry Price" numeric>
+                                {trade.entry_price}
+                              </:col>
+                              <:col :let={trade} field={:exit_price} label="Exit Price" numeric>
+                                {trade.exit_price}
+                              </:col>
+                              <:col :let={trade} field={:pnl} label="PnL" numeric pnl>
+                                <span class={pnl_color(trade.pnl)}>{trade.pnl}</span>
+                              </:col>
+                              <:col :let={trade} field={:pnl_percentage} label="PnL %" numeric pnl>
+                                <span class={pnl_color(trade.pnl_percentage)}>
+                                  {format_percentage(trade.pnl_percentage)}
+                                </span>
+                              </:col>
+                            </.data_table>
+                          <% end %>
+                        </div>
+                      <% end %>
                     </.accordion_content>
                   </.accordion_item>
                 <% end %>
@@ -223,36 +249,6 @@ defmodule CentralWeb.BacktestLive.ShowLive do
   end
 
   @impl true
-  def handle_event("debug_chart", _, socket) do
-    # Push the existing data directly to the chart
-    if length(socket.assigns.chart_data) > 0 do
-      socket =
-        push_event(socket, "chart-data-updated", %{
-          data: socket.assigns.chart_data,
-          symbol: socket.assigns.symbol,
-          timeframe: socket.assigns.timeframe
-        })
-
-      {:noreply, socket}
-    else
-      # Fetch fresh data
-      fresh_data =
-        MarketDataLoader.fetch_market_data(socket.assigns.symbol, socket.assigns.timeframe)
-
-      socket =
-        socket
-        |> assign(chart_data: fresh_data)
-        |> push_event("chart-data-updated", %{
-          data: fresh_data,
-          symbol: socket.assigns.symbol,
-          timeframe: socket.assigns.timeframe
-        })
-
-      {:noreply, socket}
-    end
-  end
-
-  @impl true
   def handle_event("set_theme", %{"theme" => theme}, socket) do
     socket =
       socket
@@ -263,21 +259,22 @@ defmodule CentralWeb.BacktestLive.ShowLive do
   end
 
   @impl true
-  def handle_event("debug_backtests", _, socket) do
+  def handle_event("refresh_backtests", _, socket) do
     strategy_id = socket.assigns.strategy.id
 
-    # Try again to load backtests directly
+    # Get backtests directly
     backtests = BacktestContext.list_backtests_for_strategy(strategy_id)
 
-    # Log results
-    IO.puts("DEBUG: Found #{length(backtests)} backtests for strategy #{strategy_id}")
-
-    # For each backtest, try to load trades
+    # Load trades for each backtest
     backtests_with_trades =
       Enum.map(backtests, fn backtest ->
         trades = TradeContext.list_trades_for_backtest(backtest.id)
-        IO.puts("DEBUG: Found #{length(trades)} trades for backtest #{backtest.id}")
-        Map.put(backtest, :trades, trades)
+        total_trades = length(trades)
+        IO.inspect(%{backtest_id: backtest.id, total_trades: total_trades}, label: "[Refresh] Total trades count")
+
+        backtest
+        |> Map.put(:trades, trades)
+        |> Map.put(:total_trades, total_trades)
       end)
 
     {:noreply,
@@ -360,6 +357,104 @@ defmodule CentralWeb.BacktestLive.ShowLive do
        has_more: has_more,
        batchSize: recommended_batch_size
      }, socket}
+  end
+
+  @impl true
+  def handle_event("trade_page_changed", %{"page" => page} = params, socket) do
+    # Extract backtest_id (string UUID)
+    backtest_id = params["backtest_id"]
+
+    if backtest_id do
+      # Use page_size from assigns
+      page_size = socket.assigns.page_size
+
+      # Fetch only the trades for this page
+      trades = TradeContext.list_trades_for_backtest_paginated(backtest_id, page, page_size)
+
+      # Update the backtest in the socket with the new trades
+      updated_backtests = Enum.map(socket.assigns.backtests, fn backtest ->
+        if backtest.id == backtest_id do
+          Map.put(backtest, :trades, trades)
+        else
+          backtest
+        end
+      end)
+
+      # Make sure the accordion stays open when changing pages
+      open_accordions = Map.put(socket.assigns.open_accordions, backtest_id, true)
+
+      {:noreply,
+        socket
+        |> assign(:backtests, updated_backtests)
+        |> assign(:trade_pages, Map.put(socket.assigns.trade_pages, backtest_id, page))
+        |> assign(:open_accordions, open_accordions)}
+    else
+      # If we can't find a backtest_id, just acknowledge the event
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("select_trade", %{"select" => trade_id_str, "backtest_id" => backtest_id}, socket) do
+    selected_map = socket.assigns.selected_trades_map
+    current_selection = Map.get(selected_map, backtest_id, [])
+
+    new_selection =
+      if trade_id_str in current_selection do
+        List.delete(current_selection, trade_id_str)
+      else
+        [trade_id_str | current_selection]
+      end
+
+    new_selected_map = Map.put(selected_map, backtest_id, new_selection)
+
+    {:noreply, assign(socket, :selected_trades_map, new_selected_map)}
+  end
+
+  @impl true
+  def handle_event("select_trade", %{"select_all" => "toggle", "backtest_id" => backtest_id}, socket) do
+    # backtest_id is the correct string UUID, no parsing needed
+
+    selected_map = socket.assigns.selected_trades_map
+    current_selection = Map.get(selected_map, backtest_id, [])
+
+    # Find the current backtest's structure from assigns using string ID
+    current_backtest = Enum.find(socket.assigns.backtests, fn b -> b.id == backtest_id end)
+
+    # Get IDs of all trades currently displayed for THIS BACKTEST PAGE
+    all_current_trade_ids =
+      if current_backtest do
+        Enum.map(current_backtest.trades, &(&1.id))
+      else
+        []
+      end
+
+    all_selected? = Enum.all?(all_current_trade_ids, fn id -> id in current_selection end)
+
+    new_selection =
+      if all_selected? do
+        # Remove the current page's trade IDs from the selection
+        Enum.reject(current_selection, fn id -> id in all_current_trade_ids end)
+      else
+        # Add all current trade IDs to the selection (avoiding duplicates)
+        Enum.uniq(current_selection ++ all_current_trade_ids)
+      end
+
+    new_selected_map = Map.put(selected_map, backtest_id, new_selection)
+
+    {:noreply, assign(socket, :selected_trades_map, new_selected_map)}
+  end
+
+  @impl true
+  def handle_event("toggle_accordion", %{"backtest_id" => backtest_id}, socket) do
+    # Toggle the open state of this accordion
+    open_accordions = socket.assigns.open_accordions
+    is_open = Map.get(open_accordions, backtest_id, false)
+
+    # Update the open state map
+    new_open_accordions = Map.put(open_accordions, backtest_id, !is_open)
+
+    {:noreply, assign(socket, :open_accordions, new_open_accordions)}
   end
 
   @impl true

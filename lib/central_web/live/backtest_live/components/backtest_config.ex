@@ -110,14 +110,14 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
               </div>
 
               <%= if @backtest.status == :completed do %>
-                <div class="flex justify-between">
+                <!-- <div class="flex justify-between">
                   <span class="text-gray-600">Total Trades:</span>
                   <span>{length(@backtest.trades)}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Final Balance:</span>
                   <span>{format_balance(@backtest.final_balance)}</span>
-                </div>
+                </div> -->
               <% end %>
             </div>
           </.card_content>
@@ -335,12 +335,6 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
   defp status_class(:completed), do: "text-green-600"
   defp status_class(:failed), do: "text-red-600"
   defp status_class(_), do: "text-gray-600"
-
-  defp format_balance(balance) when is_number(balance) do
-    :erlang.float_to_binary(balance, decimals: 2)
-  end
-
-  defp format_balance(balance), do: balance
 
   # Helper functions to set reasonable default times as DateTime objects
   defp default_start_time_datetime do

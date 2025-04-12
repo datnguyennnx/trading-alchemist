@@ -33,6 +33,28 @@ defmodule Central.Backtest.Contexts.TradeContext do
   end
 
   @doc """
+  Lists trades for a backtest with pagination.
+
+  ## Parameters
+    - backtest_id: The ID of the backtest
+    - page: The page number (starting from 1)
+    - page_size: Number of trades per page
+
+  ## Returns
+    - A list of trades for the specified page
+  """
+  def list_trades_for_backtest_paginated(backtest_id, page \\ 1, page_size \\ 50) do
+    offset = (page - 1) * page_size
+
+    Trade
+    |> where(backtest_id: ^backtest_id)
+    |> order_by([t], desc: t.entry_time)
+    |> limit(^page_size)
+    |> offset(^offset)
+    |> Repo.all()
+  end
+
+  @doc """
   Counts trades for a specific backtest.
   """
   def count_trades_for_backtest(backtest_id) do
