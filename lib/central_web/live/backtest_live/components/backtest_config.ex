@@ -43,22 +43,14 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
               <.form_item>
                 <.form_label>Start Time</.form_label>
                 <div phx-update="ignore" id="start_time_container">
-                  <.date_time_picker
-                    id="backtest-start-time"
-                    name="start_time"
-                    value={@start_time}
-                  />
+                  <.date_time_picker id="backtest-start-time" name="start_time" value={@start_time} />
                 </div>
               </.form_item>
 
               <.form_item>
                 <.form_label>End Time</.form_label>
                 <div phx-update="ignore" id="end_time_container">
-                  <.date_time_picker
-                    id="backtest-end-time"
-                    name="end_time"
-                    value={@end_time}
-                  />
+                  <.date_time_picker id="backtest-end-time" name="end_time" value={@end_time} />
                 </div>
               </.form_item>
 
@@ -161,7 +153,8 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
      |> assign(:end_time, end_time)}
   end
 
-  defp handle_date_time_picker_event(%{"name" => "start_time", "value" => value}, socket) when is_binary(value) do
+  defp handle_date_time_picker_event(%{"name" => "start_time", "value" => value}, socket)
+       when is_binary(value) do
     # Parse datetime safely
     case DateTime.from_iso8601(value) do
       {:ok, datetime, _offset} ->
@@ -172,7 +165,8 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
     end
   end
 
-  defp handle_date_time_picker_event(%{"name" => "end_time", "value" => value}, socket) when is_binary(value) do
+  defp handle_date_time_picker_event(%{"name" => "end_time", "value" => value}, socket)
+       when is_binary(value) do
     # Parse datetime safely
     case DateTime.from_iso8601(value) do
       {:ok, datetime, _offset} ->
@@ -301,7 +295,8 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
 
   # --- Moved handle_event clauses for date_time_picker_change ---
   @impl true
-  def handle_event("date_time_picker_change", %{"name" => "start_time", "value" => value}, socket) when is_binary(value) do
+  def handle_event("date_time_picker_change", %{"name" => "start_time", "value" => value}, socket)
+      when is_binary(value) do
     # Parse datetime safely
     case DateTime.from_iso8601(value) do
       {:ok, datetime, _offset} ->
@@ -313,7 +308,8 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
   end
 
   @impl true
-  def handle_event("date_time_picker_change", %{"name" => "end_time", "value" => value}, socket) when is_binary(value) do
+  def handle_event("date_time_picker_change", %{"name" => "end_time", "value" => value}, socket)
+      when is_binary(value) do
     # Parse datetime safely
     case DateTime.from_iso8601(value) do
       {:ok, datetime, _offset} ->
@@ -328,17 +324,20 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
   def handle_event("date_time_picker_change", _params, socket) do
     {:noreply, socket}
   end
+
   # --- End of moved clauses ---
 
   # Group handle_info clauses together
-  def handle_info({:datetime_updated, %{name: "start_time", datetime: datetime}}, socket) when not is_nil(datetime) do
+  def handle_info({:datetime_updated, %{name: "start_time", datetime: datetime}}, socket)
+      when not is_nil(datetime) do
     require Logger
     Logger.debug("Received datetime_updated for start_time: #{inspect(datetime)}")
     # Directly assign the DateTime value
     {:noreply, assign(socket, :start_time, datetime)}
   end
 
-  def handle_info({:datetime_updated, %{name: "end_time", datetime: datetime}}, socket) when not is_nil(datetime) do
+  def handle_info({:datetime_updated, %{name: "end_time", datetime: datetime}}, socket)
+      when not is_nil(datetime) do
     require Logger
     Logger.debug("Received datetime_updated for end_time: #{inspect(datetime)}")
     # Directly assign the DateTime value

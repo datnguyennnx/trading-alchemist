@@ -98,9 +98,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
               data-theme={@chart_theme}
               data-symbol={@symbol}
               data-timeframe={@timeframe}
-              data-debug={
-                Jason.encode!(%{count: length(@chart_data), timestamp: DateTime.utc_now()})
-              }
+              data-debug={Jason.encode!(%{count: length(@chart_data), timestamp: DateTime.utc_now()})}
               class="w-full h-[50vh] rounded-lg border border-border bg-card flex-grow"
               phx-update="ignore"
               style="position: relative;"
@@ -161,7 +159,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
                             <p class="font-semibold">{format_datetime(backtest.end_time)}</p>
                           </div>
                         </div>
-
+                        
     <!-- Trades using Table component -->
                         <h3 class="text-md font-semibold mb-2">Trades</h3>
                         <%= if Enum.empty?(backtest.trades) do %>

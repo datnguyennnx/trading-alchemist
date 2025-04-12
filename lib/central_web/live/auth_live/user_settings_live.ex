@@ -65,7 +65,7 @@ defmodule CentralWeb.AuthLive.UserSettingsLive do
 
           <div>
             <.error :if={@flash_error}>
-              <%= @flash_error %>
+              {@flash_error}
             </.error>
           </div>
 
@@ -128,8 +128,7 @@ defmodule CentralWeb.AuthLive.UserSettingsLive do
         {:noreply,
          socket
          |> assign(password_form: to_form(changeset))
-         |> assign(flash_error: "Failed to update password. Please check the form for errors.")
-        }
+         |> assign(flash_error: "Failed to update password. Please check the form for errors.")}
     end
   end
 end

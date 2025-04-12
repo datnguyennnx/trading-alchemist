@@ -41,7 +41,7 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
               </div>
             </div>
           </div>
-
+          
     <!-- Settings Content -->
           <div class="m-4 flex-1 p-6 bg-background text-foreground">
             <div class="flex flex-col gap-6">
@@ -87,7 +87,14 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
     <div id="theme-selector" phx-hook="ThemeUIUpdater">
       <.select id="theme-select" value={@current_theme} name="theme">
         <.select_trigger
-          builder={%{id: "theme-select", name: "theme", value: @current_theme, label: @current_theme == "light" && "Light" || "Dark"}}
+          builder={
+            %{
+              id: "theme-select",
+              name: "theme",
+              value: @current_theme,
+              label: (@current_theme == "light" && "Light") || "Dark"
+            }
+          }
           class="w-[120px] flex items-center gap-2 bg-background border-border text-foreground"
         />
         <.select_content builder={%{id: "theme-select", name: "theme", value: @current_theme}}>
@@ -97,14 +104,20 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
               value="light"
               label="Light"
               icon="hero-sun"
-              phx-click={JS.push("change_theme", value: %{theme: "light"}) |> JS.dispatch("set-theme", detail: %{theme: "light"})}
+              phx-click={
+                JS.push("change_theme", value: %{theme: "light"})
+                |> JS.dispatch("set-theme", detail: %{theme: "light"})
+              }
             />
             <.select_item
               builder={%{id: "theme-select", name: "theme", value: @current_theme}}
               value="dark"
               label="Dark"
               icon="hero-moon"
-              phx-click={JS.push("change_theme", value: %{theme: "dark"}) |> JS.dispatch("set-theme", detail: %{theme: "dark"})}
+              phx-click={
+                JS.push("change_theme", value: %{theme: "dark"})
+                |> JS.dispatch("set-theme", detail: %{theme: "dark"})
+              }
             />
           </.select_group>
         </.select_content>

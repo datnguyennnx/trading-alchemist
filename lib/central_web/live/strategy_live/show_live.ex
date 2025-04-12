@@ -158,20 +158,17 @@ defmodule CentralWeb.StrategyLive.ShowLive do
               <div class="space-y-3">
                 <.link navigate={~p"/strategies/#{@strategy.id}/edit"} class="w-full block">
                   <.button variant="outline" class="w-full justify-start">
-                    <.icon name="hero-pencil-solid" class="h-4 w-4 mr-2" />
-                    Edit Strategy
+                    <.icon name="hero-pencil-solid" class="h-4 w-4 mr-2" /> Edit Strategy
                   </.button>
                 </.link>
                 <.link navigate={~p"/backtest/#{@strategy.id}"} class="w-full block">
                   <.button variant="outline" class="w-full justify-start">
-                    <.icon name="hero-play-circle-solid" class="h-4 w-4 mr-2" />
-                    Run Backtest
+                    <.icon name="hero-play-circle-solid" class="h-4 w-4 mr-2" /> Run Backtest
                   </.button>
                 </.link>
                 <button type="button" phx-click="delete_strategy" class="w-full">
                   <.button variant="outline" class="w-full justify-start">
-                    <.icon name="hero-trash-solid" class="h-4 w-4 mr-2" />
-                    Delete Strategy
+                    <.icon name="hero-trash-solid" class="h-4 w-4 mr-2" /> Delete Strategy
                   </.button>
                 </button>
               </div>

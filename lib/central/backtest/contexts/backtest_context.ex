@@ -54,15 +54,22 @@ defmodule Central.Backtest.Contexts.BacktestContext do
       preload: [:strategy]
     )
     |> Repo.all()
-    |> Enum.sort_by(fn backtest ->
-      case backtest.inserted_at do
-        %DateTime{} = dt -> DateTime.to_unix(dt)
-        %NaiveDateTime{} = ndt ->
-          ndt
-          |> DateTime.from_naive!("Etc/UTC")
-          |> DateTime.to_unix()
-        _ -> 0
-      end
-    end, :desc)
+    |> Enum.sort_by(
+      fn backtest ->
+        case backtest.inserted_at do
+          %DateTime{} = dt ->
+            DateTime.to_unix(dt)
+
+          %NaiveDateTime{} = ndt ->
+            ndt
+            |> DateTime.from_naive!("Etc/UTC")
+            |> DateTime.to_unix()
+
+          _ ->
+            0
+        end
+      end,
+      :desc
+    )
   end
 end

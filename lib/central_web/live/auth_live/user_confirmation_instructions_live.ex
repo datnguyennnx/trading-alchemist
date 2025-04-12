@@ -30,7 +30,7 @@ defmodule CentralWeb.AuthLive.UserConfirmationInstructionsLive do
         </.form_item>
         <div>
           <.error :if={@flash_error}>
-            <%= @flash_error %>
+            {@flash_error}
           </.error>
         </div>
 

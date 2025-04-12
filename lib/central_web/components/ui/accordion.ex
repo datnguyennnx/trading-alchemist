@@ -77,7 +77,10 @@ defmodule CentralWeb.Components.UI.Accordion do
           {render_slot(@inner_block)}
         </p>
 
-        <.icon name="hero-chevron-down" class="h-4 w-4 shrink-0 transition-transform duration-200 group-open/accordion:rotate-180" />
+        <.icon
+          name="hero-chevron-down"
+          class="h-4 w-4 shrink-0 transition-transform duration-200 group-open/accordion:rotate-180"
+        />
       </summary>
     </details>
     """

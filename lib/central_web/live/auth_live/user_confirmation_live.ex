@@ -15,7 +15,7 @@ defmodule CentralWeb.AuthLive.UserConfirmationLive do
         <.input type="hidden" name={@form[:token].name} value={@form[:token].value} />
         <div>
           <.error :if={@flash_error}>
-            <%= @flash_error %>
+            {@flash_error}
           </.error>
         </div>
         <div class="mt-6">

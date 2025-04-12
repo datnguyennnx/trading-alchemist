@@ -26,7 +26,7 @@ defmodule CentralWeb.AuthLive.UserForgotPasswordLive do
 
         <div>
           <.error :if={@flash_error}>
-            <%= @flash_error %>
+            {@flash_error}
           </.error>
         </div>
 

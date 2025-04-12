@@ -95,7 +95,7 @@ defmodule CentralWeb.Components.UI.Select do
       {@rest}
     >
       <%= if render_slot(@inner_block) do %>
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       <% else %>
         <span
           class="select-value pointer-events-none before:content-[attr(data-content)]"
@@ -107,7 +107,6 @@ defmodule CentralWeb.Components.UI.Select do
     </button>
     """
   end
-
 
   attr :builder, :map, required: true, doc: "The builder of the select component"
 
@@ -221,7 +220,7 @@ defmodule CentralWeb.Components.UI.Select do
             <.icon name={@icon} class="h-4 w-4" />
           </span>
         <% end %>
-        <span><%= @label %></span>
+        <span>{@label}</span>
       </div>
       <%= if @builder.value == @value do %>
         <span class="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">

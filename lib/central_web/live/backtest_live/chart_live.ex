@@ -63,7 +63,7 @@ defmodule CentralWeb.BacktestLive.ChartLive do
               <div class="flex flex-wrap items-center justify-between gap-3 bg-card rounded-lg p-3 shadow-sm">
                 <!-- Market data stats -->
                 <ChartStats.chart_stats chart_data={@chart_data} />
-
+                
     <!-- Controls -->
                 <ChartControls.chart_controls
                   timeframe={@timeframe}
@@ -72,7 +72,7 @@ defmodule CentralWeb.BacktestLive.ChartLive do
                   symbols={@symbols}
                 />
               </div>
-
+              
     <!-- Simplified chart container without overlay elements -->
               <div
                 id="tradingview-chart"
