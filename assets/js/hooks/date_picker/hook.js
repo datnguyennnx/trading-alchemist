@@ -12,7 +12,6 @@ const DatePickerHook = {
     
     // Store suppressEvents flag
     this.suppressEvents = this.el.dataset.suppressEvents === 'true';
-    console.log(`DateTimePicker mounted with suppressEvents = ${this.suppressEvents}`);
     
     // Register in global registry for form access
     if (!window.DateTimePickerRegistry) {
@@ -76,7 +75,6 @@ const DatePickerHook = {
   pushEventToLiveView(date) {
     // No-op if events are suppressed
     if (this.suppressEvents) {
-      console.log("Prevented automatic pushEvent - date picker events are suppressed");
       return;
     }
     
@@ -119,7 +117,6 @@ const DatePickerHook = {
         this.el.appendChild(hiddenInput);
       }
       
-      console.log(`Added hidden field for ${name}: ${isoString}`);
       return isoString;
     } catch (error) {
       console.error("DateTimePicker hook: Error preparing date value", error);

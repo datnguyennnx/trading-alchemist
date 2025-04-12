@@ -133,17 +133,6 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
     start_time = assigns[:start_time] || default_start_time_datetime()
     end_time = assigns[:end_time] || default_end_time_datetime()
 
-    # Completely ignore date time picker updates to prevent accidental backtests
-    socket =
-      if assigns[:date_time_picker_event] do
-        # Intentionally ignoring date_time_picker_event to prevent automatic backtests
-        require Logger
-        Logger.debug("Ignoring date_time_picker_event in update/2 (preventing auto-backtest)")
-        socket
-      else
-        socket
-      end
-
     # Initialize form with default values
     default_values = %{
       "initial_balance" => "10000.0",
@@ -294,16 +283,12 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
   # Group handle_info clauses together
   def handle_info({:datetime_updated, %{name: "start_time", datetime: datetime}}, socket)
       when not is_nil(datetime) do
-    require Logger
-    Logger.debug("Received datetime_updated for start_time: #{inspect(datetime)}")
     # Directly assign the DateTime value
     {:noreply, assign(socket, :start_time, datetime)}
   end
 
   def handle_info({:datetime_updated, %{name: "end_time", datetime: datetime}}, socket)
       when not is_nil(datetime) do
-    require Logger
-    Logger.debug("Received datetime_updated for end_time: #{inspect(datetime)}")
     # Directly assign the DateTime value
     {:noreply, assign(socket, :end_time, datetime)}
   end

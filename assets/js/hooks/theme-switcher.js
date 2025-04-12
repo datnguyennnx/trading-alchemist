@@ -48,8 +48,6 @@ const ThemeSwitcher = {
       // Avoid infinite loops by checking if theme has changed
       if (this.currentTheme === theme) return;
       
-      console.log("ThemeSwitcher: Setting theme to", theme);
-      
       // Update current theme tracker
       this.currentTheme = theme;
       

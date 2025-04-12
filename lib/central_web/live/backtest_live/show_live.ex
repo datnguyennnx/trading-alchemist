@@ -294,18 +294,19 @@ defmodule CentralWeb.BacktestLive.ShowLive do
   end
 
   @impl true
-  def handle_event(
-        "load-historical-data",
-        %{
-          "timestamp" => timestamp,
-          "symbol" => symbol,
-          "timeframe" => timeframe,
-          "batchSize" => batch_size
-        },
-        socket
-      ) do
+  def handle_event("load-historical-data", params, socket) do
+    # Extract parameters with defaults to handle any structure
+    timestamp = params["timestamp"]
+    symbol = params["symbol"] || socket.assigns.symbol
+    timeframe = params["timeframe"] || socket.assigns.timeframe
+    batch_size = params["batchSize"] || 200
+
     # Convert timestamp to DateTime
-    earliest_time = DateTime.from_unix!(timestamp)
+    earliest_time = try do
+      DateTime.from_unix!(timestamp)
+    rescue
+      _ -> DateTime.utc_now()
+    end
 
     # Calculate start and end times for fetching historical data
     timeframe_seconds =
@@ -359,14 +360,6 @@ defmodule CentralWeb.BacktestLive.ShowLive do
        has_more: has_more,
        batchSize: recommended_batch_size
      }, socket}
-  end
-
-  @impl true
-  def handle_event("date_time_picker_change", params, socket) do
-    # Don't forward the event to the BacktestConfig component to prevent accidental backtests
-    require Logger
-    Logger.debug("Ignoring date_time_picker_change in show_live (preventing auto-backtest)")
-    {:noreply, socket}
   end
 
   @impl true
