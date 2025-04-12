@@ -3,6 +3,11 @@ defmodule CentralWeb.Components.UI.Dialog do
   Implement of Dialog components from https://ui.shadcn.com/docs/components/dialog
   """
   use CentralWeb.Component
+  import Phoenix.LiveView.JS
+  alias CentralWeb.Components.UI.Icon
+
+  # Icon component
+  import Icon, only: [icon: 1]
 
   @doc """
   Dialog component
@@ -88,17 +93,7 @@ defmodule CentralWeb.Components.UI.Dialog do
               class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none group-data-[state=open]/dialog:bg-accent group-data-[state=open]/dialog:text-muted-foreground"
               phx-click={JS.exec("phx-hide-modal", to: "##{@id}")}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                class="w-5 h-5"
-              >
-                <path d="M18 6 6 18"></path>
-                <path d="m6 6 12 12"></path>
-              </svg>
+              <.icon name="hero-x-mark" class="w-5 h-5" />
               <span class="sr-only">Close</span>
             </button>
           </div>
