@@ -122,12 +122,12 @@ defmodule CentralWeb.StrategyLive.NewFormLive do
                          <.select_trigger builder={select} class="w-full" />
                          <.select_content class="w-full" builder={select}>
                            <.select_group>
-                             <.select_item builder={select} value="1m">1 Minute</.select_item>
-                             <.select_item builder={select} value="5m">5 Minutes</.select_item>
-                             <.select_item builder={select} value="15m">15 Minutes</.select_item>
-                             <.select_item builder={select} value="1h">1 Hour</.select_item>
-                             <.select_item builder={select} value="4h">4 Hours</.select_item>
-                             <.select_item builder={select} value="1d">1 Day</.select_item>
+                             <.select_item builder={select} value="1m" label="1 Minute"></.select_item>
+                             <.select_item builder={select} value="5m" label="5 Minutes"></.select_item>
+                             <.select_item builder={select} value="15m" label="15 Minutes"></.select_item>
+                             <.select_item builder={select} value="1h" label="1 Hour"></.select_item>
+                             <.select_item builder={select} value="4h" label="4 Hours"></.select_item>
+                             <.select_item builder={select} value="1d" label="1 Day"></.select_item>
                            </.select_group>
                          </.select_content>
                        </.select>
@@ -140,7 +140,7 @@ defmodule CentralWeb.StrategyLive.NewFormLive do
                            <.select_trigger builder={select} class="w-full" />
                            <.select_content class="w-full" builder={select}>
                              <.select_group>
-                               <.select_item builder={select} value="BTCUSDT">BTC/USDT</.select_item>
+                               <.select_item builder={select} value="BTCUSDT" label="BTC/USDT"></.select_item>
                              </.select_group>
                            </.select_content>
                          </.select>
@@ -182,11 +182,11 @@ defmodule CentralWeb.StrategyLive.NewFormLive do
                              <.select_trigger builder={select} class="w-full" />
                              <.select_content class="w-full" builder={select}>
                                <.select_group>
-                                  <.select_item builder={select} value="price">Price</.select_item>
-                                  <.select_item builder={select} value="sma">SMA</.select_item>
-                                  <.select_item builder={select} value="ema">EMA</.select_item>
-                                  <.select_item builder={select} value="rsi">RSI</.select_item>
-                                  <.select_item builder={select} value="macd">MACD</.select_item>
+                                  <.select_item builder={select} value="price" label="Price"></.select_item>
+                                  <.select_item builder={select} value="sma" label="SMA"></.select_item>
+                                  <.select_item builder={select} value="ema" label="EMA"></.select_item>
+                                  <.select_item builder={select} value="rsi" label="RSI"></.select_item>
+                                  <.select_item builder={select} value="macd" label="MACD"></.select_item>
                                </.select_group>
                              </.select_content>
                            </.select>
@@ -199,10 +199,10 @@ defmodule CentralWeb.StrategyLive.NewFormLive do
                              <.select_trigger builder={select} class="w-full" />
                              <.select_content class="w-full" builder={select}>
                                <.select_group>
-                                  <.select_item builder={select} value="above">Above</.select_item>
-                                  <.select_item builder={select} value="below">Below</.select_item>
-                                  <.select_item builder={select} value="crosses_above">Crosses Above</.select_item>
-                                  <.select_item builder={select} value="crosses_below">Crosses Below</.select_item>
+                                  <.select_item builder={select} value="above" label="Above"></.select_item>
+                                  <.select_item builder={select} value="below" label="Below"></.select_item>
+                                  <.select_item builder={select} value="crosses_above" label="Crosses Above"></.select_item>
+                                  <.select_item builder={select} value="crosses_below" label="Crosses Below"></.select_item>
                                </.select_group>
                              </.select_content>
                            </.select>
@@ -252,11 +252,11 @@ defmodule CentralWeb.StrategyLive.NewFormLive do
                              <.select_trigger builder={select} class="w-full" />
                              <.select_content class="w-full" builder={select}>
                                <.select_group>
-                                  <.select_item builder={select} value="price">Price</.select_item>
-                                  <.select_item builder={select} value="sma">SMA</.select_item>
-                                  <.select_item builder={select} value="ema">EMA</.select_item>
-                                  <.select_item builder={select} value="rsi">RSI</.select_item>
-                                  <.select_item builder={select} value="macd">MACD</.select_item>
+                                  <.select_item builder={select} value="price" label="Price"></.select_item>
+                                  <.select_item builder={select} value="sma" label="SMA"></.select_item>
+                                  <.select_item builder={select} value="ema" label="EMA"></.select_item>
+                                  <.select_item builder={select} value="rsi" label="RSI"></.select_item>
+                                  <.select_item builder={select} value="macd" label="MACD"></.select_item>
                                </.select_group>
                              </.select_content>
                            </.select>
@@ -269,10 +269,10 @@ defmodule CentralWeb.StrategyLive.NewFormLive do
                              <.select_trigger builder={select} class="w-full" />
                              <.select_content class="w-full" builder={select}>
                                <.select_group>
-                                  <.select_item builder={select} value="above">Above</.select_item>
-                                  <.select_item builder={select} value="below">Below</.select_item>
-                                  <.select_item builder={select} value="crosses_above">Crosses Above</.select_item>
-                                  <.select_item builder={select} value="crosses_below">Crosses Below</.select_item>
+                                  <.select_item builder={select} value="above" label="Above"></.select_item>
+                                  <.select_item builder={select} value="below" label="Below"></.select_item>
+                                  <.select_item builder={select} value="crosses_above" label="Crosses Above"></.select_item>
+                                  <.select_item builder={select} value="crosses_below" label="Crosses Below"></.select_item>
                                </.select_group>
                              </.select_content>
                            </.select>
