@@ -19,7 +19,7 @@ defmodule CentralWeb.Components.UI.Input do
   attr :type, :string,
     default: "text",
     values:
-      ~w(checkbox date datetime-local email file hidden month number password tel text time url week)
+      ~w(date datetime-local email file hidden month number password tel text time url week)
 
   attr :"default-value", :any
 
@@ -30,7 +30,7 @@ defmodule CentralWeb.Components.UI.Input do
 
   attr :rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
-                multiple pattern placeholder readonly required rows size step checked)
+                multiple pattern placeholder readonly required rows size step)
 
   def input(assigns) do
     assigns = prepare_assign(assigns)
@@ -44,12 +44,7 @@ defmodule CentralWeb.Components.UI.Input do
     <input
       class={
         classes([
-          if(@type == "checkbox",
-            do:
-              "h-4 w-4 rounded border-input bg-background text-primary focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
-            else:
-              "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-input dark:bg-background dark:text-foreground dark:placeholder:text-muted-foreground dark:focus-visible:ring-ring"
-          ),
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-input dark:bg-background dark:text-foreground dark:placeholder:text-muted-foreground dark:focus-visible:ring-ring",
           @class
         ])
       }

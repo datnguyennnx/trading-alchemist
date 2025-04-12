@@ -4,6 +4,7 @@ defmodule CentralWeb.AuthLive.UserLoginLive do
   import CentralWeb.Components.UI.Input
   import CentralWeb.Components.UI.Form
   import CentralWeb.Components.UI.Button
+  import CentralWeb.Components.UI.Checkbox
 
   def render(assigns) do
     ~H"""
@@ -51,7 +52,7 @@ defmodule CentralWeb.AuthLive.UserLoginLive do
         <.form_item>
           <div class="flex items-center justify-between">
             <label class="flex items-center gap-2">
-              <.input field={@form[:remember_me]} type="checkbox" />
+              <.checkbox field={@form[:remember_me]} />
               <span>Keep me logged in</span>
             </label>
             <.link href={~p"/users/reset_password"} class="text-sm font-semibold">
