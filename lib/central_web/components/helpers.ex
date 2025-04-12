@@ -345,7 +345,7 @@ defmodule CentralWeb.ComponentHelpers do
 
             Hint: you can set up the `error_translator_function` to route all errors to your application helpers:
 
-              config :salad_ui, :error_translator_function, {MyAppWeb.CoreComponents, :translate_error}
+              config :salad_ui, :error_translator_function, {CentralWeb.CoreComponents, :translate_error}
 
             Given value: #{inspect(value)}
 
