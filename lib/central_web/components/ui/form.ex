@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Form do
+defmodule CentralWeb.Components.UI.Form do
   @moduledoc false
   use CentralWeb.Component
 
@@ -71,7 +71,7 @@ defmodule CentralWeb.Components.Form do
       end
 
     ~H"""
-    <SaladUI.Label.label
+    <CentralWeb.Components.UI.Label.label
       class={
         classes([
           @error && "text-destructive",
@@ -81,7 +81,7 @@ defmodule CentralWeb.Components.Form do
       {@rest}
     >
       {render_slot(@inner_block)}
-    </SaladUI.Label.label>
+    </CentralWeb.Components.UI.Label.label>
     """
   end
 

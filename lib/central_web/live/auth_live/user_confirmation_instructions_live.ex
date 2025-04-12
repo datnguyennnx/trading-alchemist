@@ -3,9 +3,9 @@ defmodule CentralWeb.AuthLive.UserConfirmationInstructionsLive do
 
   alias Central.Accounts
   import CentralWeb.CoreComponents
-  import CentralWeb.Components.Input
-  import SaladUI.Form
-  import SaladUI.Button
+  import CentralWeb.Components.UI.Input
+  import CentralWeb.Components.UI.Form
+  import CentralWeb.Components.UI.Button
 
   def render(assigns) do
     ~H"""

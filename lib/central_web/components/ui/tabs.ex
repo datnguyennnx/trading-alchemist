@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Tabs do
+defmodule CentralWeb.Components.UI.Tabs do
   @moduledoc """
   Implementation of tabs components from https://ui.shadcn.com/docs/components/tabs
 

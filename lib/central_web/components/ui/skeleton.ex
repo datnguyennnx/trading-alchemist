@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Skeleton do
+defmodule CentralWeb.Components.UI.Skeleton do
   @moduledoc false
   use CentralWeb.Component
 

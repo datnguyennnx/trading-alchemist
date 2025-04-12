@@ -10,9 +10,9 @@ defmodule CentralWeb.BacktestLive.Components.BacktestTest do
   alias Central.Backtest.Contexts.BacktestContext
   alias Phoenix.PubSub
 
-  import SaladUI.Card
-  import SaladUI.Button
-  import SaladUI.Progress
+  import CentralWeb.Components.UI.Card
+  import CentralWeb.Components.UI.Button
+  import CentralWeb.Components.UI.Progress
 
   def render(assigns) do
     ~H"""

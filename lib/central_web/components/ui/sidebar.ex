@@ -1,12 +1,12 @@
-defmodule CentralWeb.Components.Sidebar do
+defmodule CentralWeb.Components.UI.Sidebar do
   @moduledoc false
   use CentralWeb.Component
 
-  import CentralWeb.Components.Input
-  import CentralWeb.Components.Separator
-  import CentralWeb.Components.Sheet
-  import CentralWeb.Components.Skeleton
-  import CentralWeb.Components.Tooltip
+  import CentralWeb.Components.UI.Input
+  import CentralWeb.Components.UI.Separator
+  import CentralWeb.Components.UI.Sheet
+  import CentralWeb.Components.UI.Skeleton
+  import CentralWeb.Components.UI.Tooltip
 
   @sidebar_width "16rem"
   @sidebar_width_mobile "18rem"

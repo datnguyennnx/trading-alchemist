@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Label do
+defmodule CentralWeb.Components.UI.Label do
   @moduledoc false
   use CentralWeb.Component
 

@@ -3,11 +3,10 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
   alias Phoenix.LiveView.JS
 
   # Import the SaladUI components
-  import SaladUI.Button
-  import SaladUI.Dialog
-  import SaladUI.DropdownMenu
-  import SaladUI.Menu
-  import SaladUI.Icon
+  import CentralWeb.Components.UI.Button
+  import CentralWeb.Components.UI.Dialog
+  import CentralWeb.Components.UI.Icon
+  import CentralWeb.Components.UI.Select
 
   # Define the settings navigation items
   @settings_nav_items [
@@ -42,7 +41,7 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
               </div>
             </div>
           </div>
-          
+
     <!-- Settings Content -->
           <div class="m-4 flex-1 p-6 bg-background text-foreground">
             <div class="flex flex-col gap-6">
@@ -86,63 +85,31 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
   def theme_selector(assigns) do
     ~H"""
     <div id="theme-selector" phx-hook="ThemeUIUpdater">
-      <.dropdown_menu>
-        <.dropdown_menu_trigger>
-          <div id="theme-dropdown-container" phx-update="ignore">
-            <.button
-              variant="outline"
-              size="sm"
-              class="flex items-center gap-2 bg-background border-border text-foreground hover:bg-accent hover:text-accent-foreground"
-              id="theme-dropdown-trigger"
-            >
-              <span class="h-4 w-4 flex items-center theme-icon">
-                <%= if @current_theme == "light" do %>
-                  <.icon name="hero-sun" class="h-4 w-4" />
-                <% else %>
-                  <.icon name="hero-moon" class="h-4 w-4" />
-                <% end %>
-              </span>
-              <span class="theme-text">
-                {if @current_theme == "light", do: "Light", else: "Dark"}
-              </span>
-            </.button>
-          </div>
-        </.dropdown_menu_trigger>
-        <.dropdown_menu_content align="end" class="bg-popover text-popover-foreground border-border">
-          <.menu>
-            <.menu_group>
-              <.theme_option theme="light" />
-              <.theme_option theme="dark" />
-            </.menu_group>
-          </.menu>
-        </.dropdown_menu_content>
-      </.dropdown_menu>
+      <.select id="theme-select" value={@current_theme} name="theme">
+        <.select_trigger
+          builder={%{id: "theme-select", name: "theme", value: @current_theme, label: @current_theme == "light" && "Light" || "Dark"}}
+          class="w-[120px] flex items-center gap-2 bg-background border-border text-foreground"
+        />
+        <.select_content builder={%{id: "theme-select", name: "theme", value: @current_theme}}>
+          <.select_group>
+            <.select_item
+              builder={%{id: "theme-select", name: "theme", value: @current_theme}}
+              value="light"
+              label="Light"
+              icon="hero-sun"
+              phx-click={JS.push("change_theme", value: %{theme: "light"}) |> JS.dispatch("set-theme", detail: %{theme: "light"})}
+            />
+            <.select_item
+              builder={%{id: "theme-select", name: "theme", value: @current_theme}}
+              value="dark"
+              label="Dark"
+              icon="hero-moon"
+              phx-click={JS.push("change_theme", value: %{theme: "dark"}) |> JS.dispatch("set-theme", detail: %{theme: "dark"})}
+            />
+          </.select_group>
+        </.select_content>
+      </.select>
     </div>
-    """
-  end
-
-  # Theme option menu item
-  attr :theme, :string, required: true
-
-  defp theme_option(assigns) do
-    ~H"""
-    <.menu_item
-      id={"theme-#{@theme}-selector"}
-      phx-click={
-        JS.push("change_theme", value: %{theme: @theme})
-        |> JS.dispatch("set-theme", detail: %{theme: @theme})
-      }
-      class="hover:bg-accent hover:text-accent-foreground"
-    >
-      <span class="mr-2 h-4 w-4 flex items-center">
-        <%= if @theme == "light" do %>
-          <.icon name="hero-sun" class="h-4 w-4" />
-        <% else %>
-          <.icon name="hero-moon" class="h-4 w-4" />
-        <% end %>
-      </span>
-      <span>{String.capitalize(@theme)}</span>
-    </.menu_item>
     """
   end
 end

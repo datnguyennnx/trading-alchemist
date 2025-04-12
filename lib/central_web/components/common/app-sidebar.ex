@@ -5,9 +5,9 @@ defmodule CentralWeb.Components.Common.AppSidebar do
 
   import CentralWeb.ComponentHelpers
 
-  import SaladUI.Sidebar
-  import SaladUI.Collapsible
-  import SaladUI.Icon
+  import CentralWeb.Components.UI.Sidebar
+  import CentralWeb.Components.UI.Collapsible
+  import CentralWeb.Components.UI.Icon
 
   import Lucideicons, except: [import: 1, quote: 1, menu: 1]
   alias CentralWeb.Components.Common.SettingsDialog

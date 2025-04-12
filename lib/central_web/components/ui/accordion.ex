@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Accordion do
+defmodule CentralWeb.Components.UI.Accordion do
   @moduledoc """
   Accordion component for displaying collapsible content.
 

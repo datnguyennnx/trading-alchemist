@@ -1,9 +1,10 @@
-defmodule CentralWeb.Components.DropdownMenu do
+defmodule CentralWeb.Components.UI.DropdownMenu do
   @moduledoc false
   use CentralWeb.Component
 
   alias Phoenix.LiveView.JS
 
+  @spec dropdown_menu(map()) :: Phoenix.LiveView.Rendered.t()
   @doc """
   Render dropdown menu
 

@@ -3,10 +3,10 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
   require Logger
   alias Central.Backtest.Contexts.BacktestContext
 
-  import SaladUI.Card
-  import SaladUI.Form
-  import SaladUI.Input
-  import SaladUI.Button
+  import CentralWeb.Components.UI.Card
+  import CentralWeb.Components.UI.Form
+  import CentralWeb.Components.UI.Input
+  import CentralWeb.Components.UI.Button
   import CentralWeb.Components.DateTimePicker, only: [date_time_picker: 1]
 
   @impl true

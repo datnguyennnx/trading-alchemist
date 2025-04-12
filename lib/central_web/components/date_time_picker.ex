@@ -2,11 +2,11 @@ defmodule CentralWeb.Components.DateTimePicker do
   use CentralWeb.Component
 
 
-  import SaladUI.Button
-  import SaladUI.Input
-  import SaladUI.Select
-  import SaladUI.Label
-  import SaladUI.Icon
+  import CentralWeb.Components.UI.Button
+  import CentralWeb.Components.UI.Input
+  import CentralWeb.Components.UI.Select
+  import CentralWeb.Components.UI.Label
+  import CentralWeb.Components.UI.Icon
 
   attr :id, :string, required: true
   attr :name, :string, default: nil

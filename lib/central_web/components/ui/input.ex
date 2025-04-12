@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Input do
+defmodule CentralWeb.Components.UI.Input do
   @moduledoc false
   use CentralWeb.Component
 

@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Table do
+defmodule CentralWeb.Components.UI.Table do
   @moduledoc """
   Implement of table components from https://ui.shadcn.com/docs/components/table
   """

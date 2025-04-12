@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Menu do
+defmodule CentralWeb.Components.UI.Menu do
   @moduledoc """
   Implement menu components
   """

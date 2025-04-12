@@ -3,14 +3,14 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
   alias Central.Backtest.Contexts.StrategyContext
   alias Jason # Alias Jason for parsing
 
-  import SaladUI.Card
-  import SaladUI.Form
-  import SaladUI.Input
-  import SaladUI.Button
-  import SaladUI.Textarea
-  import SaladUI.Select
-  import SaladUI.Icon
-  import SaladUI.Tabs
+  import CentralWeb.Components.UI.Card
+  import CentralWeb.Components.UI.Form
+  import CentralWeb.Components.UI.Input
+  import CentralWeb.Components.UI.Button
+  import CentralWeb.Components.UI.Textarea
+  import CentralWeb.Components.UI.Select
+  import CentralWeb.Components.UI.Icon
+  import CentralWeb.Components.UI.Tabs
 
   @impl true
   def mount(params, _session, socket) do

@@ -2,8 +2,8 @@ defmodule CentralWeb.StrategyLive.ShowLive do
   use CentralWeb, :live_view
   alias Central.Backtest.Contexts.StrategyContext
 
-  import SaladUI.Card
-  import SaladUI.Button
+  import CentralWeb.Components.UI.Card
+  import CentralWeb.Components.UI.Button
 
   def mount(%{"id" => id}, _session, socket) do
     strategy = StrategyContext.get_strategy!(id)

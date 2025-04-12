@@ -5,9 +5,9 @@ defmodule CentralWeb.BacktestLive.ShowLive do
   alias Central.Backtest.Contexts.TradeContext
 
   # Add necessary imports
-  import SaladUI.Button
-  import SaladUI.Accordion
-  import SaladUI.Table
+  import CentralWeb.Components.UI.Button
+  import CentralWeb.Components.UI.Accordion
+  import CentralWeb.Components.UI.Table
 
   # Add necessary aliases for the chart
   alias CentralWeb.BacktestLive.Utils.MarketDataLoader

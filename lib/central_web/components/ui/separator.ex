@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Separator do
+defmodule CentralWeb.Components.UI.Separator do
   @moduledoc false
   use CentralWeb.Component
 

@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Button do
+defmodule CentralWeb.Components.UI.Button do
   @moduledoc false
   use CentralWeb.Component
 

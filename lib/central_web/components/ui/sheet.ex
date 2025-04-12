@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Sheet do
+defmodule CentralWeb.Components.UI.Sheet do
   @moduledoc """
   Implement Sheet componet https://ui.shadcn.com/docs/components/sheet
 

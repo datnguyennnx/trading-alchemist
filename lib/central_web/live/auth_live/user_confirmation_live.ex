@@ -3,8 +3,8 @@ defmodule CentralWeb.AuthLive.UserConfirmationLive do
 
   alias Central.Accounts
   import CentralWeb.CoreComponents
-  import CentralWeb.Components.Input
-  import SaladUI.Button
+  import CentralWeb.Components.UI.Input
+  import CentralWeb.Components.UI.Button
 
   def render(%{live_action: :edit} = assigns) do
     ~H"""

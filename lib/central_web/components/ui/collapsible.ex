@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Collapsible do
+defmodule CentralWeb.Components.UI.Collapsible do
   @moduledoc """
   Implementation of Collapsible components.
 

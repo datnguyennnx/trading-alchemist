@@ -3,8 +3,8 @@ defmodule CentralWeb.BacktestLive.IndexLive do
   alias Central.Backtest.Contexts.StrategyContext
   alias Central.Backtest.Contexts.BacktestContext
 
-  import SaladUI.Card
-  import SaladUI.Button
+  import CentralWeb.Components.UI.Card
+  import CentralWeb.Components.UI.Button
 
   def mount(_params, _session, socket) do
     {:ok,

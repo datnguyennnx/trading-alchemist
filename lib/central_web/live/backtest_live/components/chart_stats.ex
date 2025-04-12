@@ -3,7 +3,7 @@ defmodule CentralWeb.BacktestLive.Components.ChartStats do
 
   alias CentralWeb.BacktestLive.Utils.DataFormatter
 
-  import SaladUI.Separator
+  import CentralWeb.Components.UI.Separator
 
   @doc """
   Renders the chart statistics display with OHLC values

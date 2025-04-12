@@ -126,12 +126,12 @@ The application uses SaladUI components for consistent UI patterns:
     - Reusable dialog/modal system
 
 *   **Core UI Components:**
-    - Sidebar (`SaladUI.Sidebar`)
-    - Collapsible sections (`SaladUI.Collapsible`) 
-    - Buttons (`SaladUI.Button`)
-    - Dropdowns (`SaladUI.DropdownMenu`)
-    - Menus (`SaladUI.Menu`)
-    - Icons (`SaladUI.Icon`, using Lucide icons)
+    - Sidebar (`CentralWeb.Components.UI.Sidebar`)
+    - Collapsible sections (`CentralWeb.Components.UI.Collapsible`) 
+    - Buttons (`CentralWeb.Components.UI.Button`)
+    - Dropdowns (`CentralWeb.Components.UI.DropdownMenu`)
+    - Menus (`CentralWeb.Components.UI.Menu`)
+    - Icons (`CentralWeb.Components.UI.Icon`, using Lucide icons)
 
 *   **LiveView Integration:**
     - Components use Phoenix.Component

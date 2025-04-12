@@ -3,10 +3,10 @@ defmodule CentralWeb.BacktestLive.Components.ChartControls do
 
   alias CentralWeb.BacktestLive.Utils.DataFormatter
 
-  import SaladUI.Button
-  import SaladUI.DropdownMenu
-  import SaladUI.Tooltip
-  import SaladUI.Icon
+  import CentralWeb.Components.UI.Button
+  import CentralWeb.Components.UI.DropdownMenu
+  import CentralWeb.Components.UI.Tooltip
+  import CentralWeb.Components.UI.Icon
 
   @doc """
   Renders the chart control panel with timeframe selector, symbol selector, and refresh button

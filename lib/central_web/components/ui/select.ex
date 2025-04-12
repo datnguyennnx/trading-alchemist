@@ -1,31 +1,28 @@
-defmodule CentralWeb.Components.Select do
+defmodule CentralWeb.Components.UI.Select do
   @moduledoc """
   Implement of select components from https://ui.shadcn.com/docs/components/select
 
   ## Examples:
 
-      <form>
-         <.select default="banana" id="fruit-select">
-            <.select_trigger class="w-[180px]">
-              <.select_value placeholder=".select a fruit"/>
-            </.select_trigger>
-            <.select_content>
-              <.select_group>
-                <.select_label>Fruits</.select_label>
-                <.select_item name="fruit" value="apple">Apple</.select_item>
-                <.select_item name="fruit" value="banana">Banana</.select_item>
-                <.select_item name="fruit" value="blueberry">Blueberry</.select_item>
-                <.select_separator />
-                <.select_item  name="fruit" disabled value="grapes">Grapes</.select_item>
-                <.select_item  name="fruit" value="pineapple">Pineapple</.select_item>
-              </.select_group>
-        </.select_content>
-          </.select>
-
-        <.button type="submit">Submit</.button>
-      </form>
+      <.form_item>
+        <.form_label>Condition</.form_label>
+        <%!-- Use standard field for new form --%>
+        <.select :let={select} field={f[:exit_condition]} name="exit_condition[]" placeholder="Select condition">
+          <.select_trigger builder={select} class="w-full" />
+          <.select_content class="w-full" builder={select}>
+            <.select_group>
+              <.select_item builder={select} value="above" label="Above"></.select_item>
+              <.select_item builder={select} value="below" label="Below"></.select_item>
+              <.select_item builder={select} value="crosses_above" label="Crosses Above"></.select_item>
+              <.select_item builder={select} value="crosses_below" label="Crosses Below"></.select_item>
+            </.select_group>
+          </.select_content>
+        </.select>
+        <.form_message field={f[:exit_condition]} />
+      </.form_item>
   """
   use CentralWeb.Component
+  import CentralWeb.Components.UI.Icon
 
   @doc """
   Ready to use select component with all required parts.
@@ -46,6 +43,7 @@ defmodule CentralWeb.Components.Select do
   attr :placeholder, :string, default: nil, doc: "The placeholder text when no value is selected."
 
   attr :class, :string, default: nil
+  attr :side, :string, values: ~w(top bottom), default: "bottom"
   slot :inner_block, required: true
   attr :rest, :global
 
@@ -79,6 +77,8 @@ defmodule CentralWeb.Components.Select do
 
   attr :builder, :map, required: true, doc: "The builder of the select component"
   attr :class, :string, default: nil
+  # Change this line to make inner_block optional
+  slot :inner_block, required: false
   attr :rest, :global
 
   def select_trigger(assigns) do
@@ -94,27 +94,31 @@ defmodule CentralWeb.Components.Select do
       phx-click={toggle_select(@builder.id)}
       {@rest}
     >
-      <span
-        class="select-value pointer-events-none before:content-[attr(data-content)]"
-        data-content={@builder.label || @builder.value || @builder.placeholder}
-      >
-      </span>
+      <%= if render_slot(@inner_block) do %>
+        <%= render_slot(@inner_block) %>
+      <% else %>
+        <span
+          class="select-value pointer-events-none before:content-[attr(data-content)]"
+          data-content={@builder.label || @builder.value || @builder.placeholder}
+        >
+        </span>
+      <% end %>
       <span class="h-4 w-4 opacity-50" />
     </button>
     """
   end
 
+
   attr :builder, :map, required: true, doc: "The builder of the select component"
 
   attr :class, :string, default: nil
-  attr :side, :string, values: ~w(top bottom), default: "bottom"
-  slot :inner_block, required: true
 
+  slot :inner_block, required: true
   attr :rest, :global
 
   def select_content(assigns) do
     position_class =
-      case assigns.side do
+      case Map.get(assigns, :side, "bottom") do
         "top" -> "bottom-full mb-1"
         "bottom" -> "top-full mt-1"
       end
@@ -123,6 +127,7 @@ defmodule CentralWeb.Components.Select do
       assigns
       |> assign(:position_class, position_class)
       |> assign(:id, assigns.builder.id <> "-content")
+      |> assign(:side, Map.get(assigns, :side, "bottom"))
 
     ~H"""
     <.focus_wrap
@@ -146,6 +151,8 @@ defmodule CentralWeb.Components.Select do
   end
 
   attr :class, :string, default: nil
+  attr :side, :string, values: ~w(top bottom), default: "bottom"
+
   slot :inner_block, required: true
   attr :rest, :global
 
@@ -173,9 +180,10 @@ defmodule CentralWeb.Components.Select do
 
   attr :value, :string, required: true
   attr :label, :string, default: nil
+  attr :icon, :string, default: nil, doc: "Icon name to display (e.g., 'hero-sun')"
   attr :disabled, :boolean, default: false
   attr :class, :string, default: nil
-  slot :inner_block, required: true
+  slot :inner_block, required: false
 
   attr :rest, :global
 
@@ -188,7 +196,7 @@ defmodule CentralWeb.Components.Select do
       class={
         classes([
           "group/item",
-          "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+          "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
           @class
         ])
       }
@@ -207,25 +215,19 @@ defmodule CentralWeb.Components.Select do
         phx-keydown={JS.exec("x-hide-select", to: "##{@builder.id}")}
       />
       <div class="absolute top-0 left-0 w-full h-full group-hover/item:bg-accent rounded"></div>
-      <span class="hidden peer-checked:block absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-        <span aria-hidden="true">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-check h-4 w-4"
-          >
-            <path d="M20 6 9 17l-5-5"></path>
-          </svg>
+      <div class="z-0 peer-focus:text-accent-foreground flex items-center gap-2">
+        <%= if @icon do %>
+          <span class="h-4 w-4 flex items-center">
+            <.icon name={@icon} class="h-4 w-4" />
+          </span>
+        <% end %>
+        <span><%= @label %></span>
+      </div>
+      <%= if @builder.value == @value do %>
+        <span class="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
+          <.icon name="hero-check" class="h-4 w-4" />
         </span>
-      </span>
-      <span class="z-0 peer-focus:text-accent-foreground">{@label}</span>
+      <% end %>
     </label>
     """
   end

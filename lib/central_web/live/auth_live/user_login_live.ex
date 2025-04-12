@@ -1,9 +1,9 @@
 defmodule CentralWeb.AuthLive.UserLoginLive do
   use CentralWeb, :live_view
   import CentralWeb.CoreComponents
-  import CentralWeb.Components.Input
-  import SaladUI.Form
-  import SaladUI.Button
+  import CentralWeb.Components.UI.Input
+  import CentralWeb.Components.UI.Form
+  import CentralWeb.Components.UI.Button
 
   def render(assigns) do
     ~H"""

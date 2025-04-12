@@ -2,8 +2,8 @@ defmodule CentralWeb.StrategyLive.IndexLive do
   use CentralWeb, :live_view
   alias Central.Backtest.Contexts.StrategyContext
 
-  import SaladUI.Card
-  import SaladUI.Button
+  import CentralWeb.Components.UI.Card
+  import CentralWeb.Components.UI.Button
 
   def mount(_params, _session, socket) do
     {:ok,

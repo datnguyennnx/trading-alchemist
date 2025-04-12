@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Icon do
+defmodule CentralWeb.Components.UI.Icon do
   @moduledoc """
   Renders a [Heroicon](https://heroicons.com).
 

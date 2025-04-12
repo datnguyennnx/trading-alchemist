@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Textarea do
+defmodule CentralWeb.Components.UI.Textarea do
   @moduledoc false
   use CentralWeb.Component
 

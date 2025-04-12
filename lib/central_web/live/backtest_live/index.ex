@@ -1,7 +1,7 @@
 defmodule CentralWeb.BacktestLive.Index do
   use CentralWeb, :live_view
 
-  import SaladUI.Card
+  import CentralWeb.Components.UI.Card
 
   alias Central.Backtest.Contexts.BacktestContext
 

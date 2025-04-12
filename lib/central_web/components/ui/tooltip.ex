@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Tooltip do
+defmodule CentralWeb.Components.UI.Tooltip do
   @moduledoc false
   use CentralWeb.Component
 

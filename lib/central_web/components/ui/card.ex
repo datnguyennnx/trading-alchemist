@@ -1,4 +1,4 @@
-defmodule CentralWeb.Components.Card do
+defmodule CentralWeb.Components.UI.Card do
   @moduledoc """
   Implement of card components from https://ui.shadcn.com/docs/components/card
   """

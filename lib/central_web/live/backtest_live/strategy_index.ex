@@ -1,8 +1,8 @@
 defmodule CentralWeb.BacktestLive.StrategyIndex do
   use CentralWeb, :live_view
 
-  import SaladUI.Card
-  import SaladUI.Button
+  import CentralWeb.Components.UI.Card
+  import CentralWeb.Components.UI.Button
 
   alias Central.Backtest.Contexts.StrategyContext
 
