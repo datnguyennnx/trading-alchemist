@@ -161,15 +161,6 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                            <.select_content class="w-full" builder={select}>
                              <.select_group>
                                <.select_item builder={select} value="BTCUSDT">BTC/USDT</.select_item>
-                               <.select_item builder={select} value="ETHUSDT">ETH/USDT</.select_item>
-                               <.select_item builder={select} value="BNBUSDT">BNB/USDT</.select_item>
-                               <.select_item builder={select} value="SOLUSDT">SOL/USDT</.select_item>
-                               <.select_item builder={select} value="XRPUSDT">XRP/USDT</.select_item>
-                               <.select_item builder={select} value="ADAUSDT">ADA/USDT</.select_item>
-                               <.select_item builder={select} value="DOGEUSDT">DOGE/USDT</.select_item>
-                               <.select_item builder={select} value="DOTUSDT">DOT/USDT</.select_item>
-                               <.select_item builder={select} value="LINKUSDT">LINK/USDT</.select_item>
-                               <.select_item builder={select} value="MATICUSDT">MATIC/USDT</.select_item>
                              </.select_group>
                            </.select_content>
                          </.select>
@@ -197,7 +188,7 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                    </div>
                    <%= for i <- 0..(@entry_rules_count - 1) do %>
                      <.card class="p-4 relative space-y-4">
-                        <%# Add index to phx-value-index for remove button %>
+                        <%!-- Add index to phx-value-index for remove button --%>
                        <%= if @entry_rules_count > 1 do %>
                          <.button type="button" phx-click="remove_entry_rule" phx-value-index={i} variant="ghost" size="icon" class="absolute top-2 right-2 text-destructive hover:text-destructive/80">
                            <.icon name="hero-x-mark" class="h-4 w-4" />
@@ -206,8 +197,8 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                        <% end %>
                         <.form_item>
                            <.form_label>Indicator</.form_label>
-                           <%# Manually set name/value/id, remove field %>
-                           <%# Access value from @initial_form_data %>
+                           <%!-- Manually set name/value/id, remove field --%>
+                           <%!-- Access value from @initial_form_data --%>
                            <.select :let={select} name="entry_indicator[]" id={"entry-indicator-#{i}"} value={Map.get(@initial_form_data, "entry_indicator_#{i}")} placeholder="Select indicator">
                              <.select_trigger builder={select} class="w-full" />
                              <.select_content class="w-full" builder={select}>
@@ -220,13 +211,13 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                                </.select_group>
                              </.select_content>
                            </.select>
-                           <%# Re-add form_message, referencing the base field name for potential errors %>
+                           <%!-- Re-add form_message, referencing the base field name for potential errors --%>
                            <.form_message field={@form[:entry_indicator]} />
                          </.form_item>
                          <.form_item>
                            <.form_label>Condition</.form_label>
-                           <%# Manually set name/value/id, remove field %>
-                           <%# Access value from @initial_form_data %>
+                           <%!-- Manually set name/value/id, remove field --%>
+                           <%!-- Access value from @initial_form_data --%>
                            <.select :let={select} name="entry_condition[]" id={"entry-condition-#{i}"} value={Map.get(@initial_form_data, "entry_condition_#{i}")} placeholder="Select condition">
                              <.select_trigger builder={select} class="w-full" />
                              <.select_content class="w-full" builder={select}>
@@ -238,15 +229,15 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                                </.select_group>
                              </.select_content>
                            </.select>
-                           <%# Re-add form_message %>
+                           <%!-- Re-add form_message --%>
                            <.form_message field={@form[:entry_condition]} />
                          </.form_item>
                          <.form_item>
                            <.form_label>Value</.form_label>
-                           <%# Manually set name/value/id, remove field %>
-                           <%# Access value from @initial_form_data %>
+                           <%!-- Manually set name/value/id, remove field --%>
+                           <%!-- Access value from @initial_form_data --%>
                            <.input name="entry_value[]" type="number" step="any" placeholder="e.g. 30 or 200" id={"entry-value-#{i}"} value={Map.get(@initial_form_data, "entry_value_#{i}")}/>
-                           <%# Re-add form_message %>
+                           <%!-- Re-add form_message --%>
                            <.form_message field={@form[:entry_value]} />
                          </.form_item>
                      </.card>
@@ -269,25 +260,25 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <.form_item>
                             <.form_label>Stop Loss (%)</.form_label>
-                            <%# Manually set name/value/id, remove field %>
-                            <%# Access value from @initial_form_data %>
+                            <%!-- Manually set name/value/id, remove field --%>
+                            <%!-- Access value from @initial_form_data --%>
                             <.input name="stop_loss[]" type="number" step="0.01" min="0" max="100" placeholder="e.g. 2.0" id={"stop-loss-#{i}"} value={Map.get(@initial_form_data, "stop_loss_#{i}")}/>
-                            <%# Re-add form_message %>
+                            <%!-- Re-add form_message --%>
                             <.form_message field={@form[:stop_loss]} />
                           </.form_item>
                           <.form_item>
                             <.form_label>Take Profit (%)</.form_label>
-                             <%# Manually set name/value/id, remove field %>
-                             <%# Access value from @initial_form_data %>
+                             <%!-- Manually set name/value/id, remove field --%>
+                             <%!-- Access value from @initial_form_data --%>
                             <.input name="take_profit[]" type="number" step="0.01" min="0" max="100" placeholder="e.g. 4.0" id={"take-profit-#{i}"} value={Map.get(@initial_form_data, "take_profit_#{i}")}/>
-                            <%# Re-add form_message %>
+                            <%!-- Re-add form_message --%>
                             <.form_message field={@form[:take_profit]} />
                           </.form_item>
                         </div>
                          <.form_item>
                            <.form_label>Indicator</.form_label>
-                           <%# Manually set name/value/id, remove field %>
-                           <%# Access value from @initial_form_data %>
+                           <%!-- Manually set name/value/id, remove field --%>
+                           <%!-- Access value from @initial_form_data --%>
                            <.select :let={select} name="exit_indicator[]" id={"exit-indicator-#{i}"} value={Map.get(@initial_form_data, "exit_indicator_#{i}")} placeholder="Select indicator">
                              <.select_trigger builder={select} class="w-full" />
                              <.select_content class="w-full" builder={select}>
@@ -300,13 +291,13 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                                </.select_group>
                              </.select_content>
                            </.select>
-                            <%# Re-add form_message %>
+                            <%!-- Re-add form_message --%>
                            <.form_message field={@form[:exit_indicator]} />
                          </.form_item>
                          <.form_item>
                            <.form_label>Condition</.form_label>
-                           <%# Manually set name/value/id, remove field %>
-                           <%# Access value from @initial_form_data %>
+                           <%!-- Manually set name/value/id, remove field --%>
+                           <%!-- Access value from @initial_form_data --%>
                            <.select :let={select} name="exit_condition[]" id={"exit-condition-#{i}"} value={Map.get(@initial_form_data, "exit_condition_#{i}")} placeholder="Select condition">
                              <.select_trigger builder={select} class="w-full" />
                              <.select_content class="w-full" builder={select}>
@@ -318,15 +309,15 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                                </.select_group>
                              </.select_content>
                            </.select>
-                           <%# Re-add form_message %>
+                           <%!-- Re-add form_message --%>
                            <.form_message field={@form[:exit_condition]} />
                          </.form_item>
                          <.form_item>
                            <.form_label>Value</.form_label>
-                            <%# Manually set name/value/id, remove field %>
-                            <%# Access value from @initial_form_data %>
+                            <%!-- Manually set name/value/id, remove field --%>
+                            <%!-- Access value from @initial_form_data --%>
                            <.input name="exit_value[]" type="number" step="any" placeholder="e.g. 70 or 50" id={"exit-value-#{i}"} value={Map.get(@initial_form_data, "exit_value_#{i}")}/>
-                           <%# Re-add form_message %>
+                           <%!-- Re-add form_message --%>
                            <.form_message field={@form[:exit_value]} />
                          </.form_item>
                      </.card>
@@ -361,7 +352,7 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
 
           <.card_footer class="flex justify-end space-x-4">
              <.button type="button" phx-click="cancel" variant="outline"> Cancel </.button>
-             <%# Use form="strategy-form" to trigger submit from outside the form tag %>
+             <%!-- Use form="strategy-form" to trigger submit from outside the form tag --%>
              <.button type="submit" form="strategy-form">
                Update Strategy
              </.button>
