@@ -5,15 +5,12 @@ defmodule CentralWeb.Live.PageLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    # Initialize theme as nil; a client-side hook likely pushes the actual theme
-    {:ok, assign(socket, :theme, nil)}
+    # Initialize with a default theme
+    {:ok, assign(socket, :theme, "light")}
   end
 
   @impl true
   def render(assigns) do
-    # Default theme if not yet set by client hook
-    assigns = Map.put_new(assigns, :theme, "light")
-
     ~H"""
     <AppSidebar.app_layout theme={@theme}>
       <div class="grid auto-rows-min gap-4 md:grid-cols-3">
@@ -26,9 +23,13 @@ defmodule CentralWeb.Live.PageLive do
     """
   end
 
-  # Handle theme change pushed from the client-side hook
   @impl true
   def handle_event("theme_changed", %{"theme" => theme}, socket) do
-    {:noreply, assign(socket, :theme, theme)}
+    # Only update if theme has changed
+    if theme != socket.assigns.theme do
+      {:noreply, assign(socket, :theme, theme)}
+    else
+      {:noreply, socket}
+    end
   end
 end
