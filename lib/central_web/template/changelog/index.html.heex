@@ -2,6 +2,57 @@
   title="Changelog"
   entries={[
     %{
+      version: "0.2.2",
+      title: "UI Components, LiveView Conversion, and Fixes",
+      date: "April 14, 2025",
+      description:
+        "Introduced new UI components (Data Table, Checkbox), converted a static HTML page to LiveView, switched to Heroicons, fixed theme issues, and addressed various bugs and warnings.",
+      features: [
+        %{
+          title: "Data Table Component",
+          description: "Added a reusable Data Table component for structured data display."
+        },
+        %{
+          title: "Heroicons Integration",
+          description: "Replaced all existing SVG icons with Heroicons for consistency."
+        },
+        %{
+          title: "LiveView Page Conversion",
+          description:
+            "Migrated a standard HTML page to a dynamic Phoenix LiveView for enhanced interactivity."
+        },
+        %{
+          title: "Refactoring UI folder for SaladUI like ShadcnUI",
+          description:
+            "Ensured consistent install and storing reusable components."
+        },
+      ],
+      changes: [
+        %{description: "Implemented Data Table component."},
+        %{description: "Implemented Checkbox component."},
+        %{description: "Replaced all SVG icons with Heroicons."},
+        %{description: "Fixed options handling in Select components."},
+        %{description: "Prevented unexpected backtest runs when changing dates."},
+        %{description: "Refactored SaladUI configuration location."},
+        %{
+          description:
+            "Successfully converted an existing HTML structure to a LiveView template."
+        },
+        %{
+          description:
+            "Fixed styling inconsistencies for select components in different themes."
+        },
+        %{
+          description:
+            "Implemented correct favicon display for LiveView pages."
+        },
+        %{description: "Removed console logs and standardized logger usage."},
+        %{description: "Removed unused code and dependencies."},
+        %{description: "Removed various compiler warnings (SaladUI, crypto options)."},
+        %{description: "Resolved compiler warnings related to favicon fetching logic."}
+      ]
+    },
+    %{
       version: "0.2.1",
       title: "Backtest Engine and Performance Analytics",
       date: "April 10, 2025",
