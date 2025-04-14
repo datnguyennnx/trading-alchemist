@@ -150,7 +150,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
                       </div>
                     </.accordion_trigger>
                     <.accordion_content>
-                      <%# Only render content if the accordion item is open %>
+                      <%!-- Only render content if the accordion item is open --%>
                       <%= if Map.get(@open_accordions, backtest.id, false) do %>
                         <div class="bg-card">
                           <div class="grid grid-cols-2 gap-4 mb-4">
@@ -181,7 +181,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
                           <%= if Enum.empty?(backtest.trades) do %>
                             <p class="text-muted-foreground">No trades for this backtest</p>
                           <% else %>
-                            <%# Explicitly create the table ID %>
+                            <%!-- Explicitly create the table ID --%>
                             <% table_id = "trades-table-#{backtest.id}" %>
                             <.data_table
                               id={table_id}

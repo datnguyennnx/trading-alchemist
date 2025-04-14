@@ -81,15 +81,16 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
   # Theme selector component
   attr :current_theme, :string, required: true
 
-  def theme_selector(assigns) do
+  defp theme_selector(assigns) do
     theme_label = if assigns.current_theme == "light", do: "Light", else: "Dark"
+    assigns = assign(assigns, :theme_label, theme_label)
 
     ~H"""
     <.select
       :let={select}
       id="theme-select"
       value={assigns.current_theme}
-      label={theme_label}
+      label={@theme_label}
       name="theme"
     >
       <.select_trigger

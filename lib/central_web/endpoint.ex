@@ -32,7 +32,7 @@ defmodule CentralWeb.Endpoint do
     from: :central,
     gzip: false,
     only:
-      ~w(favicon.ico site.webmanifest apple-touch-icon.png favicon-32x32.png favicon-16x16.png),
+      ~w(favicon.ico site.webmanifest apple-touch-icon.png favicon-32x32.png favicon-16x16.png android-chrome-192x192.png android-chrome-512x512.png),
     cache_control_for_etags: "public, max-age=86400"
 
   # Code reloading can be explicitly enabled under the

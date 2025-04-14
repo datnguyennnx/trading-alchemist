@@ -222,7 +222,7 @@ defmodule CentralWeb.Components.UI.Select do
         <% end %>
         <span>{@label}</span>
       </div>
-      <%# Always render the checkmark span, control visibility with a class %>
+      <%!-- Always render the checkmark span, control visibility with a class --%>
       <span
         class={classes([
           "absolute right-2 flex h-3.5 w-3.5 items-center justify-center",

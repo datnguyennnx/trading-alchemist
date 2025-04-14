@@ -203,7 +203,7 @@ defmodule CentralWeb.Components.UI.DataTable do
                     <%= if @selectable do %>
                       <.table_head class="w-[42px] px-0 text-center">
                         <div class="flex items-center justify-center">
-                          <%# Calculate if all rows on the current page are selected %>
+                          <%!-- Calculate if all rows on the current page are selected --%>
                           <% current_page_row_ids = Enum.map(@rows, @row_id) %>
                           <% all_on_page_selected? = !Enum.empty?(current_page_row_ids) && Enum.all?(current_page_row_ids, fn id -> id in @selected_rows end) %>
                           <.checkbox
