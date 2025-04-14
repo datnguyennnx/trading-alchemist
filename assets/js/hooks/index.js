@@ -4,14 +4,14 @@
  */
 
 import FlickeringGrid from './flickering_grid';
-import ThemeSwitcher from './theme-switcher';
+import ThemeManager from './theme-switcher';
 import DatePicker from './date_picker';
 import { BacktestForm } from './backtest';
 
 // Re-export hooks
 export {
   FlickeringGrid,
-  ThemeSwitcher,
+  ThemeManager,
   DatePicker,
   BacktestForm
 }; 

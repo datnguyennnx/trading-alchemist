@@ -22,21 +22,13 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 
 // Import hooks
-import { FlickeringGrid, ThemeSwitcher, DatePicker, BacktestForm } from "./hooks";
-import { ThemeUIUpdater, themeUtils } from "./hooks/theme-switcher";
+import { FlickeringGrid, ThemeManager, DatePicker, BacktestForm } from "./hooks";
 import TradingViewChart from "./hooks/tradingview";
-
-// Run theme initialization BEFORE LiveView connects
-document.addEventListener('DOMContentLoaded', () => {
-  const theme = themeUtils.getTheme();
-  themeUtils.applyTheme(theme);
-});
 
 // Register all hooks
 const Hooks = {
   FlickeringGrid,
-  ThemeSwitcher,
-  ThemeUIUpdater,
+  ThemeManager,
   TradingViewChart,
   DateTimePicker: DatePicker,
   BacktestForm
@@ -63,32 +55,3 @@ window.addEventListener("phx:js-exec", ({detail}) => {
     liveSocket.execJS(el, el.getAttribute(detail.attr))
   })
 })
-
-// Single event listener for theme changes
-let lastSetTheme = null; // Track last theme set to avoid loops
-
-document.addEventListener('set-theme', (event) => {
-  if (event.detail?.theme) {
-    const { theme } = event.detail;
-    
-    // Avoid infinite loops by checking if theme has already been set
-    if (lastSetTheme === theme) return;
-    lastSetTheme = theme;
-    
-    console.log("Global theme changed to:", theme);
-    
-    // Apply theme to DOM and localStorage using shared utility
-    themeUtils.applyTheme(theme);
-    
-    // Update theme UI using shared utility
-    themeUtils.updateThemeUI(theme);
-    
-    // No need to dispatch another set-theme event - that would create a loop
-    // Instead, dispatch a separate event for non-LiveView components
-    const themeEvent = new CustomEvent('theme-updated', { 
-      bubbles: true, 
-      detail: { theme } 
-    });
-    document.dispatchEvent(themeEvent);
-  }
-});

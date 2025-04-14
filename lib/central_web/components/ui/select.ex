@@ -222,11 +222,16 @@ defmodule CentralWeb.Components.UI.Select do
         <% end %>
         <span>{@label}</span>
       </div>
-      <%= if @builder.value == @value do %>
-        <span class="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
-          <.icon name="hero-check" class="h-4 w-4" />
-        </span>
-      <% end %>
+      <%# Always render the checkmark span, control visibility with a class %>
+      <span
+        class={classes([
+          "absolute right-2 flex h-3.5 w-3.5 items-center justify-center",
+          # Add 'hidden' class if not selected
+          if(@builder.value != @value, do: "hidden", else: nil)
+        ])}
+      >
+        <.icon name="hero-check" class="h-4 w-4" />
+      </span>
     </label>
     """
   end

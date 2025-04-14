@@ -20,8 +20,10 @@ defmodule CentralWeb.Router do
   scope "/", CentralWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
     get "/changelog", ChangelogController, :index
+
+    live "/", Live.PageLive # New LiveView route
+
   end
 
   # Other scopes may use custom stacks.

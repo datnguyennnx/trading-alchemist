@@ -183,7 +183,7 @@ defmodule CentralWeb.Components.Common.AppSidebar do
 
   def app_layout(assigns) do
     ~H"""
-    <div id={@id} phx-hook="ThemeSwitcher" data-connected="false" class={@class}>
+    <div id={@id} phx-hook="ThemeManager" class={@class}>
       <.sidebar_provider>
         <.sidebar_main data={@data} theme={@theme} />
         <.sidebar_inset>

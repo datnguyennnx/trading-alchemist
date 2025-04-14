@@ -1,6 +1,5 @@
 defmodule CentralWeb.Components.Common.SettingsDialog do
   use Phoenix.Component
-  alias Phoenix.LiveView.JS
 
   # Import the SaladUI components
   import CentralWeb.Components.UI.Button
@@ -20,7 +19,7 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
   attr :id, :string, default: "settings-dialog"
   attr :trigger_id, :string, default: nil
   attr :class, :string, default: nil
-  attr :current_theme, :string, default: "light"
+  attr :current_theme, :string, required: true
   attr :settings_nav_items, :list, default: @settings_nav_items
 
   def settings_dialog(assigns) do
@@ -41,7 +40,7 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
               </div>
             </div>
           </div>
-          
+
     <!-- Settings Content -->
           <div class="m-4 flex-1 p-6 bg-background text-foreground">
             <div class="flex flex-col gap-6">
@@ -83,46 +82,39 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
   attr :current_theme, :string, required: true
 
   def theme_selector(assigns) do
+    theme_label = if assigns.current_theme == "light", do: "Light", else: "Dark"
+
     ~H"""
-    <div id="theme-selector" phx-hook="ThemeUIUpdater">
-      <.select id="theme-select" value={@current_theme} name="theme">
-        <.select_trigger
-          builder={
-            %{
-              id: "theme-select",
-              name: "theme",
-              value: @current_theme,
-              label: (@current_theme == "light" && "Light") || "Dark"
-            }
-          }
-          class="w-[120px] flex items-center gap-2 bg-background border-border text-foreground"
-        />
-        <.select_content builder={%{id: "theme-select", name: "theme", value: @current_theme}}>
-          <.select_group>
-            <.select_item
-              builder={%{id: "theme-select", name: "theme", value: @current_theme}}
-              value="light"
-              label="Light"
-              icon="hero-sun"
-              phx-click={
-                JS.push("change_theme", value: %{theme: "light"})
-                |> JS.dispatch("set-theme", detail: %{theme: "light"})
-              }
-            />
-            <.select_item
-              builder={%{id: "theme-select", name: "theme", value: @current_theme}}
-              value="dark"
-              label="Dark"
-              icon="hero-moon"
-              phx-click={
-                JS.push("change_theme", value: %{theme: "dark"})
-                |> JS.dispatch("set-theme", detail: %{theme: "dark"})
-              }
-            />
-          </.select_group>
-        </.select_content>
-      </.select>
-    </div>
+    <.select
+      :let={select}
+      id="theme-select"
+      value={assigns.current_theme}
+      label={theme_label}
+      name="theme"
+    >
+      <.select_trigger
+        builder={select}
+        class="w-[120px] flex items-center gap-2 bg-background border-border text-foreground"
+      />
+      <.select_content builder={select}>
+        <.select_group>
+          <.select_item
+            builder={select}
+            value="light"
+            label="Light"
+            icon="hero-sun"
+            data-theme-value="light"
+          />
+          <.select_item
+            builder={select}
+            value="dark"
+            label="Dark"
+            icon="hero-moon"
+            data-theme-value="dark"
+          />
+        </.select_group>
+      </.select_content>
+    </.select>
     """
   end
 end
