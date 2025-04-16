@@ -54,7 +54,53 @@ sequenceDiagram
     MarketSyncWorker->>MarketSyncWorker: Schedule next sync
 ```
 
-## 2. Complete Backtest Execution Flow
+## 2. On-Demand Historical Data Sync Flow
+
+This diagram illustrates how the system fetches specific historical data ranges on-demand for backtests when the required data is not already available.
+
+> **Note:** This flow is also integrated into the Complete Backtest Execution Flow (section 3). This standalone diagram shows the detailed process in isolation, while the Complete Backtest Execution Flow shows how it fits into the overall backtest process.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant BacktestRunner
+    participant StrategyExecutor
+    participant MarketDataHandler
+    participant HistoricalDataFetcher
+    participant MarketDataContext
+    participant BinanceAPI
+    participant Database
+
+    User->>BacktestRunner: Initiate Backtest(ID, Params)
+    BacktestRunner->>StrategyExecutor: execute_backtest(ID)
+    StrategyExecutor->>MarketDataHandler: fetch_market_data(BacktestParams)
+    MarketDataHandler->>MarketDataContext: get_date_range(symbol, timeframe)
+    MarketDataContext->>Database: Query min/max timestamps
+    Database-->>MarketDataContext: {db_start, db_end}
+    MarketDataContext-->>MarketDataHandler: {db_start, db_end}
+    MarketDataHandler->>MarketDataHandler: Compare requested range with db range
+    alt Data Missing
+        MarketDataHandler->>BacktestRunner: Update Status (fetching_data)
+        MarketDataHandler->>HistoricalDataFetcher: fetch_and_store_range(symbol, tf, missing_start, missing_end)
+        HistoricalDataFetcher->>BinanceAPI: GET /api/v3/klines (potentially multiple chunks)
+        BinanceAPI-->>HistoricalDataFetcher: Kline data
+        HistoricalDataFetcher->>Database: INSERT INTO market_data (on_conflict: :nothing)
+        Database-->>HistoricalDataFetcher: {count, _}
+        HistoricalDataFetcher-->>MarketDataHandler: {:ok, count}
+    end
+    MarketDataHandler->>MarketDataContext: get_candles(symbol, tf, start, end)
+    MarketDataContext->>Database: SELECT * FROM market_data WHERE ...
+    Database-->>MarketDataContext: Candle records
+    MarketDataContext-->>MarketDataHandler: Candle records
+    MarketDataHandler->>MarketDataHandler: Parse/Format data
+    MarketDataHandler-->>StrategyExecutor: {:ok, candles_data}
+    StrategyExecutor->>StrategyExecutor: Run strategy logic...
+    StrategyExecutor-->>BacktestRunner: Backtest results
+    BacktestRunner->>Database: Update Backtest status (completed/failed)
+    BacktestRunner->>User: Notify completion/failure
+```
+
+## 3. Complete Backtest Execution Flow
 
 This diagram shows the detailed flow of a backtest execution, from strategy configuration to results analysis.
 
@@ -66,6 +112,8 @@ sequenceDiagram
     participant ExecutionContext as Execution Context
     participant BacktestRunner as Backtest Runner Worker
     participant MarketDataContext as Market Data Context
+    participant HistoricalDataFetcher as Historical Data Fetcher
+    participant BinanceAPI as Binance API
     participant StrategyExecutor as Strategy Executor
     participant IndicatorCalc as Indicator Calculator
     participant RiskManager as Risk Manager
@@ -106,6 +154,21 @@ sequenceDiagram
     else Data not in cache
         MarketDataContext->>DB: Query market_data for symbol/timeframe/range
         DB-->>MarketDataContext: Return market data
+        
+        alt Data missing or incomplete
+            MarketDataContext->>BacktestRunner: Report missing data
+            BacktestRunner->>ExecutionContext: Update backtest status to "fetching_data"
+            ExecutionContext->>DB: Update status
+            BacktestRunner->>HistoricalDataFetcher: fetch_and_store_range(symbol, timeframe, missing_start, missing_end)
+            HistoricalDataFetcher->>BinanceAPI: Fetch missing historical data
+            BinanceAPI-->>HistoricalDataFetcher: Return kline data
+            HistoricalDataFetcher->>DB: Store historical data
+            HistoricalDataFetcher-->>BacktestRunner: Data fetched successfully
+            BacktestRunner->>MarketDataContext: Request historical data again
+            MarketDataContext->>DB: Query market_data (now complete)
+            DB-->>MarketDataContext: Return complete market data
+        end
+        
         MarketDataContext->>Cache: Store in cache
     end
     
@@ -171,7 +234,7 @@ sequenceDiagram
     WebUI-->>Trader: Display performance metrics and trades
 ```
 
-## 3. Transaction Replay Flow
+## 4. Transaction Replay Flow
 
 This diagram shows how historical transactions are imported and replayed in the system.
 
@@ -255,7 +318,7 @@ sequenceDiagram
     WebUI-->>Trader: Display transaction comparison
 ```
 
-## 4. Real-time Market Data Streaming Flow
+## 5. Real-time Market Data Streaming Flow
 
 This diagram illustrates how the system can stream real-time market data for live testing.
 
@@ -322,7 +385,7 @@ sequenceDiagram
     end
 ```
 
-## 5. Chart and Trade Visualization Flow
+## 6. Chart and Trade Visualization Flow
 
 This diagram shows how the system visualizes backtested trades on interactive charts.
 
