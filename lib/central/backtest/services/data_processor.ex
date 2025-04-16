@@ -4,6 +4,7 @@ defmodule Central.Backtest.Services.DataProcessor do
   """
 
   alias Central.Backtest.Schemas.MarketData
+  alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
   @doc """
   Normalizes raw binance kline data into a standard format.
@@ -35,12 +36,12 @@ defmodule Central.Backtest.Services.DataProcessor do
       %{
         symbol: symbol,
         timeframe: timeframe,
-        timestamp: DateTime.from_unix!(open_time, :millisecond),
-        open: parse_decimal(open),
-        high: parse_decimal(high),
-        low: parse_decimal(low),
-        close: parse_decimal(close),
-        volume: parse_decimal(volume),
+        timestamp: Utils.DateTime.from_unix(open_time, :millisecond),
+        open: Utils.Decimal.parse(open),
+        high: Utils.Decimal.parse(high),
+        low: Utils.Decimal.parse(low),
+        close: Utils.Decimal.parse(close),
+        volume: Utils.Decimal.parse(volume),
         source: "binance"
       }
     end)
@@ -152,20 +153,6 @@ defmodule Central.Backtest.Services.DataProcessor do
 
   # PRIVATE FUNCTIONS
 
-  defp parse_decimal(value) when is_binary(value) do
-    case Decimal.parse(value) do
-      {decimal, ""} -> decimal
-      {decimal, _} -> decimal
-      :error -> Decimal.new(0)
-    end
-  end
-
-  defp parse_decimal(value) when is_number(value) do
-    Decimal.new(value)
-  end
-
-  defp parse_decimal(_), do: Decimal.new(0)
-
   defp validate_candle(candle) do
     # Check for required fields
     has_required =
@@ -175,13 +162,13 @@ defmodule Central.Backtest.Services.DataProcessor do
         Map.has_key?(candle, :low) and
         Map.has_key?(candle, :close)
 
-    # Validate values
+    # Validate values using utility functions
     valid_values =
-      Decimal.compare(candle.high, candle.low) != :lt and
-        Decimal.compare(candle.open, Decimal.new(0)) != :lt and
-        Decimal.compare(candle.high, Decimal.new(0)) != :lt and
-        Decimal.compare(candle.low, Decimal.new(0)) != :lt and
-        Decimal.compare(candle.close, Decimal.new(0)) != :lt
+      Utils.Decimal.compare(candle.high, candle.low) != :lt and
+        Utils.Decimal.positive?(candle.open) and
+        Utils.Decimal.positive?(candle.high) and
+        Utils.Decimal.positive?(candle.low) and
+        Utils.Decimal.positive?(candle.close)
 
     has_required and valid_values
   end

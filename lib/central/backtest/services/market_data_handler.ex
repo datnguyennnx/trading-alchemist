@@ -5,10 +5,12 @@ defmodule Central.Backtest.Services.MarketDataHandler do
   """
 
   require Logger
-  alias Central.Utils.DatetimeUtils
+  # Remove unused alias
+  # alias Central.Utils.DatetimeUtils
   alias Central.Backtest.Contexts.MarketData, as: MarketDataContext
   alias Central.Backtest.Services.HistoricalDataFetcher
   alias Central.Backtest.Contexts.BacktestContext
+  alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
   @doc """
   Fetches market data for a backtest period.
@@ -108,18 +110,18 @@ defmodule Central.Backtest.Services.MarketDataHandler do
 
     # Case 2: Check if requested start_time is earlier than available data
     missing_ranges_list =
-      if not is_nil(db_start) and DateTime.compare(start_time, db_start) == :lt do
+      if not is_nil(db_start) and Utils.DateTime.diff(start_time, db_start) < 0 do
         # Add the missing early range
-        [{start_time, DateTime.add(db_start, -1, :second)} | missing_ranges_list]
+        [{start_time, Utils.DateTime.add(db_start, -1, :second)} | missing_ranges_list]
       else
         missing_ranges_list
       end
 
     # Case 3: Check if requested end_time is later than available data
     missing_ranges_list =
-      if not is_nil(db_end) and DateTime.compare(end_time, db_end) == :gt do
+      if not is_nil(db_end) and Utils.DateTime.diff(end_time, db_end) > 0 do
         # Add the missing later range
-        missing_ranges_list ++ [{DateTime.add(db_end, 1, :second), end_time}]
+        missing_ranges_list ++ [{Utils.DateTime.add(db_end, 1, :second), end_time}]
       else
         missing_ranges_list
       end
@@ -163,11 +165,11 @@ defmodule Central.Backtest.Services.MarketDataHandler do
         Enum.map(candles, fn candle ->
           %{
             timestamp: candle.timestamp,
-            open: parse_decimal_or_float(candle.open),
-            high: parse_decimal_or_float(candle.high),
-            low: parse_decimal_or_float(candle.low),
-            close: parse_decimal_or_float(candle.close),
-            volume: parse_decimal_or_float(candle.volume),
+            open: Utils.Decimal.to_float(candle.open),
+            high: Utils.Decimal.to_float(candle.high),
+            low: Utils.Decimal.to_float(candle.low),
+            close: Utils.Decimal.to_float(candle.close),
+            volume: Utils.Decimal.to_float(candle.volume),
             symbol: candle.symbol
           }
         end)
@@ -188,6 +190,7 @@ defmodule Central.Backtest.Services.MarketDataHandler do
 
   @doc """
   Parse a value that might be a string, decimal, or number into a float.
+  DEPRECATED: Use BacktestUtils.Decimal.to_float instead.
 
   ## Parameters
     - value: The value to be converted to float
@@ -196,38 +199,13 @@ defmodule Central.Backtest.Services.MarketDataHandler do
     - float value or 0.0 if conversion fails
   """
   def parse_decimal_or_float(value) do
-    cond do
-      is_nil(value) ->
-        0.0
-
-      is_binary(value) ->
-        case Float.parse(value) do
-          {num, _} -> num
-          # Default
-          :error -> 0.0
-        end
-
-      is_number(value) ->
-        value
-
-      # Handle Decimal type explicitly
-      match?(%Decimal{}, value) ->
-        Decimal.to_float(value)
-
-      # Generic struct check as fallback
-      is_struct(value) && function_exported?(value.__struct__, :to_float, 1) ->
-        value.__struct__.to_float(value)
-
-      true ->
-        Logger.warning("Unknown value type for conversion: #{inspect(value)}")
-        # Default
-        0.0
-    end
+    Logger.warning("parse_decimal_or_float is deprecated. Use BacktestUtils.Decimal.to_float instead")
+    Utils.Decimal.to_float(value)
   end
 
   @doc """
   Converts various datetime formats to UTC DateTime for database storage.
-  NOTE: This is a wrapper around DatetimeUtils for backward compatibility.
+  DEPRECATED: Use BacktestUtils.DateTime.to_utc instead.
 
   ## Parameters
     - dt: DateTime, NaiveDateTime, or ISO8601 string
@@ -236,12 +214,13 @@ defmodule Central.Backtest.Services.MarketDataHandler do
     - DateTime in UTC timezone or nil if conversion fails
   """
   def datetime_to_utc(dt) do
-    DatetimeUtils.to_utc_datetime(dt)
+    Logger.warning("datetime_to_utc is deprecated. Use BacktestUtils.DateTime.to_utc instead")
+    Utils.DateTime.to_utc(dt)
   end
 
   @doc """
   Converts various datetime formats to NaiveDateTime.
-  DEPRECATED: Use DatetimeUtils.to_utc_datetime instead for database storage.
+  DEPRECATED: Use BacktestUtils.DateTime.to_utc instead for database storage.
 
   ## Parameters
     - dt: DateTime, NaiveDateTime, or ISO8601 string
@@ -250,31 +229,12 @@ defmodule Central.Backtest.Services.MarketDataHandler do
     - NaiveDateTime or nil if conversion fails
   """
   def datetime_to_naive(dt) do
-    Logger.warning("datetime_to_naive is deprecated. Use DatetimeUtils.to_utc_datetime instead")
+    Logger.warning("datetime_to_naive is deprecated. Use BacktestUtils.DateTime.to_utc instead")
 
-    cond do
-      is_binary(dt) ->
-        case NaiveDateTime.from_iso8601(dt) do
-          {:ok, naive_dt} ->
-            naive_dt
-
-          {:error, _} ->
-            Logger.warning("Failed to parse datetime string: #{inspect(dt)}")
-            nil
-        end
-
-      is_map(dt) and Map.has_key?(dt, :__struct__) and dt.__struct__ == DateTime ->
-        DateTime.to_naive(dt)
-
-      is_map(dt) and Map.has_key?(dt, :__struct__) and dt.__struct__ == NaiveDateTime ->
-        dt
-
-      is_nil(dt) ->
-        nil
-
-      true ->
-        Logger.warning("Unexpected datetime format: #{inspect(dt)}")
-        nil
+    # Maintain backwards compatibility
+    case Utils.DateTime.to_utc(dt) do
+      %DateTime{} = datetime -> DateTime.to_naive(datetime)
+      nil -> nil
     end
   end
 end

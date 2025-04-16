@@ -1,6 +1,7 @@
 defmodule Central.Backtest.Schemas.Trade do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -71,7 +72,7 @@ defmodule Central.Backtest.Schemas.Trade do
         changeset
         |> validate_number(:exit_price, greater_than: 0)
         |> validate_change(:exit_time, fn :exit_time, exit_time ->
-          if DateTime.compare(exit_time, entry_time) == :lt do
+          if Utils.DateTime.diff(exit_time, entry_time) < 0 do
             [exit_time: "must be after entry time"]
           else
             []
@@ -110,7 +111,7 @@ defmodule Central.Backtest.Schemas.Trade do
     |> validate_required([:exit_time, :exit_price])
     |> validate_number(:exit_price, greater_than: 0)
     |> validate_change(:exit_time, fn :exit_time, exit_time ->
-      if DateTime.compare(exit_time, trade.entry_time) == :lt do
+      if Utils.DateTime.diff(exit_time, trade.entry_time) < 0 do
         [exit_time: "must be after entry time"]
       else
         []

@@ -13,6 +13,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
   # Add necessary aliases for the chart
   alias CentralWeb.BacktestLive.Utils.MarketDataLoader
   alias CentralWeb.BacktestLive.Components.ChartStats
+  alias CentralWeb.BacktestLive.Utils.FormatterUtils
 
   @impl true
   def mount(%{"strategy_id" => strategy_id}, session, socket) do
@@ -545,25 +546,14 @@ defmodule CentralWeb.BacktestLive.ShowLive do
     {:noreply, socket}
   end
 
-  # Helper functions for formatting and styling
-  defp format_datetime(nil), do: "N/A"
-
-  defp format_datetime(%DateTime{} = datetime) do
-    datetime
-    |> DateTime.truncate(:second)
-    |> Calendar.strftime("%Y-%m-%d %H:%M:%S")
-  end
-
-  defp format_datetime(%NaiveDateTime{} = naive_datetime) do
-    naive_datetime
-    |> NaiveDateTime.truncate(:second)
-    |> Calendar.strftime("%Y-%m-%d %H:%M:%S")
+  # Helper functions for formatting and styling - using FormatterUtils
+  defp format_datetime(datetime) do
+    FormatterUtils.format_datetime(datetime)
   end
 
   defp format_percentage(nil), do: "N/A"
-
   defp format_percentage(decimal) do
-    "#{decimal}%"
+    FormatterUtils.format_percent(decimal)
   end
 
   defp status_color(status) do
@@ -584,13 +574,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
     end
   end
 
-  defp pnl_color(nil), do: ""
-
   defp pnl_color(value) do
-    cond do
-      Decimal.compare(value, Decimal.new(0)) == :gt -> "text-green-600"
-      Decimal.compare(value, Decimal.new(0)) == :lt -> "text-red-600"
-      true -> ""
-    end
+    FormatterUtils.color_class(value)
   end
 end

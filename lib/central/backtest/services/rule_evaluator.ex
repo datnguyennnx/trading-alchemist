@@ -5,7 +5,7 @@ defmodule Central.Backtest.Services.RuleEvaluator do
   """
 
   require Logger
-  alias Central.Backtest.Services.MarketDataHandler
+  alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
   @doc """
   Extract entry rules from a strategy configuration.
@@ -129,7 +129,7 @@ defmodule Central.Backtest.Services.RuleEvaluator do
       # Convert value to float if needed
       threshold =
         try do
-          MarketDataHandler.parse_decimal_or_float(value)
+          Utils.Decimal.to_float(value)
         rescue
           _ -> 0.0
         end
@@ -162,8 +162,8 @@ defmodule Central.Backtest.Services.RuleEvaluator do
     {stop_loss_pct, take_profit_pct} = get_stop_loss_take_profit(rules, backtest.strategy)
 
     # Get entry price as float
-    entry_price = MarketDataHandler.parse_decimal_or_float(position.entry_price)
-    close_price = MarketDataHandler.parse_decimal_or_float(candle.close)
+    entry_price = Utils.Decimal.to_float(position.entry_price)
+    close_price = Utils.Decimal.to_float(candle.close)
 
     # Always include take-profit and stop-loss checks
     take_profit_reached = position && close_price >= entry_price * (1 + take_profit_pct)
@@ -180,7 +180,7 @@ defmodule Central.Backtest.Services.RuleEvaluator do
         # Convert value to float if needed
         threshold =
           try do
-            MarketDataHandler.parse_decimal_or_float(value)
+            Utils.Decimal.to_float(value)
           rescue
             _ -> 0.0
           end
@@ -259,8 +259,8 @@ defmodule Central.Backtest.Services.RuleEvaluator do
   # Safe comparison function that handles different types
   defp safe_compare(left, right, operator) do
     # Convert both values to floats to ensure consistent comparison
-    left_float = MarketDataHandler.parse_decimal_or_float(left)
-    right_float = MarketDataHandler.parse_decimal_or_float(right)
+    left_float = Utils.Decimal.to_float(left)
+    right_float = Utils.Decimal.to_float(right)
 
     case operator do
       "greater_than" -> left_float > right_float

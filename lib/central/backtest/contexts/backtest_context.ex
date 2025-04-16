@@ -6,6 +6,7 @@ defmodule Central.Backtest.Contexts.BacktestContext do
   import Ecto.Query
   alias Central.Repo
   alias Central.Backtest.Schemas.Backtest
+  alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
   @doc """
   Creates a new backtest with the given attributes.
@@ -58,12 +59,10 @@ defmodule Central.Backtest.Contexts.BacktestContext do
       fn backtest ->
         case backtest.inserted_at do
           %DateTime{} = dt ->
-            DateTime.to_unix(dt)
+            Utils.DateTime.to_unix(dt)
 
           %NaiveDateTime{} = ndt ->
-            ndt
-            |> DateTime.from_naive!("Etc/UTC")
-            |> DateTime.to_unix()
+            Utils.DateTime.to_unix(ndt)
 
           _ ->
             0

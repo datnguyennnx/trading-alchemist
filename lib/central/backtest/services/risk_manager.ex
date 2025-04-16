@@ -6,9 +6,9 @@ defmodule Central.Backtest.Services.RiskManager do
 
   require Logger
   alias Central.Backtest.Schemas.Backtest
-  alias Central.Backtest.Services.MarketDataHandler
   alias Central.Utils.TradeAdapter
   alias Central.Repo
+  alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
   @doc """
   Updates risk metrics for a backtest based on completed trades.
@@ -84,12 +84,12 @@ defmodule Central.Backtest.Services.RiskManager do
     cond do
       # Check if position_size is available in metadata
       is_map(backtest.metadata) && Map.has_key?(backtest.metadata, "position_size") ->
-        MarketDataHandler.parse_decimal_or_float(backtest.metadata["position_size"])
+        Utils.Decimal.to_float(backtest.metadata["position_size"])
 
       # Fall back to risk_per_trade from strategy config
       backtest.strategy && is_map(backtest.strategy.config) &&
           Map.has_key?(backtest.strategy.config, "risk_per_trade") ->
-        MarketDataHandler.parse_decimal_or_float(backtest.strategy.config["risk_per_trade"])
+        Utils.Decimal.to_float(backtest.strategy.config["risk_per_trade"])
 
       # Otherwise use default
       true ->

@@ -19,8 +19,10 @@ defmodule Central.Backtest.Services.StrategyExecutor do
     MarketDataHandler
   }
 
-  alias Central.Utils.DatetimeUtils
+  alias Central.Backtest.Utils.DatetimeUtils
   alias Central.Repo
+
+  alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
   @doc """
   Executes a backtest with the given backtest_id.
@@ -125,8 +127,7 @@ defmodule Central.Backtest.Services.StrategyExecutor do
   # Initialize the state for a backtest
   defp initialize_backtest_state(backtest) do
     # Get initial balance
-    initial_balance =
-      MarketDataHandler.parse_decimal_or_float(backtest.initial_balance) || 10000.0
+    initial_balance = Utils.Decimal.to_float(backtest.initial_balance) || 10000.0
 
     Logger.debug("Initial balance set to: #{inspect(initial_balance)}")
 
@@ -204,7 +205,7 @@ defmodule Central.Backtest.Services.StrategyExecutor do
   # Process a single candle for the backtest
   defp process_candle(candle, state, backtest) do
     # Update the last price
-    last_price = MarketDataHandler.parse_decimal_or_float(candle.close)
+    last_price = Utils.Decimal.to_float(candle.close)
     state = %{state | last_price: last_price}
 
     # Check entry conditions if we have no position
@@ -237,7 +238,7 @@ defmodule Central.Backtest.Services.StrategyExecutor do
       %{
         state
         | position: %{
-            entry_price: MarketDataHandler.parse_decimal_or_float(candle.close),
+            entry_price: Utils.Decimal.to_float(candle.close),
             entry_time: timestamp,
             size: position_size,
             # For simplicity, only long positions for now
@@ -278,11 +279,10 @@ defmodule Central.Backtest.Services.StrategyExecutor do
   # Update backtest results in the database
   defp update_backtest_results(backtest, final_state) do
     # Get original balance as float for calculation
-    initial_balance =
-      MarketDataHandler.parse_decimal_or_float(backtest.initial_balance) || 10000.0
+    initial_balance = Utils.Decimal.to_float(backtest.initial_balance) || 10000.0
 
     # Ensure final balance is a number
-    final_balance = MarketDataHandler.parse_decimal_or_float(final_state.balance)
+    final_balance = Utils.Decimal.to_float(final_state.balance)
     profit_loss = final_balance - initial_balance
 
     # First update the backtest status and final balance
@@ -321,8 +321,8 @@ defmodule Central.Backtest.Services.StrategyExecutor do
   defp prepare_trade_entries(trades, backtest_id) do
     Enum.map(trades, fn trade ->
       # Calculate percentage PnL
-      entry_price = MarketDataHandler.parse_decimal_or_float(trade.entry_price)
-      pnl = MarketDataHandler.parse_decimal_or_float(trade.pnl)
+      entry_price = Utils.Decimal.to_float(trade.entry_price)
+      pnl = Utils.Decimal.to_float(trade.pnl)
       pnl_percentage = if entry_price > 0, do: pnl / entry_price * 100, else: 0
 
       # Get current timestamp as NaiveDateTime for database compatibility with inserted_at/updated_at
@@ -341,11 +341,11 @@ defmodule Central.Backtest.Services.StrategyExecutor do
 
       %{
         backtest_id: backtest_id,
-        entry_price: MarketDataHandler.parse_decimal_or_float(trade.entry_price),
+        entry_price: Utils.Decimal.to_float(trade.entry_price),
         entry_time: entry_time,
-        exit_price: MarketDataHandler.parse_decimal_or_float(trade.exit_price),
+        exit_price: Utils.Decimal.to_float(trade.exit_price),
         exit_time: exit_time,
-        quantity: MarketDataHandler.parse_decimal_or_float(trade.size),
+        quantity: Utils.Decimal.to_float(trade.size),
         # Keep as atom for Ecto.Enum field
         side: trade.direction,
         pnl: pnl,

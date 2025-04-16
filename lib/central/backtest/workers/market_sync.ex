@@ -12,6 +12,7 @@ defmodule Central.Backtest.Workers.MarketSync do
   alias Central.Backtest.Schemas.MarketData
   alias Central.Config.DateTime, as: DateTimeConfig
   alias Central.Repo
+  alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
   # 1 hour by default
   @default_sync_interval 60 * 60 * 1000
@@ -156,7 +157,7 @@ defmodule Central.Backtest.Workers.MarketSync do
         duration_ms =
           case state.last_sync_time do
             nil -> 0
-            start_time -> DateTime.diff(DateTimeConfig.now(), start_time, :millisecond)
+            start_time -> Utils.DateTime.diff(DateTimeConfig.now(), start_time, :millisecond)
           end
 
         Logger.info(
@@ -244,8 +245,7 @@ defmodule Central.Backtest.Workers.MarketSync do
             case upsert_market_data(market_data) do
               {:ok, count} ->
                 # Calculate duration in milliseconds
-                sync_duration_ms =
-                  DateTime.diff(DateTimeConfig.now(), sync_start_time, :millisecond)
+                sync_duration_ms = Utils.DateTime.diff(DateTimeConfig.now(), sync_start_time, :millisecond)
 
                 # Send a message back to the GenServer that sync is complete
                 send(self(), {:sync_complete, market_key, :success, count, sync_duration_ms})
@@ -323,7 +323,7 @@ defmodule Central.Backtest.Workers.MarketSync do
   end
 
   defp calculate_expected_candles(timeframe, start_time, end_time) do
-    total_seconds = DateTime.diff(end_time, start_time)
+    total_seconds = Utils.DateTime.diff(end_time, start_time)
 
     case timeframe do
       "1m" -> div(total_seconds, 60)
@@ -386,7 +386,7 @@ defmodule Central.Backtest.Workers.MarketSync do
   defp upsert_market_data(market_data) do
     try do
       # Get current timestamp for inserted_at
-      now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+      now = Utils.DateTime.naive_utc_now()
 
       # Convert string price values to Decimal before insert and add timestamps
       market_data_with_decimals =
@@ -399,7 +399,7 @@ defmodule Central.Backtest.Workers.MarketSync do
             _ ->
               # Create a new map with all required fields
               %{
-                id: Ecto.UUID.generate(),
+                id: Utils.generate_id(),
                 symbol: item.symbol,
                 timeframe: item.timeframe,
                 timestamp: item.timestamp,
@@ -433,18 +433,14 @@ defmodule Central.Backtest.Workers.MarketSync do
 
   # Parse string or number to Decimal
   defp parse_decimal(value) when is_binary(value) do
-    case Decimal.parse(value) do
-      {decimal, ""} -> decimal
-      {decimal, _} -> decimal
-      :error -> Decimal.new(0)
-    end
+    Utils.Decimal.parse(value)
   end
 
   defp parse_decimal(value) when is_number(value) do
-    Decimal.new(value)
+    Utils.Decimal.parse(value)
   end
 
-  defp parse_decimal(_), do: Decimal.new(0)
+  defp parse_decimal(_), do: Utils.Decimal.parse(nil)
 
   defp schedule_sync(delay) do
     Process.send_after(self(), :perform_sync, delay)
@@ -453,10 +449,10 @@ defmodule Central.Backtest.Workers.MarketSync do
   defp schedule_next_sync(state) do
     # Schedule the next sync based on the configured interval
     next_sync_time =
-      DateTimeConfig.now()
-      |> DateTime.add(state.sync_interval, :millisecond)
-      |> DateTime.truncate(:second)
-      |> DateTimeConfig.format()
+      Utils.DateTime.utc_now()
+      |> Utils.DateTime.add(state.sync_interval, :millisecond)
+      |> Utils.DateTime.truncate(:second)
+      |> Utils.DateTime.format()
 
     schedule_sync(state.sync_interval)
 

@@ -5,8 +5,8 @@ defmodule Central.Backtest.Services.TradeManager do
   """
 
   require Logger
-  alias Central.Backtest.Services.MarketDataHandler
-  alias Central.Utils.DatetimeUtils
+  alias Central.Backtest.Utils.DatetimeUtils
+  alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
   @doc """
   Closes an open position and records the trade.
@@ -46,7 +46,7 @@ defmodule Central.Backtest.Services.TradeManager do
     }
 
     # Update balance - ensure everything is properly converted to floats
-    balance = MarketDataHandler.parse_decimal_or_float(state.balance)
+    balance = Utils.Decimal.to_float(state.balance)
     new_balance = balance + profit_loss
 
     Logger.debug(
@@ -74,9 +74,9 @@ defmodule Central.Backtest.Services.TradeManager do
   """
   def calculate_profit_loss(position, exit_price) do
     # Ensure values are floats
-    entry_price = MarketDataHandler.parse_decimal_or_float(position.entry_price)
-    exit_price_float = MarketDataHandler.parse_decimal_or_float(exit_price)
-    size = MarketDataHandler.parse_decimal_or_float(position.size)
+    entry_price = Utils.Decimal.to_float(position.entry_price)
+    exit_price_float = Utils.Decimal.to_float(exit_price)
+    size = Utils.Decimal.to_float(position.size)
 
     # Log the values for debugging
     Logger.debug(

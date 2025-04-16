@@ -7,6 +7,7 @@ defmodule CentralWeb.BacktestLive.ChartLive do
   # Alias utility modules
   alias CentralWeb.BacktestLive.Utils.DataFormatter
   alias CentralWeb.BacktestLive.Utils.MarketDataLoader
+  alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
   # Alias component modules
   alias CentralWeb.BacktestLive.Components.ChartStats
@@ -63,7 +64,7 @@ defmodule CentralWeb.BacktestLive.ChartLive do
               <div class="flex flex-wrap items-center justify-between gap-3 bg-card rounded-lg p-3 shadow-sm">
                 <!-- Market data stats -->
                 <ChartStats.chart_stats chart_data={@chart_data} />
-                
+
     <!-- Controls -->
                 <ChartControls.chart_controls
                   timeframe={@timeframe}
@@ -72,7 +73,7 @@ defmodule CentralWeb.BacktestLive.ChartLive do
                   symbols={@symbols}
                 />
               </div>
-              
+
     <!-- Simplified chart container without overlay elements -->
               <div
                 id="tradingview-chart"
@@ -217,8 +218,8 @@ defmodule CentralWeb.BacktestLive.ChartLive do
         %{"timestamp" => timestamp, "symbol" => symbol, "timeframe" => timeframe} = params,
         socket
       ) do
-    # Convert timestamp to DateTime
-    earliest_time = DateTime.from_unix!(timestamp)
+    # Convert timestamp to DateTime using the utility
+    earliest_time = Utils.DateTime.from_unix(timestamp)
 
     # Get batch size from params or use default
     batch_size = Map.get(params, "batchSize", 200)
@@ -240,11 +241,11 @@ defmodule CentralWeb.BacktestLive.ChartLive do
 
     # Calculate time needed to fetch earlier candles
     fetch_duration = timeframe_seconds * batch_size
-    start_time = DateTime.add(earliest_time, -fetch_duration, :second)
+    start_time = Utils.DateTime.add(earliest_time, -fetch_duration, :second)
     end_time = earliest_time
 
     Logger.info(
-      "Fetching historical data for #{symbol}/#{timeframe} from #{DateTime.to_iso8601(start_time)} to #{DateTime.to_iso8601(end_time)} (batch size: #{batch_size})"
+      "Fetching historical data for #{symbol}/#{timeframe} from #{Utils.DateTime.format(start_time, "%Y-%m-%dT%H:%M:%SZ")} to #{Utils.DateTime.format(end_time, "%Y-%m-%dT%H:%M:%SZ")} (batch size: #{batch_size})"
     )
 
     # Fetch historical data
