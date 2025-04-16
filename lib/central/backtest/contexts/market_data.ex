@@ -361,7 +361,6 @@ defmodule Central.Backtest.Contexts.MarketData do
 
   # PRIVATE FUNCTIONS
 
-  @doc false
   defp fetch_and_cache_last_candle(symbol, timeframe, cache_key) do
     # Query for the last candle
     candle =

@@ -3,6 +3,7 @@ defmodule CentralWeb.BacktestLive.ShowLive do
   alias Central.Backtest.Contexts.StrategyContext
   alias Central.Backtest.Contexts.BacktestContext
   alias Central.Backtest.Contexts.TradeContext
+  require Logger
 
   # Add necessary imports
   import CentralWeb.Components.UI.Button
@@ -246,6 +247,54 @@ defmodule CentralWeb.BacktestLive.ShowLive do
   def handle_event("refresh_data", _, socket) do
     send(self(), :load_market_data)
     {:noreply, assign(socket, loading: true)}
+  end
+
+  @impl true
+  def handle_event("date_time_picker_change", %{"id" => id, "name" => _name, "value" => value}, socket) do
+    # Parse the datetime value safely with error handling
+    try do
+      datetime = case DateTime.from_iso8601(value) do
+        {:ok, dt, _} -> dt
+        {:error, reason} ->
+          Logger.warning("Failed to parse date: #{value}. Reason: #{inspect(reason)}")
+          # Fall back to current time if parsing fails
+          DateTime.utc_now()
+      end
+
+      # Based on the input field ID, update the appropriate value in the socket assigns
+      socket =
+        case id do
+          "backtest-start-time" ->
+            # Check if we might need to fetch historical data for this range
+            symbol = socket.assigns.symbol
+            timeframe = socket.assigns.timeframe
+
+            # Trigger historical data loading for this date range
+            Task.start(fn ->
+              try do
+                Logger.info("Pre-loading historical data for #{symbol}/#{timeframe} starting at #{DateTime.to_iso8601(datetime)}")
+                MarketDataLoader.fetch_historical_data(symbol, timeframe, datetime, DateTime.utc_now())
+              rescue
+                e -> Logger.error("Failed to pre-load historical data: #{inspect(e)}")
+              end
+            end)
+
+            assign(socket, :start_time, datetime)
+            |> put_flash(:info, "Updated start time. Pre-loading historical market data in the background.")
+
+          "backtest-end-time" ->
+            assign(socket, :end_time, datetime)
+          _ ->
+            socket
+        end
+
+      {:noreply, socket}
+    rescue
+      error ->
+        Logger.error("Error handling date picker: #{inspect(error)}")
+        # Return the socket unchanged if something fails, but with a flash message
+        {:noreply, put_flash(socket, :error, "There was an error processing the date. Please try again or select a different date range.")}
+    end
   end
 
   @impl true

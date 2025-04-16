@@ -11,8 +11,9 @@ defmodule Central.Backtest.Schemas.Backtest do
     field :timeframe, :string
     field :initial_balance, :decimal
     field :final_balance, :decimal
-    field :status, Ecto.Enum, values: [:pending, :running, :completed, :failed]
+    field :status, Ecto.Enum, values: [:pending, :fetching_data, :running, :completed, :failed]
     field :metadata, :map, default: %{}
+    field :error_message, :string
 
     belongs_to :strategy, Central.Backtest.Schemas.Strategy
     belongs_to :user, Central.Accounts.User, type: :id
@@ -35,7 +36,8 @@ defmodule Central.Backtest.Schemas.Backtest do
       :status,
       :metadata,
       :strategy_id,
-      :user_id
+      :user_id,
+      :error_message
     ])
     |> validate_required([
       :start_time,

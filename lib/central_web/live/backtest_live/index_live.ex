@@ -145,6 +145,7 @@ defmodule CentralWeb.BacktestLive.IndexLive do
   end
 
   defp status_class(:pending), do: "text-yellow-600"
+  defp status_class(:fetching_data), do: "text-blue-400"
   defp status_class(:running), do: "text-blue-600"
   defp status_class(:completed), do: "text-green-600"
   defp status_class(:failed), do: "text-red-600"
