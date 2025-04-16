@@ -20,14 +20,14 @@ const ThemeManager = {
 
   getTheme() {
     const storedTheme = localStorage.getItem('theme');
-    // Default to 'dark' if localStorage theme is not set or invalid
-    const theme = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'dark';
+    // Default to 'light' if localStorage theme is not set or invalid
+    const theme = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'light';
     return theme;
   },
 
   applyTheme(theme) {
     if (!theme || (theme !== 'light' && theme !== 'dark')) {
-       theme = 'dark';
+       theme = 'light';
     }
     const htmlElement = document.documentElement;
     htmlElement.classList.remove('dark', 'light');
@@ -50,24 +50,35 @@ const ThemeManager = {
        return; // It's okay if the select UI isn't on every page
     }
 
+    // Update the trigger display value
     const selectTrigger = selectElement.querySelector('.select-value');
     if (selectTrigger) {
        const label = theme === 'light' ? 'Light' : 'Dark';
        selectTrigger.setAttribute('data-content', label);
     }
 
-    const items = selectElement.querySelectorAll('.select-content [role="option"]');
+    // Update the radio inputs and checkmarks
+    const items = selectElement.querySelectorAll('[role="option"]');
     items.forEach(item => {
-      const radio = item.querySelector('input[name="theme"]');
-      const checkmark = item.querySelector('span.absolute.right-2'); 
-
-      if (radio && checkmark) { 
+      const radio = item.querySelector('input[type="radio"]');
+      if (radio) { 
         const isChecked = (radio.value === theme);
-        radio.checked = isChecked; 
-        checkmark.style.display = isChecked ? 'flex' : 'none'; 
+        radio.checked = isChecked;
+        
+        // In SaladUI's select_item, there's a specific span for the checkmark
+        // It's located at the end and contains an SVG icon
+        const checkmark = item.querySelector('span.absolute');
+        
+        if (checkmark) {
+          if (isChecked) {
+            checkmark.classList.remove('hidden');
+          } else {
+            checkmark.classList.add('hidden');
+          }
+        }
       }
     });
   }
 };
 
-export default ThemeManager; 
+export default ThemeManager;

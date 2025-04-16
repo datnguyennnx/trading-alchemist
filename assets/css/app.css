@@ -81,12 +81,6 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
 
-    /* --- DateTime Picker Variables (Dark Theme - Mapped where possible) --- */
-    /* Values automatically inherit from the light theme mappings unless overridden */
-    /* For example, --dtp-bg-color will now use the dark theme's --popover value */
-    /* Override specific ones if needed, e.g.: */
-    /* --dtp-input-bg: #1a202c; /* If different from dark theme's --input */
-
     /* --- Sidebar Variables (Dark Theme - Keep as is) --- */
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -105,39 +99,6 @@
   /* --- Base Body Styles --- */
   body {
     @apply bg-background text-foreground;
-    /* Apply border explicitly on elements instead of globally */
-  }
-
-  /* --- Force Light Theme (Keep mechanism, ensure vars match :root) --- */
-  [data-force-light-theme],
-  [data-force-light-theme] * {
-    /* Apply light theme variable values */
-    --background: 0 0% 100% !important;
-    --foreground: 240 10% 3.9% !important;
-    --card: 0 0% 100% !important;
-    --card-foreground: 240 10% 3.9% !important;
-    --popover: 0 0% 100% !important;
-    --popover-foreground: 240 10% 3.9% !important;
-    --primary: 240 5.9% 10% !important;
-    --primary-foreground: 0 0% 98% !important;
-    --secondary: 240 4.8% 95.9% !important;
-    --secondary-foreground: 240 5.9% 10% !important;
-    --muted: 240 4.8% 95.9% !important;
-    --muted-foreground: 240 3.8% 46.1% !important;
-    --accent: 240 4.8% 95.9% !important;
-    --accent-foreground: 240 5.9% 10% !important;
-    --destructive: 0 84.2% 60.2% !important;
-    --destructive-foreground: 0 0% 98% !important;
-    --border: 240 5.9% 90% !important;
-    --input: 240 5.9% 90% !important;
-    --ring: 240 5.9% 10% !important;
-
-    /* Force light color scheme */
-    color-scheme: light !important;
-  }
-   /* Ensure base background/text are light */
-  [data-force-light-theme] {
-     @apply bg-background text-foreground; /* Uses the overridden light vars */
   }
 }
 
@@ -154,55 +115,45 @@
   }
 
   .price-card:hover {
-    /* Adjust shadow and transform as needed */
     @apply shadow-md hover:-translate-y-px;
   }
 
   .price-label {
-    @apply mb-1 text-sm text-muted-foreground; /* 0.875rem = text-sm, 0.25rem = mb-1 */
+    @apply mb-1 text-sm text-muted-foreground;
   }
 
   .price-value {
-    @apply text-base font-medium; /* 1rem = text-base, weight 500 */
+    @apply text-base font-medium;
   }
 
   .price-value.up {
-    /* Using arbitrary HSL value from original CSS. Consider adding a --success variable. */
     @apply text-[hsl(142,76%,36%)];
-    /* Alternative: use a Tailwind green like text-green-600 */
   }
 
   .price-value.down {
-    /* Using arbitrary HSL value from original CSS. Consider using --destructive or defining --error. */
     @apply text-[hsl(346,87%,43%)];
-     /* Alternative: use Tailwind red like text-red-600 or text-destructive */
   }
 
   /* --- DateTime Picker Styles --- */
   .date_time_picker {
-    /* Use popover colors as the dropdown is like a popover */
     @apply relative font-sans text-popover-foreground;
   }
 
   /* Input Display */
   .date-time-field .input-wrapper {
-    /* Use input background/border, DTP specific radius */
     @apply cursor-pointer rounded-[--dtp-border-radius] border border-border p-2 px-3 transition-colors duration-200 ease-in-out;
   }
   
-  /* Match dark theme in the image */
   .dark .date-time-field .input-wrapper {
-    @apply bg-gray-800 border-gray-700;
+    @apply bg-neutral-800 border-neutral-700;
   }
 
   .date-time-field .input-wrapper:hover {
-    /* Use primary color for hover border, like Shadcn input */
     @apply border-primary;
   }
   
-  /* Match dark theme in the image */
   .dark .date-time-field .input-wrapper:hover {
-    @apply border-gray-600;
+    @apply border-neutral-600;
   }
 
   .date-time-field .display-value {
@@ -214,24 +165,20 @@
   }
 
   .date-time-field .display-value svg {
-    /* Use muted text color for icon */
-    @apply ml-2 h-4 w-4 stroke-muted-foreground; /* 1em ~ h-4 w-4, 0.5rem = ml-2 */
+    @apply ml-2 h-4 w-4 stroke-muted-foreground;
   }
   
-  /* Match darker icon in the image */
   .dark .date-time-field .display-value svg {
-    @apply stroke-gray-400;
+    @apply stroke-neutral-400;
   }
 
   /* Dropdown */
   .calendar-dropdown {
-    /* Use popover styles, DTP specific radius */
-    @apply absolute z-10 mt-1 hidden w-max rounded-[--dtp-border-radius] border border-border bg-popover p-3 shadow-md; /* 0.25rem = mt-1, 0.75rem = p-3 */
+    @apply absolute z-10 mt-1 hidden w-max rounded-[--dtp-border-radius] border border-border bg-popover p-3 shadow-md;
   }
   
-  /* Match dark theme in the image */
   .dark .calendar-dropdown {
-    @apply bg-gray-800 border-gray-700;
+    @apply bg-neutral-800 border-neutral-700;
   }
 
   .calendar-dropdown.show {
@@ -240,72 +187,64 @@
 
   /* Calendar Header */
   .calendar-header {
-    @apply mb-3 flex items-center justify-between; /* 0.75rem = mb-3 */
+    @apply mb-3 flex items-center justify-between;
   }
 
   .calendar-header .current-month {
-    @apply font-semibold; /* weight 600 */
+    @apply font-semibold;
   }
 
   .calendar-header .nav-btn {
-    /* Use popover text, DTP radius, accent for hover */
-    @apply cursor-pointer rounded-[--dtp-border-radius] p-1 text-popover-foreground transition-colors; /* 0.25rem = p-1 */
+    @apply cursor-pointer rounded-[--dtp-border-radius] p-1 text-popover-foreground transition-colors;
   }
   .calendar-header .nav-btn:hover {
      @apply bg-accent;
   }
-  .calendar-header .nav-btn:focus-visible { /* Added focus style */
+  .calendar-header .nav-btn:focus-visible {
      @apply bg-accent outline-none ring-2 ring-ring ring-offset-2;
   }
   .calendar-header .nav-btn svg {
-    @apply block h-4 w-4 stroke-current; /* 1em ~ h-4 w-4 */
+    @apply block h-4 w-4 stroke-current;
   }
-
 
   /* Calendar Grid */
   .calendar-grid {
-    @apply mb-3; /* 0.75rem = mb-3 */
+    @apply mb-3;
   }
 
   .weekdays {
-    @apply mb-1 grid grid-cols-7 text-center; /* 0.25rem = mb-1 */
+    @apply mb-1 grid grid-cols-7 text-center;
   }
 
   .weekday {
-    /* Use muted text, small size */
-    @apply p-1 text-xs font-semibold text-muted-foreground; /* 0.75rem = text-xs, 0.25rem = p-1 */
+    @apply p-1 text-xs font-semibold text-muted-foreground;
   }
   
-  /* Match dark theme in the image */
   .dark .weekday {
-    @apply text-gray-400;
+    @apply text-neutral-400;
   }
 
   .days {
-    /* Use small gap between days */
     @apply grid grid-cols-7 gap-[4px];
   }
 
   .day-btn {
-    /* Base button styles, DTP radius, accent hover */
-    @apply w-full min-w-[32px] cursor-pointer rounded-[--dtp-border-radius] px-0 py-2 text-center text-sm leading-tight text-popover-foreground transition-colors duration-200 ease-in-out; /* 0.5rem 0 = py-2 px-0, 0.875rem = text-sm, 1.25 = leading-tight */
+    @apply w-full min-w-[32px] cursor-pointer rounded-[--dtp-border-radius] px-0 py-2 text-center text-sm leading-tight text-popover-foreground transition-colors duration-200 ease-in-out;
   }
   
-  /* Match dark theme in the image */
   .dark .day-btn {
-    @apply text-gray-300;
+    @apply text-neutral-300;
   }
   
   .day-btn:not(:disabled):not(.empty):hover {
      @apply bg-accent;
   }
   
-  /* Match dark theme in the image */
   .dark .day-btn:not(:disabled):not(.empty):hover {
-    @apply bg-gray-700 text-gray-100;
+    @apply bg-neutral-700 text-neutral-100;
   }
    
-  .day-btn:focus-visible { /* Added focus style */
+  .day-btn:focus-visible {
      @apply bg-accent outline-none ring-2 ring-ring ring-offset-2;
    }
 
@@ -314,64 +253,56 @@
   }
 
   .day-btn.today {
-     /* Use border color for today's date, could also use muted-foreground */
     @apply border-border;
   }
   
-  /* Match dark theme in the image */
   .dark .day-btn.today {
-    @apply border-gray-600 text-gray-200;
+    @apply border-neutral-600 text-neutral-200;
   }
 
   .day-btn.selected {
-    /* Use primary color for selected, primary text */
-    @apply border-primary bg-primary text-primary-foreground hover:bg-primary/90; /* Added hover brightness */
+    @apply border-primary bg-primary text-primary-foreground hover:bg-primary/90;
   }
   
-  /* Match dark theme in the image */
   .dark .day-btn.selected {
-    @apply bg-gray-600 border-gray-600 text-white hover:bg-gray-500;
+    @apply bg-neutral-600 border-neutral-600 text-white hover:bg-neutral-500;
   }
   
-  /* Ensure selected state overrides focus-visible background if needed */
   .day-btn.selected:focus-visible {
      @apply bg-primary text-primary-foreground ring-2 ring-ring ring-offset-2 ring-offset-popover;
   }
+  
   .day-btn.selected:hover {
-      @apply bg-primary/90; /* Consistent hover */
+      @apply bg-primary/90;
   }
 
   .day-btn:disabled {
     @apply cursor-not-allowed text-muted-foreground opacity-50;
   }
+  
   .day-btn.empty {
-    /* Make empty slots non-interactive and visually empty */
     @apply cursor-default bg-transparent hover:bg-transparent;
   }
 
-
   /* Time Picker */
   .time-picker {
-    @apply mt-3 border-t border-border pt-3; /* 0.75rem = mt-3, pt-3 */
+    @apply mt-3 border-t border-border pt-3;
   }
   
-  /* Match dark theme in the image */
   .dark .time-picker {
-    @apply border-gray-700;
+    @apply border-neutral-700;
   }
 
   .time-selector {
-    @apply flex items-center justify-center gap-2; /* 0.5rem = gap-2 */
+    @apply flex items-center justify-center gap-2;
   }
 
   .time-unit select {
-    /* Style like a Shadcn select/input */
-    @apply h-9 cursor-pointer appearance-none rounded-[--dtp-border-radius] border border-border px-2.5 py-1.5 text-center text-sm text-popover-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2; /* 0.4rem 0.6rem ~ py-1.5 px-2.5 */
+    @apply h-9 cursor-pointer appearance-none rounded-[--dtp-border-radius] border border-border px-2.5 py-1.5 text-center text-sm text-popover-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
   }
   
-  /* Match dark theme in the image */
   .dark .time-unit select {
-    @apply bg-gray-700 text-gray-200 border-0;
+    @apply bg-neutral-700 text-neutral-200 border-0;
   }
   
   .time-unit select:hover {
@@ -382,8 +313,7 @@
     @apply font-bold text-muted-foreground;
   }
   
-  /* Match dark theme in the image */
   .dark .time-separator {
-    @apply text-gray-300;
+    @apply text-neutral-300;
   }
 }
