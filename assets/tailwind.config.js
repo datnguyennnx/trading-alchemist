@@ -6,6 +6,7 @@ const fs = require("fs");
 const path = require("path");
 
 module.exports = {
+  darkMode: "class",
   theme: {
     extend: {
       colors: require("./tailwind.colors.json"),

@@ -1,3 +1,5 @@
+// assets/js/hooks/theme-switcher.js
+
 const ThemeManager = {
   mounted() {
     this.theme = this.getTheme();
@@ -5,7 +7,7 @@ const ThemeManager = {
     this.updateSelectUI(this.theme); // Update UI on initial load
 
     // Listen for clicks on theme options within this hook's element
-    this.el.addEventListener('click', (e) => {
+    document.body.addEventListener('click', (e) => {
       const targetItem = e.target.closest('[data-theme-value]');
       if (targetItem) {
         const newTheme = targetItem.dataset.themeValue;
@@ -14,32 +16,19 @@ const ThemeManager = {
         }
       }
     });
-    
-    // Mark as connected and push initial theme
-    window.addEventListener('phx:page-loading-stop', () => {
-      this.el.dataset.connected = "true";
-      // Push the initial theme AFTER UI is updated
-      this.pushEventToServer('theme_changed', { theme: this.theme });
-    });
-
-    // Removed handleEvent for set_theme_from_server
-    /*
-    this.handleEvent('set_theme_from_server', ({ theme }) => {
-      if (theme && theme !== this.theme) {
-        this.setTheme(theme);
-      }
-    });
-    */
   },
 
-  // --- Helper Methods ---
-
   getTheme() {
-    return localStorage.getItem('theme') ||
-           (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const storedTheme = localStorage.getItem('theme');
+    // Default to 'dark' if localStorage theme is not set or invalid
+    const theme = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'dark';
+    return theme;
   },
 
   applyTheme(theme) {
+    if (!theme || (theme !== 'light' && theme !== 'dark')) {
+       theme = 'dark';
+    }
     const htmlElement = document.documentElement;
     htmlElement.classList.remove('dark', 'light');
     htmlElement.classList.add(theme);
@@ -48,51 +37,36 @@ const ThemeManager = {
   },
 
   setTheme(newTheme) {
-     if (newTheme === this.theme) return; // Avoid redundant work
+     if (newTheme === this.theme) return; 
 
      this.theme = newTheme;
      this.applyTheme(this.theme);
-     this.updateSelectUI(this.theme); // Update UI immediately after setting theme
-     this.pushEventToServer('theme_changed', { theme: this.theme }); // Notify server
+     this.updateSelectUI(this.theme);
   },
 
-  // Add method to manually update the theme select UI
   updateSelectUI(theme) {
-    const selectElement = this.el.querySelector('#theme-select');
-    if (!selectElement) return; // Guard clause
+    const selectElement = document.querySelector('#theme-select'); 
+    if (!selectElement) {
+       return; // It's okay if the select UI isn't on every page
+    }
 
-    // Update the trigger label
     const selectTrigger = selectElement.querySelector('.select-value');
     if (selectTrigger) {
        const label = theme === 'light' ? 'Light' : 'Dark';
        selectTrigger.setAttribute('data-content', label);
     }
 
-    // Update the checked state AND checkmark visibility using style.display
     const items = selectElement.querySelectorAll('.select-content [role="option"]');
     items.forEach(item => {
       const radio = item.querySelector('input[name="theme"]');
-      // Find the checkmark span (now always present thanks to select.ex change)
-      const checkmark = item.querySelector('span.absolute.right-2');
+      const checkmark = item.querySelector('span.absolute.right-2'); 
 
-      if (radio && checkmark) { // Check if both elements are found
+      if (radio && checkmark) { 
         const isChecked = (radio.value === theme);
-        radio.checked = isChecked; // Set the underlying radio state
-
-        // Directly control checkmark visibility via style.display
-        checkmark.style.display = isChecked ? 'flex' : 'none'; // Use 'flex' as per select.ex
+        radio.checked = isChecked; 
+        checkmark.style.display = isChecked ? 'flex' : 'none'; 
       }
     });
-  },
-
-  pushEventToServer(event, payload) {
-    if (this.el.dataset.connected === "true") {
-      try {
-        this.pushEvent(event, payload);
-      } catch (error) {
-        console.error(`Failed to push ${event} event:`, error);
-      }
-    }
   }
 };
 

@@ -22,8 +22,7 @@ defmodule CentralWeb.Router do
 
     get "/changelog", ChangelogController, :index
 
-    live "/", Live.PageLive # New LiveView route
-
+    live "/", Live.PageLive
   end
 
   # Other scopes may use custom stacks.
@@ -54,7 +53,9 @@ defmodule CentralWeb.Router do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     live_session :redirect_if_user_is_authenticated,
-      on_mount: [{CentralWeb.UserAuth, :redirect_if_user_is_authenticated}] do
+      on_mount: [
+        {CentralWeb.UserAuth, :redirect_if_user_is_authenticated}
+      ] do
       live "/users/register", AuthLive.UserRegistrationLive, :new
       live "/users/log_in", AuthLive.UserLoginLive, :new
       live "/users/reset_password", AuthLive.UserForgotPasswordLive, :new
@@ -68,7 +69,9 @@ defmodule CentralWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{CentralWeb.UserAuth, :ensure_authenticated}] do
+      on_mount: [
+        {CentralWeb.UserAuth, :ensure_authenticated}
+      ] do
       live "/users/settings", AuthLive.UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", AuthLive.UserSettingsLive, :confirm_email
 
@@ -90,7 +93,9 @@ defmodule CentralWeb.Router do
     delete "/users/log_out", UserSessionController, :delete
 
     live_session :current_user,
-      on_mount: [{CentralWeb.UserAuth, :mount_current_user}] do
+      on_mount: [
+        {CentralWeb.UserAuth, :mount_current_user}
+      ] do
       live "/users/confirm/:token", AuthLive.UserConfirmationLive, :edit
       live "/users/confirm", AuthLive.UserConfirmationInstructionsLive, :new
     end
