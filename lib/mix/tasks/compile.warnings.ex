@@ -6,6 +6,10 @@ defmodule Mix.Tasks.Compile.Warnings do
     # Create log directory if it doesn't exist
     File.mkdir_p!("log")
 
+    # Generate timestamp for filename
+    timestamp = DateTime.utc_now() |> Calendar.strftime("%Y%m%d_%H%M%S")
+    log_filename = "log/compiler_warnings_#{timestamp}.log"
+
     # Redirect stderr to capture compiler warnings
     {output, exit_code} = System.cmd("mix", ["compile", "--warnings-as-errors"],
       stderr_to_stdout: true,
@@ -17,20 +21,19 @@ defmodule Mix.Tasks.Compile.Warnings do
     |> Enum.filter(&(String.contains?(&1, "warning:") || String.contains?(&1, "\\|")))
 
     # Add timestamp to warnings
-    timestamp = DateTime.utc_now() |> DateTime.to_string()
     formatted_warnings = Enum.map(warnings, fn warning ->
-      "#{timestamp} [warning] #{warning}"
+      "#{DateTime.utc_now() |> DateTime.to_string()} [warning] #{warning}"
     end)
 
     # Write warnings to file
     if length(formatted_warnings) > 0 do
-      File.write!("log/compiler_warnings.log",
+      File.write!(log_filename,
         Enum.join(formatted_warnings, "\n") <> "\n",
         [:append]
       )
 
       # Print report
-      IO.puts("#{length(formatted_warnings)} compiler warnings captured to log/compiler_warnings.log")
+      IO.puts("#{length(formatted_warnings)} compiler warnings captured to #{log_filename}")
     else
       IO.puts("No compiler warnings found")
     end

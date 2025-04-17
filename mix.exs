@@ -85,7 +85,10 @@ defmodule Central.MixProject do
         "tailwind central --minify",
         "esbuild central --minify",
         "phx.digest"
-      ]
+      ],
+      warnings: ["compile.warnings"],
+      "show.warnings": ["show.warnings"],
+      "capture.all.warnings": ["compile.warnings", "capture.warnings"]
     ]
   end
 end
