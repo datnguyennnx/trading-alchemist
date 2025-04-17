@@ -54,6 +54,13 @@ config :tailwind,
   ]
 
 # Configures Elixir's Logger
+config :logger,
+  backends: [:console, {LoggerFileBackend, :warning_log}],
+  level: :info,
+  compile_time_purge_matching: [
+    [level_lower_than: :info]
+  ]
+
 config :logger, :console,
   format: "[$date $time] $metadata[$level] $message\n",
   metadata: [:request_id],
@@ -61,12 +68,10 @@ config :logger, :console,
   time_format: "%H:%M:%S",
   date_format: "%d/%m/%Y"
 
-# Optimize logging levels for different environments
-config :logger,
-  level: :info,
-  compile_time_purge_matching: [
-    [level_lower_than: :info]
-  ]
+config :logger, :warning_log,
+  path: "log/elixir_warnings.log",
+  level: :warning,
+  format: "$date $time [$level] $message\n"
 
 # Configure Tesla HTTP client
 config :tesla, adapter: {Tesla.Adapter.Finch, [name: Central.Finch, pool_timeout: 5000]}

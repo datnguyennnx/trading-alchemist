@@ -62,7 +62,8 @@ defmodule Central.MixProject do
       {:salad_ui, "~> 0.9"},
       {:lucide_icons, "~> 2.0"},
       {:tw_merge, "~> 0.1.1"},
-      {:tesla, "~> 1.8"}
+      {:tesla, "~> 1.8"},
+      {:logger_file_backend, "~> 0.0.13"}
     ]
   end
 
