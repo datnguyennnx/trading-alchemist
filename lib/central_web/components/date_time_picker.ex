@@ -99,18 +99,17 @@ defmodule CentralWeb.Components.DateTimePicker do
               placeholder="MM"
             />
             <.select
-              :let={select}
               id={"#{@id}-period-select"}
               name={"#{@id}-period"}
               value={selected_period(@value)}
               class="period-select w-20"
               placeholder="AM/PM"
+              :let={builder}
             >
-              <.select_trigger builder={select} class="w-full" />
-              <.select_content builder={select}>
-                <.select_item builder={select} value="AM">AM</.select_item>
-                <.select_item builder={select} value="PM">PM</.select_item>
-              </.select_content>
+              <.select_group>
+                <.select_item builder={builder} value="AM" label="AM" />
+                <.select_item builder={builder} value="PM" label="PM" />
+              </.select_group>
             </.select>
           </div>
         </div>

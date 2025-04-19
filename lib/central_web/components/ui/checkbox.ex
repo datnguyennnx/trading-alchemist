@@ -11,6 +11,7 @@ defmodule CentralWeb.Components.UI.Checkbox do
   attr :name, :any, default: nil
   attr :value, :any, default: nil
   attr :"default-value", :any, values: [true, false, "true", "false"], default: false
+  attr :checked, :boolean, default: nil
   attr :field, Phoenix.HTML.FormField
   attr :class, :string, default: nil
   attr :rest, :global
