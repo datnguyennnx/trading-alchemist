@@ -26,43 +26,37 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   - {:error, reason} on failure
   """
 
+  alias Central.Backtest.Indicators.Trend.MovingAverage
+  alias Central.Backtest.Indicators.Trend.ExponentialMovingAverage
+  alias Central.Backtest.Indicators.Calculations.{ListOperations, Math}
+
+  # ----------------------------------------------------------------------
+  # Public Interface Functions
+  # ----------------------------------------------------------------------
+
   @doc """
   Calculates Volume Moving Average for candles.
   This is the main public interface function that matches the facade in indicators.ex.
   """
   def volume_ma(candles, period \\ 20, ma_type \\ :sma, volume_key \\ :volume)
 
+  def volume_ma([], _period, _ma_type, _volume_key) do
+    {:error, "Empty candle list"}
+  end
+
   def volume_ma(candles, period, ma_type, volume_key)
-      when is_list(candles) and is_map(hd(candles)) do
-    volume = Enum.map(candles, &Map.get(&1, volume_key))
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) do
+    volume = ListOperations.extract_key(candles, volume_key)
     calculate_ma(volume, period, ma_type)
   end
 
   def volume_ma(volume, period, ma_type, _volume_key)
-      when is_list(volume) and is_number(hd(volume)) do
+      when is_list(volume) and length(volume) > 0 and is_number(hd(volume)) do
     calculate_ma(volume, period, ma_type)
   end
 
-  # Private helper function to calculate the actual MA
-  defp calculate_ma(volume, period, ma_type) do
-    case ma_type do
-      :sma ->
-        case Central.Backtest.Indicators.Trend.MovingAverage.calculate(volume, period, :simple) do
-          {:ok, result} -> {:ok, result}
-          error -> error
-        end
-      :ema ->
-        case Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(volume, period) do
-          {:ok, result} -> {:ok, result}
-          error -> error
-        end
-      :wma ->
-        case Central.Backtest.Indicators.Trend.MovingAverage.calculate(volume, period, :weighted) do
-          {:ok, result} -> {:ok, result}
-          error -> error
-        end
-      _ -> {:error, "Unsupported moving average type"}
-    end
+  def volume_ma(_volume, _period, _ma_type, _volume_key) do
+    {:error, "Invalid input data"}
   end
 
   @doc """
@@ -79,39 +73,14 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   """
   def volume_roc(candles, period \\ 14, volume_key \\ :volume)
 
-  def volume_roc(candles, period, volume_key)
-      when is_list(candles) and is_map(hd(candles)) and is_atom(volume_key) do
-    volume = Enum.map(candles, &Map.get(&1, volume_key))
-    volume_roc_raw(volume, period)
+  def volume_roc([], _period, _volume_key) do
+    {:error, "Empty candle list"}
   end
 
-  @doc """
-  Calculates Volume Rate of Change for raw volume data.
-
-  ## Parameters
-    - volume: List of volume values
-    - period: Number of periods for calculation
-
-  ## Returns
-    - {:ok, roc_values} on success
-    - {:error, reason} on failure
-  """
-  def volume_roc_raw(volume, period)
-      when is_list(volume) and is_number(hd(volume)) do
-    with :ok <- validate_inputs(volume, period) do
-      roc = volume
-        |> Enum.chunk_every(period + 1, 1, :discard)
-        |> Enum.map(fn chunk ->
-          current = List.last(chunk)
-          previous = List.first(chunk)
-          if previous == 0, do: 0, else: (current - previous) / previous * 100
-        end)
-        |> pad_with_zeros(length(volume), period)
-
-      {:ok, roc}
-    else
-      {:error, reason} -> {:error, reason}
-    end
+  def volume_roc(candles, period, volume_key)
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(volume_key) do
+    volume = ListOperations.extract_key(candles, volume_key)
+    volume_roc_raw(volume, period)
   end
 
   @doc """
@@ -128,37 +97,14 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   """
   def relative_volume(candles, period \\ 20, volume_key \\ :volume)
 
-  def relative_volume(candles, period, volume_key)
-      when is_list(candles) and is_map(hd(candles)) and is_atom(volume_key) do
-    volume = Enum.map(candles, &Map.get(&1, volume_key))
-    relative_volume_raw(volume, period)
+  def relative_volume([], _period, _volume_key) do
+    {:error, "Empty candle list"}
   end
 
-  @doc """
-  Calculates Relative Volume for raw volume data.
-
-  ## Parameters
-    - volume: List of volume values
-    - period: Number of periods for calculation
-
-  ## Returns
-    - {:ok, relative_volume} on success
-    - {:error, reason} on failure
-  """
-  def relative_volume_raw(volume, period)
-      when is_list(volume) and is_number(hd(volume)) do
-    with :ok <- validate_inputs(volume, period),
-         {:ok, volume_avg} <- calculate_ma(volume, period, :sma) do
-
-      rel_volume = Enum.zip(volume, volume_avg)
-        |> Enum.map(fn {vol, avg} ->
-          if avg == 0, do: 0, else: vol / avg
-        end)
-
-      {:ok, rel_volume}
-    else
-      {:error, reason} -> {:error, reason}
-    end
+  def relative_volume(candles, period, volume_key)
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(volume_key) do
+    volume = ListOperations.extract_key(candles, volume_key)
+    relative_volume_raw(volume, period)
   end
 
   @doc """
@@ -175,11 +121,215 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   """
   def up_down_volume(candles, price_key \\ :close, volume_key \\ :volume)
 
+  def up_down_volume([], _price_key, _volume_key) do
+    {:error, "Empty candle list"}
+  end
+
   def up_down_volume(candles, price_key, volume_key)
-      when is_list(candles) and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
-    volume = Enum.map(candles, &Map.get(&1, volume_key))
-    prices = Enum.map(candles, &Map.get(&1, price_key))
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
+    volume = ListOperations.extract_key(candles, volume_key)
+    prices = ListOperations.extract_key(candles, price_key)
     up_down_volume_raw(volume, prices)
+  end
+
+  @doc """
+  Identifies Volume Breakouts with OHLCV candle data.
+
+  ## Parameters
+    - candles: List of candle maps with :volume data
+    - period: Number of periods for moving average (default: 20)
+    - threshold: Threshold for breakout detection (default: 2.0)
+    - volume_key: Key to use for volume data (default: :volume)
+
+  ## Returns
+    - {:ok, breakout_signals} on success where 1 = breakout, 0 = no breakout
+    - {:error, reason} on failure
+  """
+  def volume_breakouts(candles, period \\ 20, threshold \\ 2.0, volume_key \\ :volume)
+
+  def volume_breakouts([], _period, _threshold, _volume_key) do
+    {:error, "Empty candle list"}
+  end
+
+  def volume_breakouts(candles, period, threshold, volume_key)
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(volume_key) do
+    volume = ListOperations.extract_key(candles, volume_key)
+    volume_breakouts_raw(volume, period, threshold)
+  end
+
+  @doc """
+  Calculates Volume Price Confirmation with OHLCV candle data.
+
+  ## Parameters
+    - candles: List of candle maps with :close and :volume data
+    - period: Number of periods for calculation (default: 20)
+    - rel_vol_threshold: Threshold for relative volume (default: 1.5)
+    - price_key: Key to use for price data (default: :close)
+    - volume_key: Key to use for volume data (default: :volume)
+
+  ## Returns
+    - {:ok, confirmation_values} on success
+    - {:error, reason} on failure
+  """
+  def volume_price_confirmation(candles, period \\ 20, rel_vol_threshold \\ 1.5, price_key \\ :close, volume_key \\ :volume)
+
+  def volume_price_confirmation([], _period, _rel_vol_threshold, _price_key, _volume_key) do
+    {:error, "Empty candle list"}
+  end
+
+  def volume_price_confirmation(candles, period, rel_vol_threshold, price_key, volume_key)
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
+    volume = ListOperations.extract_key(candles, volume_key)
+    prices = ListOperations.extract_key(candles, price_key)
+    volume_price_confirmation_raw(volume, prices, period, rel_vol_threshold)
+  end
+
+  @doc """
+  Detects Volume Climax with OHLCV candle data.
+
+  ## Parameters
+    - candles: List of candle maps with :close and :volume data
+    - period: Number of periods for calculation (default: 20)
+    - volume_threshold: Threshold for volume spike detection (default: 3.0)
+    - trend_lookback: Number of periods to determine trend (default: 5)
+    - price_key: Key to use for price data (default: :close)
+    - volume_key: Key to use for volume data (default: :volume)
+
+  ## Returns
+    - {:ok, climax_signals} on success
+    - {:error, reason} on failure
+  """
+  def volume_climax(candles, period \\ 20, volume_threshold \\ 3.0, trend_lookback \\ 5, price_key \\ :close, volume_key \\ :volume)
+
+  def volume_climax([], _period, _volume_threshold, _trend_lookback, _price_key, _volume_key) do
+    {:error, "Empty candle list"}
+  end
+
+  def volume_climax(candles, period, volume_threshold, trend_lookback, price_key, volume_key)
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
+    volume = ListOperations.extract_key(candles, volume_key)
+    prices = ListOperations.extract_key(candles, price_key)
+    volume_climax_raw(volume, prices, period, volume_threshold, trend_lookback)
+  end
+
+  @doc """
+  Calculates Volume Force with OHLCV candle data.
+
+  ## Parameters
+    - candles: List of candle maps with :close and :volume data
+    - price_key: Key to use for price data (default: :close)
+    - volume_key: Key to use for volume data (default: :volume)
+
+  ## Returns
+    - {:ok, volume_force} on success
+    - {:error, reason} on failure
+  """
+  def volume_force(candles, price_key \\ :close, volume_key \\ :volume)
+
+  def volume_force([], _price_key, _volume_key) do
+    {:error, "Empty candle list"}
+  end
+
+  def volume_force(candles, price_key, volume_key)
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
+    volume = ListOperations.extract_key(candles, volume_key)
+    prices = ListOperations.extract_key(candles, price_key)
+    volume_force_raw(volume, prices)
+  end
+
+  @doc """
+  Calculates Volume Moving Average with OHLCV candle data.
+
+  ## Parameters
+    - candles: List of candle maps with :volume data
+    - period: Number of periods for the moving average (default: 20)
+    - ma_type: Type of moving average (:sma, :ema, :wma) (default: :sma)
+    - volume_key: Key to use for volume data (default: :volume)
+
+  ## Returns
+    - {:ok, volume_ma} on success
+    - {:error, reason} on failure
+  """
+  def volume_ma_candles(candles, period \\ 20, ma_type \\ :sma, volume_key \\ :volume)
+
+  def volume_ma_candles([], _period, _ma_type, _volume_key) do
+    {:error, "Empty candle list"}
+  end
+
+  def volume_ma_candles(candles, period, ma_type, volume_key)
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(volume_key) do
+    volume = ListOperations.extract_key(candles, volume_key)
+    volume_ma(volume, period, ma_type)
+  end
+
+  # ----------------------------------------------------------------------
+  # Raw Calculation Functions
+  # ----------------------------------------------------------------------
+
+  @doc """
+  Calculates Volume Rate of Change for raw volume data.
+
+  ## Parameters
+    - volume: List of volume values
+    - period: Number of periods for calculation
+
+  ## Returns
+    - {:ok, roc_values} on success
+    - {:error, reason} on failure
+  """
+  def volume_roc_raw([], _period) do
+    {:error, "Empty volume list"}
+  end
+
+  def volume_roc_raw(volume, period)
+      when is_list(volume) and length(volume) > 0 and is_number(hd(volume)) do
+    with :ok <- validate_inputs(volume, period) do
+      roc = volume
+        |> Enum.chunk_every(period + 1, 1, :discard)
+        |> Enum.map(fn chunk ->
+          current = List.last(chunk)
+          previous = List.first(chunk)
+          # Using Math.safe_div to avoid divide by zero
+          if previous == 0, do: 0, else: Math.safe_div(current - previous, previous) * 100
+        end)
+        |> pad_with_zeros(length(volume), period)
+
+      {:ok, roc}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Calculates Relative Volume for raw volume data.
+
+  ## Parameters
+    - volume: List of volume values
+    - period: Number of periods for calculation
+
+  ## Returns
+    - {:ok, relative_volume} on success
+    - {:error, reason} on failure
+  """
+  def relative_volume_raw([], _period) do
+    {:error, "Empty volume list"}
+  end
+
+  def relative_volume_raw(volume, period)
+      when is_list(volume) and length(volume) > 0 and is_number(hd(volume)) do
+    with :ok <- validate_inputs(volume, period),
+        {:ok, volume_avg} <- volume_ma(volume, period, :sma, :volume) do
+
+      # Using Math.safe_div to handle division
+      rel_volume = Enum.zip(volume, volume_avg)
+        |> Enum.map(fn {vol, avg} ->
+          Math.safe_div(vol, avg)
+        end)
+
+      {:ok, rel_volume}
+    else
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @doc """
@@ -193,8 +343,16 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
     - {:ok, {up_volume, down_volume}} on success
     - {:error, reason} on failure
   """
+  def up_down_volume_raw([], _prices) do
+    {:error, "Empty volume list"}
+  end
+
+  def up_down_volume_raw(_volume, []) do
+    {:error, "Empty price list"}
+  end
+
   def up_down_volume_raw(volume, prices)
-      when is_list(volume) and is_list(prices) do
+      when is_list(volume) and is_list(prices) and length(volume) > 0 and length(prices) > 0 do
     with :ok <- validate_volume_prices(volume, prices) do
       {up_vol, down_vol} = prices
         |> Enum.chunk_every(2, 1, :discard)
@@ -219,27 +377,6 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   end
 
   @doc """
-  Identifies Volume Breakouts with OHLCV candle data.
-
-  ## Parameters
-    - candles: List of candle maps with :volume data
-    - period: Number of periods for moving average (default: 20)
-    - threshold: Threshold for breakout detection (default: 2.0)
-    - volume_key: Key to use for volume data (default: :volume)
-
-  ## Returns
-    - {:ok, breakout_signals} on success where 1 = breakout, 0 = no breakout
-    - {:error, reason} on failure
-  """
-  def volume_breakouts(candles, period \\ 20, threshold \\ 2.0, volume_key \\ :volume)
-
-  def volume_breakouts(candles, period, threshold, volume_key)
-      when is_list(candles) and is_map(hd(candles)) and is_atom(volume_key) do
-    volume = Enum.map(candles, &Map.get(&1, volume_key))
-    volume_breakouts_raw(volume, period, threshold)
-  end
-
-  @doc """
   Identifies Volume Breakouts for raw volume data.
 
   ## Parameters
@@ -251,43 +388,26 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
     - {:ok, breakout_signals} on success where 1 = breakout, 0 = no breakout
     - {:error, reason} on failure
   """
-  def volume_breakouts_raw(volume, period, threshold)
-      when is_list(volume) and is_number(hd(volume)) do
-    with :ok <- validate_inputs(volume, period),
-         {:ok, volume_avg} <- calculate_ma(volume, period, :sma) do
+  def volume_breakouts_raw([], _period, _threshold) do
+    {:error, "Empty volume list"}
+  end
 
+  def volume_breakouts_raw(volume, period, threshold)
+      when is_list(volume) and length(volume) > 0 and is_number(hd(volume)) do
+    with :ok <- validate_inputs(volume, period),
+        {:ok, volume_avg} <- volume_ma(volume, period, :sma, :volume) do
+
+      # Using Math.safe_div to handle division
       breakouts = Enum.zip(volume, volume_avg)
         |> Enum.map(fn {vol, avg} ->
-          if avg > 0 and vol / avg >= threshold, do: 1, else: 0
+          ratio = Math.safe_div(vol, avg)
+          if avg > 0 and ratio >= threshold, do: 1, else: 0
         end)
 
       {:ok, breakouts}
     else
       {:error, reason} -> {:error, reason}
     end
-  end
-
-  @doc """
-  Calculates Volume Price Confirmation with OHLCV candle data.
-
-  ## Parameters
-    - candles: List of candle maps with :close and :volume data
-    - period: Number of periods for calculation (default: 20)
-    - rel_vol_threshold: Threshold for relative volume (default: 1.5)
-    - price_key: Key to use for price data (default: :close)
-    - volume_key: Key to use for volume data (default: :volume)
-
-  ## Returns
-    - {:ok, confirmation_values} on success
-    - {:error, reason} on failure
-  """
-  def volume_price_confirmation(candles, period \\ 20, rel_vol_threshold \\ 1.5, price_key \\ :close, volume_key \\ :volume)
-
-  def volume_price_confirmation(candles, period, rel_vol_threshold, price_key, volume_key)
-      when is_list(candles) and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
-    volume = Enum.map(candles, &Map.get(&1, volume_key))
-    prices = Enum.map(candles, &Map.get(&1, price_key))
-    volume_price_confirmation_raw(volume, prices, period, rel_vol_threshold)
   end
 
   @doc """
@@ -303,10 +423,18 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
     - {:ok, confirmation_values} on success
     - {:error, reason} on failure
   """
+  def volume_price_confirmation_raw([], _prices, _period, _rel_vol_threshold) do
+    {:error, "Empty volume list"}
+  end
+
+  def volume_price_confirmation_raw(_volume, [], _period, _rel_vol_threshold) do
+    {:error, "Empty price list"}
+  end
+
   def volume_price_confirmation_raw(volume, prices, period, rel_vol_threshold)
-      when is_list(volume) and is_list(prices) do
+      when is_list(volume) and is_list(prices) and length(volume) > 0 and length(prices) > 0 do
     with :ok <- validate_volume_prices(volume, prices),
-         {:ok, rel_volume} <- relative_volume_raw(volume, period) do
+        {:ok, rel_volume} <- relative_volume_raw(volume, period) do
 
       # Get price changes
       price_changes = prices
@@ -332,30 +460,6 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   end
 
   @doc """
-  Detects Volume Climax with OHLCV candle data.
-
-  ## Parameters
-    - candles: List of candle maps with :close and :volume data
-    - period: Number of periods for calculation (default: 20)
-    - volume_threshold: Threshold for volume spike detection (default: 3.0)
-    - trend_lookback: Number of periods to determine trend (default: 5)
-    - price_key: Key to use for price data (default: :close)
-    - volume_key: Key to use for volume data (default: :volume)
-
-  ## Returns
-    - {:ok, climax_signals} on success
-    - {:error, reason} on failure
-  """
-  def volume_climax(candles, period \\ 20, volume_threshold \\ 3.0, trend_lookback \\ 5, price_key \\ :close, volume_key \\ :volume)
-
-  def volume_climax(candles, period, volume_threshold, trend_lookback, price_key, volume_key)
-      when is_list(candles) and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
-    volume = Enum.map(candles, &Map.get(&1, volume_key))
-    prices = Enum.map(candles, &Map.get(&1, price_key))
-    volume_climax_raw(volume, prices, period, volume_threshold, trend_lookback)
-  end
-
-  @doc """
   Detects Volume Climax for raw volume and price data.
 
   ## Parameters
@@ -369,10 +473,18 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
     - {:ok, climax_signals} on success
     - {:error, reason} on failure
   """
+  def volume_climax_raw([], _prices, _period, _volume_threshold, _trend_lookback) do
+    {:error, "Empty volume list"}
+  end
+
+  def volume_climax_raw(_volume, [], _period, _volume_threshold, _trend_lookback) do
+    {:error, "Empty price list"}
+  end
+
   def volume_climax_raw(volume, prices, period, volume_threshold, trend_lookback)
-      when is_list(volume) and is_list(prices) do
+      when is_list(volume) and is_list(prices) and length(volume) > 0 and length(prices) > 0 do
     with :ok <- validate_volume_prices(volume, prices),
-         {:ok, rel_volume} <- relative_volume_raw(volume, period) do
+        {:ok, rel_volume} <- relative_volume_raw(volume, period) do
 
       # Determine price trends
       price_trends = prices
@@ -388,44 +500,25 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
       price_changes = prices
         |> Enum.chunk_every(2, 1, :discard)
         |> Enum.map(fn [prev, curr] ->
-          if prev == 0, do: 0, else: (curr - prev) / prev * 100
+          # Use Math.safe_div for division
+          if prev == 0, do: 0, else: Math.safe_div(curr - prev, prev) * 100
         end)
         |> pad_with_zeros(length(prices), 1)
 
       # Combine trend, price change and volume for climax detection
       Enum.zip([price_trends, price_changes, rel_volume])
-        |> Enum.map(fn {trend, price_change, rel_vol} ->
-          cond do
-            trend == :downtrend and price_change > 1 and rel_vol >= volume_threshold -> 1  # Bullish climax
-            trend == :uptrend and price_change < -1 and rel_vol >= volume_threshold -> -1  # Bearish climax
-            true -> 0  # No climax
-          end
+        |> Enum.map(fn
+          {:downtrend, price_change, rel_vol} when price_change > 1 and rel_vol >= volume_threshold ->
+            1  # Bullish climax
+          {:uptrend, price_change, rel_vol} when price_change < -1 and rel_vol >= volume_threshold ->
+            -1  # Bearish climax
+          {_trend, _price_change, _rel_vol} ->
+            0  # No climax
         end)
         |> then(fn result -> {:ok, result} end)
     else
       {:error, reason} -> {:error, reason}
     end
-  end
-
-  @doc """
-  Calculates Volume Force with OHLCV candle data.
-
-  ## Parameters
-    - candles: List of candle maps with :close and :volume data
-    - price_key: Key to use for price data (default: :close)
-    - volume_key: Key to use for volume data (default: :volume)
-
-  ## Returns
-    - {:ok, volume_force} on success
-    - {:error, reason} on failure
-  """
-  def volume_force(candles, price_key \\ :close, volume_key \\ :volume)
-
-  def volume_force(candles, price_key, volume_key)
-      when is_list(candles) and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
-    volume = Enum.map(candles, &Map.get(&1, volume_key))
-    prices = Enum.map(candles, &Map.get(&1, price_key))
-    volume_force_raw(volume, prices)
   end
 
   @doc """
@@ -439,14 +532,23 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
     - {:ok, volume_force} on success
     - {:error, reason} on failure
   """
+  def volume_force_raw([], _prices) do
+    {:error, "Empty volume list"}
+  end
+
+  def volume_force_raw(_volume, []) do
+    {:error, "Empty price list"}
+  end
+
   def volume_force_raw(volume, prices)
-      when is_list(volume) and is_list(prices) and is_number(hd(volume)) do
+      when is_list(volume) and is_list(prices) and length(volume) > 0 and length(prices) > 0 and is_number(hd(volume)) do
     with :ok <- validate_volume_prices(volume, prices) do
       # Calculate percentage price changes
       price_changes = prices
         |> Enum.chunk_every(2, 1, :discard)
         |> Enum.map(fn [prev, curr] ->
-          if prev == 0, do: 0, else: (curr - prev) / prev * 100
+          # Use Math.safe_div for division
+          if prev == 0, do: 0, else: Math.safe_div(curr - prev, prev) * 100
         end)
         |> pad_with_zeros(length(prices), 1)
 
@@ -454,36 +556,45 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
       force = Enum.zip([volume, price_changes])
         |> Enum.map(fn {vol, change} -> vol * change end)
 
+      # If normalization is needed, we could use Normalization.normalize_to_range
+      # normalized_force = Normalization.normalize_to_range(force)
+
       {:ok, force}
     else
       {:error, reason} -> {:error, reason}
     end
   end
 
-  @doc """
-  Calculates Volume Moving Average with OHLCV candle data.
+  # ----------------------------------------------------------------------
+  # Helper Functions
+  # ----------------------------------------------------------------------
 
-  ## Parameters
-    - candles: List of candle maps with :volume data
-    - period: Number of periods for the moving average (default: 20)
-    - ma_type: Type of moving average (:sma, :ema, :wma) (default: :sma)
-    - volume_key: Key to use for volume data (default: :volume)
-
-  ## Returns
-    - {:ok, volume_ma} on success
-    - {:error, reason} on failure
-  """
-  def volume_ma_candles(candles, period \\ 20, ma_type \\ :sma, volume_key \\ :volume)
-
-  def volume_ma_candles(candles, period, ma_type, volume_key)
-      when is_list(candles) and is_map(hd(candles)) and is_atom(volume_key) do
-    volume = Enum.map(candles, &Map.get(&1, volume_key))
-    volume_ma(volume, period, ma_type)
+  # Helper function to calculate the actual MA
+  defp calculate_ma(volume, period, ma_type) do
+    case ma_type do
+      :sma ->
+        case MovingAverage.calculate(volume, period, :simple) do
+          {:ok, result} -> {:ok, result}
+          error -> error
+        end
+      :ema ->
+        case ExponentialMovingAverage.calculate(volume, period) do
+          {:ok, result} -> {:ok, result}
+          error -> error
+        end
+      :wma ->
+        case MovingAverage.calculate(volume, period, :weighted) do
+          {:ok, result} -> {:ok, result}
+          error -> error
+        end
+      _ -> {:error, "Unsupported moving average type"}
+    end
   end
 
-  # Helper Functions
-
-  defp validate_inputs(volume, period) do
+  @doc """
+  Validates inputs for volume calculations.
+  """
+  def validate_inputs(volume, period) do
     cond do
       not is_list(volume) ->
         {:error, "Volume must be a list"}
@@ -496,7 +607,10 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
     end
   end
 
-  defp validate_volume_prices(volume, prices) do
+  @doc """
+  Validates volume and price data for calculations that require both.
+  """
+  def validate_volume_prices(volume, prices) do
     cond do
       not (is_list(volume) and is_list(prices)) ->
         {:error, "Volume and prices must be lists"}
@@ -509,13 +623,21 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
     end
   end
 
-  defp pad_with_zeros(values, original_length, padding_size) do
+  @doc """
+  Pads a list with zeros to the specified original length.
+  """
+  def pad_with_zeros(values, original_length, padding_size) when is_list(values) and is_integer(original_length) and is_integer(padding_size) do
     padding = List.duplicate(0, padding_size)
     padding ++ values ++ List.duplicate(0, original_length - padding_size - length(values))
   end
 
-  defp pad_with_first_value(values, original_length, padding_size) do
-    first_value = List.first(values) || :neutral
+  @doc """
+  Pads a list with the first value to the specified original length.
+  """
+  def pad_with_first_value(values, original_length, padding_size) when is_list(values) and is_integer(original_length) and is_integer(padding_size) do
+    # Use explicit atom rather than a boolean value that might cause pattern matching issues
+    default_value = :neutral
+    first_value = if length(values) > 0, do: List.first(values), else: default_value
     padding = List.duplicate(first_value, padding_size)
     padding ++ values ++ List.duplicate(first_value, original_length - padding_size - length(values))
   end

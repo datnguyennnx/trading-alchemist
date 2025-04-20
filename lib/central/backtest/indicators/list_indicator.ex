@@ -331,6 +331,8 @@ defmodule Central.Backtest.Indicators.ListIndicator do
         params: [
           %{name: "period", type: :number, default: 20,
             label: "Period", min: 1, max: 200},
+          %{name: "normalized", type: :boolean, default: true,
+            label: "Normalize Slope"},
           %{name: "price_key", type: :select, default: "close",
             options: ["open", "high", "low", "close"], label: "Price Input"}
         ]
@@ -477,6 +479,8 @@ defmodule Central.Backtest.Indicators.ListIndicator do
         params: [
           %{name: "period", type: :number, default: 10,
             label: "Period", min: 1, max: 100},
+          %{name: "return_percentage", type: :boolean, default: false,
+            label: "Show As Percentage"},
           %{name: "price_key", type: :select, default: "close",
             options: ["open", "high", "low", "close"], label: "Price Input"}
         ]
@@ -546,6 +550,8 @@ defmodule Central.Backtest.Indicators.ListIndicator do
             label: "Period", min: 1, max: 200},
           %{name: "factor", type: :number, default: 2.0,
             label: "Projection Factor", step: 0.1, min: 0.1, max: 5.0},
+          %{name: "adaptive", type: :boolean, default: false,
+            label: "Use Adaptive Bands"},
           %{name: "price_key", type: :select, default: "close",
             options: ["open", "high", "low", "close"], label: "Price Input"}
         ]
@@ -706,8 +712,8 @@ defmodule Central.Backtest.Indicators.ListIndicator do
         params: [
           %{name: "interval", type: :number, default: 100,
             label: "Level Interval", min: 1, max: 1000},
-          %{name: "include_decimals", type: :select, default: "true",
-            options: ["true", "false"], label: "Include Decimal Levels"}
+          %{name: "include_decimals", type: :boolean, default: true,
+            label: "Include Decimal Levels"}
         ]
       },
       %{
