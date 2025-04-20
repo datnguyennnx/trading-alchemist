@@ -432,6 +432,4 @@ defmodule CentralWeb.StrategyLive.Components.IndicatorConfig do
     |> Enum.map(&String.capitalize/1)
     |> Enum.join(" ")
   end
-
-  defp humanize_value(value), do: to_string(value)
 end
