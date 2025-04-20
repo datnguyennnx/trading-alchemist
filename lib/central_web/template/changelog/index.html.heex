@@ -2,6 +2,48 @@
   title="Changelog"
   entries={[
     %{
+      version: "0.2.3",
+      title: "Dynamic Form, Indicator trading, Historical Data Sync and Backtest Enhancements",
+      date: "April 20, 2025",
+      description:
+        "Implemented on-demand historical data fetching, enhanced backtest UI components, improved error handling, and optimized datetime utilities. Importance patch is dynamic form and bunch of indicator for strategy settings",
+      features: [
+        %{
+          title: "Historical Market Data Sync",
+          description: "Implemented on-demand historical data fetching with chunking, error handling, and automatic detection of missing data."
+        },
+        %{
+          title: "Backtest UI Improvements",
+          description: "Enhanced date picker handling with automatic background data loading and improved user feedback."
+        },
+        %{
+          title: "Strategy Rule Component",
+          description: "Enhanced dynamic form handling with improved value management and conditional field visibility."
+        },
+        %{
+          title: "Error Handling Enhancements",
+          description: "Resolved function clause errors and implemented graceful error recovery mechanisms."
+        },
+        %{
+          title: "Technical Optimizations",
+          description: "Unified datetime utilities, optimized indicator calculations, and improved code maintainability."
+        }
+      ],
+      changes: [
+        %{description: "Added HistoricalDataFetcher service for fetching specific date ranges from Binance API."},
+        %{description: "Implemented chunking mechanism to handle large date ranges while respecting API rate limits."},
+        %{description: "Added robust error handling with exponential backoff retry mechanism."},
+        %{description: "Enhanced date picker with automatic background data loading when selecting historical dates."},
+        %{description: "Improved user feedback through flash messages during data loading."},
+        %{description: "Enhanced rule item handling with better value processing and default states."},
+        %{description: "Added conditional field visibility based on selected values."},
+        %{description: "Resolved function clause error for date time picker when historical data is missing."},
+        %{description: "Unified datetime handling by moving functionality to Central.Backtest.Utils.DatetimeUtils."},
+        %{description: "Optimized Volume Indicator with improved calculation utilities."},
+        %{description: "Fixed compiler warnings by removing unused module imports."}
+      ]
+    },
+    %{
       version: "0.2.2",
       title: "UI Components, LiveView Conversion, and Fixes",
       date: "April 14, 2025",
