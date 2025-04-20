@@ -1,14 +1,17 @@
 defmodule CentralWeb.StrategyLive.IndexLive do
   use CentralWeb, :live_view
   alias Central.Backtest.Contexts.StrategyContext
+  alias Central.Backtest.Indicators
 
   import CentralWeb.Components.UI.Card
   import CentralWeb.Components.UI.Button
 
   def mount(_params, _session, socket) do
+    strategies = list_strategies()
     {:ok,
      socket
-     |> assign(:strategies, list_strategies())
+     |> assign(:strategies, strategies)
+     |> assign(:indicators, Indicators.list_indicators())
      |> assign(:page_title, "Trading Strategies")}
   end
 
@@ -64,7 +67,13 @@ defmodule CentralWeb.StrategyLive.IndexLive do
                   <div class="flex justify-between">
                     <span class="text-muted-foreground">Rules:</span>
                     <span class="font-medium">
-                      {"#{count_rules(strategy.config["entry_rules"])} entries, #{count_rules(strategy.config["exit_rules"])} exits"}
+                      {count_entry_rules(strategy)} entries, {count_exit_rules(strategy)} exits
+                    </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-muted-foreground">Indicators:</span>
+                    <span class="font-medium">
+                      {summary_indicators(strategy, @indicators)}
                     </span>
                   </div>
                 </div>
@@ -99,8 +108,58 @@ defmodule CentralWeb.StrategyLive.IndexLive do
     end
   end
 
-  defp count_rules(nil), do: 0
-  defp count_rules(rules) when is_list(rules), do: length(rules)
-  defp count_rules(rules) when is_map(rules), do: 1
-  defp count_rules(_), do: 0
+  defp count_entry_rules(strategy) do
+    case strategy.entry_rules do
+      %{"conditions" => conditions} when is_list(conditions) -> length(conditions)
+      _ -> 0
+    end
+  end
+
+  defp count_exit_rules(strategy) do
+    case strategy.exit_rules do
+      %{"conditions" => conditions} when is_list(conditions) -> length(conditions)
+      _ -> 0
+    end
+  end
+
+  defp summary_indicators(strategy, indicators) do
+    # Get all unique indicators used in the strategy
+    entry_indicators =
+      case strategy.entry_rules do
+        %{"conditions" => conditions} when is_list(conditions) ->
+          Enum.map(conditions, & &1["indicator"])
+        _ -> []
+      end
+
+    exit_indicators =
+      case strategy.exit_rules do
+        %{"conditions" => conditions} when is_list(conditions) ->
+          Enum.map(conditions, & &1["indicator"])
+        _ -> []
+      end
+
+    all_indicators = entry_indicators ++ exit_indicators
+    unique_indicators = Enum.uniq(all_indicators)
+
+    case length(unique_indicators) do
+      0 -> "None"
+      1 -> display_indicator_name(hd(unique_indicators), indicators)
+      2 ->
+        "#{display_indicator_name(Enum.at(unique_indicators, 0), indicators)}, #{display_indicator_name(Enum.at(unique_indicators, 1), indicators)}"
+      n when n > 2 -> "#{n} indicators"
+    end
+  end
+
+  defp display_indicator_name(indicator_id, indicators) do
+    case Enum.find(indicators, fn i -> i.id == indicator_id end) do
+      %{id: id} when id in ["sma", "ema", "rsi", "macd"] ->
+        String.upcase(id)
+      %{id: "bollinger_bands"} ->
+        "BB"
+      %{name: name} ->
+        name
+      _ ->
+        indicator_id || "Unknown"
+    end
+  end
 end

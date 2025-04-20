@@ -211,7 +211,7 @@ defmodule CentralWeb.Components.UI.Select do
       class={
         classes([
           "select-content absolute hidden w-full",
-          "z-50 max-h-80 min-w-[12rem] overflow-hidden rounded-[--radius] border border-input bg-popover text-popover-foreground shadow-lg",
+          "z-50 min-w-[12rem] rounded-[--radius] border border-input bg-popover text-popover-foreground shadow-lg",
           "group-data-[state=open]:animate-in group-data-[state=closed]:animate-out",
           "group-data-[state=closed]:fade-out-0 group-data-[state=open]:fade-in-0",
           "group-data-[state=closed]:zoom-out-95 group-data-[state=open]:zoom-in-95",
@@ -222,7 +222,7 @@ defmodule CentralWeb.Components.UI.Select do
       }
       {@rest}
     >
-      <div class="relative w-full p-1">
+      <div class="w-full p-1">
         {render_slot(@inner_block)}
       </div>
     </.focus_wrap>

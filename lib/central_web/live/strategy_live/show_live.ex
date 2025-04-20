@@ -1,6 +1,7 @@
 defmodule CentralWeb.StrategyLive.ShowLive do
   use CentralWeb, :live_view
   alias Central.Backtest.Contexts.StrategyContext
+  alias Central.Backtest.Indicators
   alias CentralWeb.Components.UI.Icon
 
   import CentralWeb.Components.UI.Card
@@ -15,6 +16,7 @@ defmodule CentralWeb.StrategyLive.ShowLive do
     {:ok,
      socket
      |> assign(:strategy, strategy)
+     |> assign(:indicators, Indicators.list_indicators())
      |> assign(:page_title, strategy.name)}
   end
 
@@ -65,19 +67,20 @@ defmodule CentralWeb.StrategyLive.ShowLive do
               <div>
                 <h3 class="text-lg font-medium mb-2">Entry Rules</h3>
                 <div class="space-y-3">
-                  <%= if Enum.empty?(@strategy.config["entry_rules"] || []) do %>
+                  <%= if Enum.empty?(get_entry_rules(@strategy)) do %>
                     <p class="text-muted-foreground italic">No entry rules defined</p>
                   <% else %>
-                    <%= for rule <- @strategy.config["entry_rules"] do %>
+                    <%= for rule <- get_entry_rules(@strategy) do %>
                       <div class="border rounded-lg p-3">
                         <div class="flex justify-between items-center">
-                          <p class="font-medium text-md">{format_rule_name(rule["strategy"])}</p>
+                          <p class="font-medium text-md">
+                            <%= get_indicator_display_name(rule["indicator"], @indicators) %>
+                            <%= format_condition(rule["comparison"]) %>
+                            <%= format_value(rule["value"]) %>
+                          </p>
                           <div class="flex space-x-2">
                             <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md px-2 py-1 text-xs">
-                              Period: {rule["period"]}
-                            </span>
-                            <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md px-2 py-1 text-xs">
-                              Value: {rule["value"]}
+                              <%= get_indicator_type(rule["indicator"], @indicators) %>
                             </span>
                           </div>
                         </div>
@@ -90,13 +93,17 @@ defmodule CentralWeb.StrategyLive.ShowLive do
               <div>
                 <h3 class="text-lg font-medium mb-2">Exit Rules</h3>
                 <div class="space-y-3">
-                  <%= if Enum.empty?(@strategy.config["exit_rules"] || []) do %>
+                  <%= if Enum.empty?(get_exit_rules(@strategy)) do %>
                     <p class="text-muted-foreground italic">No exit rules defined</p>
                   <% else %>
-                    <%= for rule <- @strategy.config["exit_rules"] do %>
+                    <%= for rule <- get_exit_rules(@strategy) do %>
                       <div class="border rounded-lg p-3">
                         <div class="flex justify-between items-center">
-                          <p class="font-medium text-md">{format_rule_name(rule["strategy"])}</p>
+                          <p class="font-medium text-md">
+                            <%= get_indicator_display_name(rule["indicator"], @indicators) %>
+                            <%= format_condition(rule["comparison"]) %>
+                            <%= format_value(rule["value"]) %>
+                          </p>
                           <div class="flex space-x-2 flex-wrap">
                             <span class="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md px-2 py-1 text-xs whitespace-nowrap">
                               SL: {rule["stop_loss"]}%
@@ -105,10 +112,7 @@ defmodule CentralWeb.StrategyLive.ShowLive do
                               TP: {rule["take_profit"]}%
                             </span>
                             <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md px-2 py-1 text-xs">
-                              Period: {rule["period"]}
-                            </span>
-                            <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md px-2 py-1 text-xs">
-                              Value: {rule["value"]}
+                              <%= get_indicator_type(rule["indicator"], @indicators) %>
                             </span>
                           </div>
                         </div>
@@ -189,6 +193,49 @@ defmodule CentralWeb.StrategyLive.ShowLive do
      |> redirect(to: ~p"/strategies")}
   end
 
+  # Helper functions for strategy rules display
+
+  defp get_entry_rules(strategy) do
+    case strategy.entry_rules do
+      %{"conditions" => conditions} when is_list(conditions) -> conditions
+      _ -> []
+    end
+  end
+
+  defp get_exit_rules(strategy) do
+    case strategy.exit_rules do
+      %{"conditions" => conditions} when is_list(conditions) -> conditions
+      _ -> []
+    end
+  end
+
+  defp get_indicator_display_name(indicator_id, indicators) do
+    case Enum.find(indicators, fn i -> i.id == indicator_id end) do
+      %{name: name} -> name
+      _ -> format_rule_name(indicator_id)
+    end
+  end
+
+  defp get_indicator_type(indicator_id, indicators) do
+    case Enum.find(indicators, fn i -> i.id == indicator_id end) do
+      %{type: type} when is_atom(type) -> String.capitalize(Atom.to_string(type))
+      %{type: type} when is_binary(type) -> String.capitalize(type)
+      _ -> "Unknown"
+    end
+  end
+
+  defp format_condition("above"), do: ">"
+  defp format_condition("below"), do: "<"
+  defp format_condition("crosses_above"), do: "crosses above"
+  defp format_condition("crosses_below"), do: "crosses below"
+  defp format_condition(condition) when is_binary(condition), do: condition
+  defp format_condition(_), do: ""
+
+  defp format_value(value) when is_binary(value), do: value
+  defp format_value(value) when is_number(value), do: to_string(value)
+  defp format_value(_), do: ""
+
+  # Legacy format function, keep for backward compatibility
   defp format_rule_name("above_sma"), do: "Price Above SMA"
   defp format_rule_name("below_sma"), do: "Price Below SMA"
   defp format_rule_name("rsi_oversold"), do: "RSI Oversold"
