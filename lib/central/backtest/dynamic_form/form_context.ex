@@ -333,11 +333,17 @@ defmodule Central.Backtest.DynamicForm.FormContext do
 
     # Transform each parameter according to its type
     transformed_params = Enum.reduce(params_map, %{}, fn {key, value}, acc ->
-      param_spec = find_param_spec(params_list, key)
-
-      transformed_value = transform_value(value, param_spec)
-
-      Map.put(acc, safe_key_to_atom(key), transformed_value)
+      # Special handling for timeframe parameters to prevent the KeyError
+      if is_binary(key) && (
+        String.contains?(key, "timeframe") ||
+        String.contains?(key, "price_key") ||
+        key == "open" || key == "close" || key == "high" || key == "low") && is_binary(value) do
+        Map.put(acc, safe_key_to_atom(key), value)
+      else
+        param_spec = find_param_spec(params_list, key)
+        transformed_value = transform_value(value, param_spec)
+        Map.put(acc, safe_key_to_atom(key), transformed_value)
+      end
     end)
 
     transformed_params
@@ -380,12 +386,34 @@ defmodule Central.Backtest.DynamicForm.FormContext do
   defp find_param_spec(params_list, key) do
     atom_key = safe_key_to_atom(key)
 
-    Enum.find(params_list, fn param ->
-      param.name == atom_key || to_string(param.name) == to_string(key)
-    end)
+    # If the key contains specific strings or is a common parameter value, return a special param spec
+    if is_binary(key) && (
+      String.contains?(key, "timeframe") ||
+      String.contains?(key, "price_key") ||
+      key == "open" || key == "close" || key == "high" || key == "low") do
+      %{name: String.to_atom(key), type: :string_param}
+    else
+      Enum.find(params_list, fn param ->
+        param.name == atom_key || to_string(param.name) == to_string(key)
+      end)
+    end
   end
 
+  # Special handler for string parameter type (for timeframes, price keys, etc.)
+  defp transform_value(value, %{type: :string_param}) when is_binary(value), do: value
+
+  # Add a list of common string values that should never be processed as maps
+  defp transform_value(value, _) when is_binary(value) and value in [
+    "daily", "weekly", "monthly", "yearly", "1h", "4h", "30m", "15m", "1d", "1w",
+    "open", "close", "high", "low", "volume", "hl2", "hlc3", "ohlc4"
+  ], do: value
+
   # Transform values based on parameter type
+  defp transform_value(value, nil) when is_binary(value), do: value
+
+  # Special handler for timeframe type (new type we're introducing)
+  defp transform_value(value, %{type: :timeframe}) when is_binary(value), do: value
+
   defp transform_value(value, %{type: :number}) when is_binary(value) do
     case Float.parse(value) do
       {num, _} -> num
@@ -398,19 +426,51 @@ defmodule Central.Backtest.DynamicForm.FormContext do
   end
 
   defp transform_value(value, %{type: :select, options: options}) do
-    # Ensure the value is one of the allowed options
-    if Enum.any?(options, fn opt -> to_string(opt.value) == to_string(value) end) do
+    # First - special case for timeframe strings that are common in the system
+    if is_binary(value) && Enum.member?(["daily", "weekly", "monthly", "yearly", "1h", "4h", "30m", "15m", "1d", "1w"], value) do
       value
     else
-      # Return the first option value if invalid
-      case List.first(options) do
-        %{value: default_value} -> default_value
-        _ -> value
+      # Ensure the value is one of the allowed options
+      if Enum.any?(options, fn opt -> to_string(opt.value) == to_string(value) end) do
+        value
+      else
+        # Return the first option value if invalid
+        case List.first(options) do
+          %{value: default_value} -> default_value
+          _ -> value
+        end
       end
     end
   end
 
-  defp transform_value(value, _), do: value
+  # Special handling for timeframe parameters
+  defp transform_value(value, %{name: :timeframe}) when is_binary(value), do: value
+  defp transform_value(value, %{name: "timeframe"}) when is_binary(value), do: value
+
+  # Handle any parameter whose name contains "timeframe"
+  defp transform_value(value, param_spec) when is_binary(value) and not is_nil(param_spec) do
+    param_name = param_spec[:name]
+    if is_binary(param_name) && String.contains?(param_name, "timeframe") do
+      value
+    else
+      if is_atom(param_name) && String.contains?(Atom.to_string(param_name), "timeframe") do
+        value
+      else
+        # For non-timeframe parameters, proceed with default handling
+        transform_value_default(value)
+      end
+    end
+  end
+
+  # Handle maps specifically and safely check for :value key
+  defp transform_value(%{value: value}, _), do: value
+
+  # Default handler for values that don't match other patterns
+  defp transform_value(value, _), do: transform_value_default(value)
+
+  # Helper for default value transformation
+  defp transform_value_default(value) when is_binary(value), do: value
+  defp transform_value_default(value), do: value
 
   # Validate parameter against its specification
   defp validate_parameter(value, %{type: :number, min: min, max: max})
