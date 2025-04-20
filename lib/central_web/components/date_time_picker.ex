@@ -98,19 +98,23 @@ defmodule CentralWeb.Components.DateTimePicker do
               value={selected_minute_padded(@value)}
               placeholder="MM"
             />
-            <.select
-              id={"#{@id}-period-select"}
-              name={"#{@id}-period"}
-              value={selected_period(@value)}
-              class="period-select w-20"
-              placeholder="AM/PM"
-              :let={builder}
-            >
-              <.select_group>
-                <.select_item builder={builder} value="AM" label="AM" />
-                <.select_item builder={builder} value="PM" label="PM" />
-              </.select_group>
-            </.select>
+            <div class="relative w-20">
+              <.select
+                id={"#{@id}-period-select"}
+                name={"#{@id}-period"}
+                value={selected_period(@value)}
+                class="period-select w-full"
+                :let={builder}
+              >
+                <.select_trigger builder={builder} class="h-9" />
+                <.select_content builder={builder} class="w-full min-w-[5rem]">
+                  <.select_group>
+                    <.select_item builder={builder} value="AM" label="AM" />
+                    <.select_item builder={builder} value="PM" label="PM" />
+                  </.select_group>
+                </.select_content>
+              </.select>
+            </div>
           </div>
         </div>
       </div>

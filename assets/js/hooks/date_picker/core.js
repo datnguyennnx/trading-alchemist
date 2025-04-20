@@ -98,9 +98,30 @@ const DatePickerCore = {
       elements.minuteInput.addEventListener('blur', () => this.formatMinuteInput(state));
     }
     
+    // Period select (AM/PM)
+    // Handle both the direct select element and the radios inside the dropdown
     if (elements.periodSelect) {
+      // For traditional select
       elements.periodSelect.addEventListener('change', () => {
         if (state.selectedDate) this.updateDateTimeDisplay(state);
+      });
+      
+      // For modern custom select with radio inputs
+      const periodRadios = elements.calendar.querySelectorAll(`input[name="${elements.container.id}-period"]`);
+      periodRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          if (state.selectedDate) this.updateDateTimeDisplay(state);
+        });
+      });
+      
+      // Also listen for click events on the period select items
+      const periodItems = elements.calendar.querySelectorAll(`.period-select label[role="option"]`);
+      periodItems.forEach(item => {
+        item.addEventListener('click', () => {
+          setTimeout(() => {
+            if (state.selectedDate) this.updateDateTimeDisplay(state);
+          }, 50); // Small delay to allow the value to update
+        });
       });
     }
     
@@ -378,9 +399,30 @@ const DatePickerCore = {
     let minutes = parseInt(elements.minuteInput.value, 10) || 0;
     
     // Get period from select or data attribute
-    let period = elements.periodSelect ? 
-      elements.periodSelect.value : 
-      elements.container.dataset.period || 'AM';
+    let period = 'AM';
+    
+    // Check different ways the period might be stored
+    if (elements.periodSelect) {
+      // Try to get from the select element directly
+      period = elements.periodSelect.value || 'AM';
+      
+      // If using custom select, also try to find selected radio
+      const periodRadios = elements.calendar.querySelectorAll(`input[name="${elements.container.id}-period"]:checked`);
+      if (periodRadios.length > 0) {
+        period = periodRadios[0].value;
+      }
+      
+      // Try to find from select value attribute
+      const selectedItems = elements.calendar.querySelectorAll(`.period-select label[role="option"] input:checked`);
+      if (selectedItems.length > 0) {
+        period = selectedItems[0].value;
+      }
+    }
+    
+    // Fallback to data attribute
+    if (!period || (period !== 'AM' && period !== 'PM')) {
+      period = elements.container.dataset.period || 'AM';
+    }
     
     // Convert to 24-hour time
     let hours24 = hours;
