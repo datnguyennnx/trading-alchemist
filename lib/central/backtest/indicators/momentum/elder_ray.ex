@@ -31,7 +31,7 @@ defmodule Central.Backtest.Indicators.Momentum.ElderRay do
   Calculates the Elder-Ray Index.
   """
   def calculate(high, low, period \\ 13) do
-    with true <- validate_inputs(high, low, period),
+    with :ok <- validate_inputs(high, low, period),
          ema <- MovingAverage.ema(high, period),
          bull_power <- calculate_bull_power(high, ema),
          bear_power <- calculate_bear_power(low, ema) do
@@ -50,7 +50,7 @@ defmodule Central.Backtest.Indicators.Momentum.ElderRay do
       period <= 0 ->
         {:error, "Period must be greater than 0"}
       true ->
-        true
+        :ok
     end
   end
 
@@ -102,7 +102,11 @@ defmodule Central.Backtest.Indicators.Momentum.ElderRay do
   end
 
   defp find_divergences_in_window(window, index) do
-    {highs, lows, bull_powers, bear_powers} = Enum.unzip(window)
+    # Extract the four lists manually instead of using Enum.unzip
+    highs = Enum.map(window, fn {h, _, _, _} -> h end)
+    lows = Enum.map(window, fn {_, l, _, _} -> l end)
+    bull_powers = Enum.map(window, fn {_, _, bp, _} -> bp end)
+    bear_powers = Enum.map(window, fn {_, _, _, brp} -> brp end)
 
     all_divergences = []
 

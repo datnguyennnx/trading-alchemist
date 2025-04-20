@@ -98,7 +98,7 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   """
   def volume_roc_raw(volume, period)
       when is_list(volume) and is_number(hd(volume)) do
-    with {:ok, _} <- validate_inputs(volume, period) do
+    with :ok <- validate_inputs(volume, period) do
       roc = volume
         |> Enum.chunk_every(period + 1, 1, :discard)
         |> Enum.map(fn chunk ->
@@ -147,7 +147,7 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   """
   def relative_volume_raw(volume, period)
       when is_list(volume) and is_number(hd(volume)) do
-    with {:ok, _} <- validate_inputs(volume, period),
+    with :ok <- validate_inputs(volume, period),
          {:ok, volume_avg} <- calculate_ma(volume, period, :sma) do
 
       rel_volume = Enum.zip(volume, volume_avg)
@@ -195,7 +195,7 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   """
   def up_down_volume_raw(volume, prices)
       when is_list(volume) and is_list(prices) do
-    with {:ok, _} <- validate_volume_prices(volume, prices) do
+    with :ok <- validate_volume_prices(volume, prices) do
       {up_vol, down_vol} = prices
         |> Enum.chunk_every(2, 1, :discard)
         |> Enum.zip(Enum.drop(volume, 1))
@@ -253,7 +253,7 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   """
   def volume_breakouts_raw(volume, period, threshold)
       when is_list(volume) and is_number(hd(volume)) do
-    with {:ok, _} <- validate_inputs(volume, period),
+    with :ok <- validate_inputs(volume, period),
          {:ok, volume_avg} <- calculate_ma(volume, period, :sma) do
 
       breakouts = Enum.zip(volume, volume_avg)
@@ -305,7 +305,7 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   """
   def volume_price_confirmation_raw(volume, prices, period, rel_vol_threshold)
       when is_list(volume) and is_list(prices) do
-    with {:ok, _} <- validate_volume_prices(volume, prices),
+    with :ok <- validate_volume_prices(volume, prices),
          {:ok, rel_volume} <- relative_volume_raw(volume, period) do
 
       # Get price changes
@@ -371,7 +371,7 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   """
   def volume_climax_raw(volume, prices, period, volume_threshold, trend_lookback)
       when is_list(volume) and is_list(prices) do
-    with {:ok, _} <- validate_volume_prices(volume, prices),
+    with :ok <- validate_volume_prices(volume, prices),
          {:ok, rel_volume} <- relative_volume_raw(volume, period) do
 
       # Determine price trends
@@ -441,7 +441,7 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   """
   def volume_force_raw(volume, prices)
       when is_list(volume) and is_list(prices) and is_number(hd(volume)) do
-    with {:ok, _} <- validate_volume_prices(volume, prices) do
+    with :ok <- validate_volume_prices(volume, prices) do
       # Calculate percentage price changes
       price_changes = prices
         |> Enum.chunk_every(2, 1, :discard)
@@ -492,7 +492,7 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
       length(volume) < period ->
         {:error, "Not enough data points for the given period"}
       true ->
-        {:ok, true}
+        :ok
     end
   end
 
@@ -505,7 +505,7 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
       length(volume) < 2 ->
         {:error, "At least 2 data points are required"}
       true ->
-        {:ok, true}
+        :ok
     end
   end
 

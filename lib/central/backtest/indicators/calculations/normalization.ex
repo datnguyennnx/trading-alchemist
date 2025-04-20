@@ -23,7 +23,7 @@ defmodule Central.Backtest.Indicators.Calculations.Normalization do
     range = Decimal.sub(max_value, min_value)
 
     if Decimal.equal?(range, Decimal.new(0)) do
-      List.duplicate(Decimal.new(0.5), length(values))
+      List.duplicate(Decimal.new("0.5"), length(values))
     else
       Enum.map(values, fn value ->
         Decimal.div(Decimal.sub(value, min_value), range)

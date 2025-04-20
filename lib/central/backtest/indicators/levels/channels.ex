@@ -43,7 +43,7 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
 
   def linear_regression_channel(prices, period, deviation_multiplier)
       when is_list(prices) and is_number(period) and is_number(deviation_multiplier) do
-    with true <- validate_inputs(prices, period),
+    with :ok <- validate_inputs(prices, period),
          {:ok, {_slope, _intercept, fitted_values}} <- calculate_linear_regression(prices, period) do
 
       # Calculate standard error for the channel width
@@ -115,7 +115,7 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
   """
   def raff_regression_channel(prices, period)
       when is_list(prices) and is_number(period) do
-    with true <- validate_inputs(prices, period),
+    with :ok <- validate_inputs(prices, period),
          {:ok, {_slope, _intercept, fitted_values}} <- calculate_linear_regression(prices, period) do
 
       # Calculate max deviations above and below the regression line
@@ -184,7 +184,7 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
   - {:error, reason} on failure
   """
   def parallel_channel(high, low, period \\ 20) do
-    with true <- validate_high_low(high, low, period) do
+    with :ok <- validate_high_low(high, low, period) do
       # Find pivot points (highs and lows)
       pivots = find_pivot_points(high, low, period)
 
@@ -211,7 +211,7 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
   - {:error, reason} on failure
   """
   def trend_channel(high, low, close, period \\ 20) do
-    with true <- validate_hlc(high, low, close, period) do
+    with :ok <- validate_hlc(high, low, close, period) do
       # Calculate the trend angle (using linear regression on close prices)
       {:ok, {slope, intercept, mid_line}} = calculate_linear_regression(close, period)
 
@@ -270,7 +270,7 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
 
   def envelope_channel(prices, period, percentage, ma_type)
       when is_list(prices) and is_number(period) do
-    with true <- validate_inputs(prices, period) do
+    with :ok <- validate_inputs(prices, period) do
       # Calculate the middle line (moving average)
       {:ok, mid_line} = case ma_type do
         :sma -> Central.Backtest.Indicators.Trend.MovingAverage.calculate(prices, period, :simple)
@@ -438,33 +438,37 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
       length(prices) < period ->
         {:error, "Not enough data points for the given period"}
       true ->
-        true
+        :ok
     end
   end
 
   defp validate_high_low(high, low, period) do
     cond do
-      not (is_list(high) and is_list(low)) ->
+      not is_list(high) or not is_list(low) ->
         {:error, "High and low must be lists"}
       length(high) != length(low) ->
-        {:error, "High and low must have the same length"}
+        {:error, "High and low lists must have the same length"}
+      period <= 0 ->
+        {:error, "Period must be greater than 0"}
       length(high) < period ->
         {:error, "Not enough data points for the given period"}
       true ->
-        true
+        :ok
     end
   end
 
   defp validate_hlc(high, low, close, period) do
     cond do
-      not (is_list(high) and is_list(low) and is_list(close)) ->
+      not is_list(high) or not is_list(low) or not is_list(close) ->
         {:error, "High, low, and close must be lists"}
       length(high) != length(low) or length(high) != length(close) ->
-        {:error, "High, low, and close must have the same length"}
+        {:error, "High, low, and close lists must have the same length"}
+      period <= 0 ->
+        {:error, "Period must be greater than 0"}
       length(high) < period ->
         {:error, "Not enough data points for the given period"}
       true ->
-        true
+        :ok
     end
   end
 
