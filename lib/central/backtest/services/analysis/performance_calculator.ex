@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Services.Performance do
+defmodule Central.Backtest.Services.Analysis.PerformanceCalculator do
   @moduledoc """
   Service for calculating performance metrics for backtests.
   Includes profit/loss statistics, drawdown metrics, and other trading performance indicators.
@@ -6,8 +6,8 @@ defmodule Central.Backtest.Services.Performance do
 
   require Logger
   alias Central.Backtest.Schemas.Backtest
-  alias Central.Backtest.Services.RiskManager
-  alias Central.Utils.TradeAdapter
+  alias Central.Backtest.Services.Risk.RiskManager
+  alias Central.Backtest.Utils.TradeAdapter
   alias Central.Repo
 
   @doc """

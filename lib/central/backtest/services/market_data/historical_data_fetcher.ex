@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Services.HistoricalDataFetcher do
+defmodule Central.Backtest.Services.MarketData.HistoricalDataFetcher do
   @moduledoc """
   Service for fetching specific historical data ranges on demand.
   Used primarily by the backtest system to ensure all required data is available.
@@ -7,7 +7,7 @@ defmodule Central.Backtest.Services.HistoricalDataFetcher do
   require Logger
   alias Central.Repo
   alias Central.Backtest.Schemas.MarketData
-  alias Central.Backtest.Services.Binance.Client, as: BinanceClient
+  alias Central.Backtest.Services.Exchange.Binance.Client, as: BinanceClient
 
   # Maximum number of candles per API request (Binance limit)
   @max_candles_per_request 1000

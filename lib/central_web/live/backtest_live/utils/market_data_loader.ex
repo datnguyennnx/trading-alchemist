@@ -2,10 +2,10 @@ defmodule CentralWeb.BacktestLive.Utils.MarketDataLoader do
   require Logger
   import Ecto.Query
 
-  alias Central.Backtest.Contexts.MarketData, as: MarketDataContext
+  alias Central.Backtest.Contexts.MarketDataContext
   alias Central.Backtest.Schemas.MarketData, as: MarketDataSchema
-  alias Central.Backtest.Workers.MarketSync
-  alias Central.Backtest.Services.HistoricalDataFetcher
+  alias Central.Backtest.Workers.MarketSyncWorker
+  alias Central.Backtest.Services.MarketData.HistoricalDataFetcher
   alias Central.Repo
   alias CentralWeb.BacktestLive.Utils.DataFormatter
 
@@ -166,7 +166,7 @@ defmodule CentralWeb.BacktestLive.Utils.MarketDataLoader do
   defp try_standard_sync(symbol, timeframe) do
     try do
       # Trigger market sync for this specific symbol and timeframe
-      MarketSync.trigger_sync(symbol, timeframe)
+      MarketSyncWorker.trigger_sync(symbol, timeframe)
       Logger.info("Standard sync triggered for #{symbol}/#{timeframe}")
 
       # Give it a moment to fetch

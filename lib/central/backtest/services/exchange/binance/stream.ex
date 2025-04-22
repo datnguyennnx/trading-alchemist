@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Services.Binance.Stream do
+defmodule Central.Backtest.Services.Exchange.Binance.Stream do
   @moduledoc """
   GenServer for handling WebSocket connections to Binance streams.
   Manages connection lifecycle, subscription, and broadcasting of data.

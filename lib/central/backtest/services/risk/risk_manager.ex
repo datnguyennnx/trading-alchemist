@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Services.RiskManager do
+defmodule Central.Backtest.Services.Risk.RiskManager do
   @moduledoc """
   Service for managing risk in trading strategies.
   Calculates position sizes, stop-loss levels, and risk metrics.
@@ -6,7 +6,7 @@ defmodule Central.Backtest.Services.RiskManager do
 
   require Logger
   alias Central.Backtest.Schemas.Backtest
-  alias Central.Utils.TradeAdapter
+  alias Central.Backtest.Utils.TradeAdapter
   alias Central.Repo
   alias Central.Backtest.Utils.BacktestUtils, as: Utils
 

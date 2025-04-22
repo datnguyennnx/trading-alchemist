@@ -14,7 +14,7 @@ defmodule CentralWeb.BacktestLive.ChartLive do
   alias CentralWeb.BacktestLive.Components.ChartControls
 
   # Context aliases used directly in this module
-  alias Central.Backtest.Contexts.MarketData, as: MarketDataContext
+  alias Central.Backtest.Contexts.MarketDataContext
 
   def mount(_params, session, socket) do
     # Get available symbols from the context

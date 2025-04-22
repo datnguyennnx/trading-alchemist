@@ -20,11 +20,11 @@ defmodule Central.Application do
       # Task Supervisor for background jobs
       {Task.Supervisor, name: Central.TaskSupervisor},
       # Initialize the market data cache
-      {Task, fn -> Central.Backtest.Contexts.MarketData.init_cache() end},
+      {Task, fn -> Central.Backtest.Contexts.MarketDataContext.init_cache() end},
       # Start the market data sync worker
-      Central.Backtest.Workers.MarketSync,
+      Central.Backtest.Workers.MarketSyncWorker,
       # Start the BacktestRunner GenServer
-      {Central.Backtest.Workers.BacktestRunner, []},
+      {Central.Backtest.Workers.BacktestRunnerWorker, []},
       # Start to serve requests, typically the last entry
       CentralWeb.Endpoint,
       TwMerge.Cache

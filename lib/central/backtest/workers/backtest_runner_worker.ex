@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Workers.BacktestRunner do
+defmodule Central.Backtest.Workers.BacktestRunnerWorker do
   @moduledoc """
   Background worker for executing backtests asynchronously.
 
@@ -11,8 +11,11 @@ defmodule Central.Backtest.Workers.BacktestRunner do
 
   use GenServer
   require Logger
+  import Ecto.Query
 
-  alias Central.Backtest.Services.{StrategyExecutor, Performance, RiskManager}
+  alias Central.Backtest.Services.Execution.StrategyExecutor
+  alias Central.Backtest.Services.Analysis.PerformanceCalculator, as: Performance
+  alias Central.Backtest.Services.Risk.RiskManager
   alias Central.Backtest.Schemas.Backtest
   alias Central.Repo
   alias Central.Config.DateTimeConfig
@@ -394,8 +397,6 @@ defmodule Central.Backtest.Workers.BacktestRunner do
   end
 
   defp recover_pending_backtests do
-    import Ecto.Query
-
     # Find all pending or running backtests that need to be restarted
     query =
       from b in Backtest,

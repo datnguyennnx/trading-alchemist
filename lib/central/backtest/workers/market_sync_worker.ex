@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Workers.MarketSync do
+defmodule Central.Backtest.Workers.MarketSyncWorker do
   @moduledoc """
   GenServer for synchronizing market data in the background.
   Periodically fetches new candles for configured symbols and timeframes.
@@ -8,7 +8,7 @@ defmodule Central.Backtest.Workers.MarketSync do
   require Logger
   import Ecto.Query
 
-  alias Central.Backtest.Services.Binance.Client, as: BinanceClient
+  alias Central.Backtest.Services.Exchange.Binance.Client, as: BinanceClient
   alias Central.Backtest.Schemas.MarketData
   alias Central.Config.DateTime, as: DateTimeConfig
   alias Central.Repo

@@ -40,7 +40,7 @@ defmodule Central.Backtest.Contexts.BacktestContext do
     from(b in Backtest,
       order_by: [desc: b.inserted_at],
       limit: ^limit,
-      preload: [:strategy]
+      preload: [:strategy, :trades]
     )
     |> Repo.all()
   end

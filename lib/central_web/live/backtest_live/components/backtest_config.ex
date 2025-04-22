@@ -260,7 +260,7 @@ defmodule CentralWeb.BacktestLive.Components.BacktestConfig do
     case BacktestContext.create_backtest(backtest_params) do
       {:ok, backtest} ->
         # Start backtest in background worker
-        Central.Backtest.Workers.BacktestRunner.perform_async(%{
+        Central.Backtest.Workers.BacktestRunnerWorker.perform_async(%{
           "backtest_id" => backtest.id
         })
 

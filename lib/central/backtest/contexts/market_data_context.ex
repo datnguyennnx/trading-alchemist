@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Contexts.MarketData do
+defmodule Central.Backtest.Contexts.MarketDataContext do
   @moduledoc """
   Context for working with market data.
   Provides functions for querying and caching market data.
@@ -7,6 +7,7 @@ defmodule Central.Backtest.Contexts.MarketData do
   import Ecto.Query
   alias Central.Backtest.Schemas.MarketData
   alias Central.Repo
+  alias Central.Backtest.Workers.MarketSyncWorker
 
   # In-memory cache using ETS
   @ets_table :market_data_cache
@@ -18,8 +19,13 @@ defmodule Central.Backtest.Contexts.MarketData do
 
   # Initialize the ETS table for caching
   def init_cache do
+    try do
     :ets.new(@ets_table, [:set, :public, :named_table, read_concurrency: true])
     :ok
+    rescue
+      # Table might already exist
+      ArgumentError -> :ok
+    end
   end
 
   @doc """
@@ -64,6 +70,13 @@ defmodule Central.Backtest.Contexts.MarketData do
 
         symbols
     end
+  end
+
+  @doc """
+  Alias for list_symbols. Returns available symbols for backtesting.
+  """
+  def get_available_symbols do
+    list_symbols()
   end
 
   @doc """
@@ -113,6 +126,13 @@ defmodule Central.Backtest.Contexts.MarketData do
 
         timeframes
     end
+  end
+
+  @doc """
+  Alias for list_timeframes. Returns available timeframes for backtesting.
+  """
+  def get_available_timeframes do
+    list_timeframes()
   end
 
   @doc """
@@ -281,6 +301,21 @@ defmodule Central.Backtest.Contexts.MarketData do
       timeframes: timeframe_count,
       date_range: %{min: min_date, max: max_date}
     }
+  end
+
+  @doc """
+  Triggers a sync for a specific symbol and timeframe.
+  Delegates to the MarketSyncWorker.
+  """
+  def trigger_sync(symbol, timeframe) do
+    MarketSyncWorker.trigger_sync(symbol, timeframe)
+  end
+
+  @doc """
+  Gets the current status of the market sync worker.
+  """
+  def get_sync_status do
+    MarketSyncWorker.get_status()
   end
 
   @doc """

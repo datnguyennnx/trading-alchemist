@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Services.DataProcessor do
+defmodule Central.Backtest.Services.MarketData.DataProcessor do
   @moduledoc """
   Responsible for transforming, normalizing, and validating market data.
   """

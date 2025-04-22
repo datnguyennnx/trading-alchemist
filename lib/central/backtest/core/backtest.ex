@@ -1,4 +1,4 @@
-defmodule Central.Backtest do
+defmodule Central.Backtest.Core.Backtest do
   @moduledoc """
   The Backtest context provides the core functionality for backtesting trading
   strategies against historical market data, analyzing results, and optimizing strategies.
@@ -7,12 +7,9 @@ defmodule Central.Backtest do
   and provides a clear API for the rest of the application to interact with.
   """
 
-  alias Central.Backtest.Services.{
-    RiskManager,
-    Performance
-  }
-
-  alias Central.Backtest.Workers.BacktestRunner
+  alias Central.Backtest.Services.Risk.RiskManager
+  alias Central.Backtest.Services.Analysis.PerformanceCalculator
+  alias Central.Backtest.Workers.BacktestRunnerWorker
 
   # Public API
 
@@ -28,7 +25,7 @@ defmodule Central.Backtest do
       :ok
   """
   def queue_backtest(backtest_id, options \\ %{}) do
-    BacktestRunner.perform_async(Map.merge(%{"backtest_id" => backtest_id}, options))
+    BacktestRunnerWorker.perform_async(Map.merge(%{"backtest_id" => backtest_id}, options))
     :ok
   end
 
@@ -43,7 +40,7 @@ defmodule Central.Backtest do
       :ok
   """
   def cancel_backtest(backtest_id) do
-    BacktestRunner.cancel_backtest(backtest_id)
+    BacktestRunnerWorker.cancel_backtest(backtest_id)
     :ok
   end
 
@@ -58,7 +55,7 @@ defmodule Central.Backtest do
       %{running_count: 2, metrics: %{...}}
   """
   def get_runner_status do
-    BacktestRunner.get_state()
+    BacktestRunnerWorker.get_state()
   end
 
   @doc """
@@ -76,7 +73,7 @@ defmodule Central.Backtest do
       {:ok, %{win_rate: 65.0, profit_factor: 2.3, ...}}
   """
   def reprocess_metrics(backtest_id) do
-    with {:ok, performance} <- Performance.generate_performance_summary(backtest_id),
+    with {:ok, performance} <- PerformanceCalculator.generate_performance_summary(backtest_id),
          {:ok, risk} <- RiskManager.update_risk_metrics(backtest_id) do
       {:ok, Map.merge(performance, risk)}
     else

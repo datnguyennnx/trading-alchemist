@@ -6,7 +6,7 @@ defmodule CentralWeb.BacktestLive.Components.BacktestTest do
 
   use CentralWeb, :live_component
   require Logger
-  alias Central.Backtest.Workers.BacktestRunner
+  alias Central.Backtest.Workers.BacktestRunnerWorker
   alias Central.Backtest.Contexts.BacktestContext
   alias Phoenix.PubSub
 
@@ -103,7 +103,7 @@ defmodule CentralWeb.BacktestLive.Components.BacktestTest do
 
   def update(assigns, socket) do
     # Get the current state of the backtest runner
-    runner_state = BacktestRunner.get_state()
+    runner_state = BacktestRunnerWorker.get_state()
 
     {:ok,
      socket
@@ -114,7 +114,7 @@ defmodule CentralWeb.BacktestLive.Components.BacktestTest do
   end
 
   def handle_event("check_runner_state", _, socket) do
-    runner_state = BacktestRunner.get_state()
+    runner_state = BacktestRunnerWorker.get_state()
     {:noreply, assign(socket, :runner_state, runner_state)}
   end
 

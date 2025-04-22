@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Services.RuleEvaluator do
+defmodule Central.Backtest.Services.Execution.RuleEvaluator do
   @moduledoc """
   Evaluates trading rules and conditions for strategy execution during backtesting.
   Provides functions for processing entry and exit conditions defined in strategies.

@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Services.TradeManager do
+defmodule Central.Backtest.Services.Execution.TradeManager do
   @moduledoc """
   Manages trade operations for backtesting, including opening and closing positions,
   calculating profit/loss, and tracking trade statistics.

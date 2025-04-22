@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Services.MarketDataHandler do
+defmodule Central.Backtest.Services.MarketData.MarketDataHandler do
   @moduledoc """
   Handles market data operations for backtesting, including data fetching,
   parsing, and formatting for strategy execution.
@@ -7,8 +7,8 @@ defmodule Central.Backtest.Services.MarketDataHandler do
   require Logger
   # Remove unused alias
   # alias Central.Utils.DatetimeUtils
-  alias Central.Backtest.Contexts.MarketData, as: MarketDataContext
-  alias Central.Backtest.Services.HistoricalDataFetcher
+  alias Central.Backtest.Contexts.MarketDataContext
+  alias Central.Backtest.Services.MarketData.HistoricalDataFetcher
   alias Central.Backtest.Contexts.BacktestContext
   alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
@@ -93,7 +93,7 @@ defmodule Central.Backtest.Services.MarketDataHandler do
   #   - {:missing, ranges} where ranges is a list of {start_time, end_time} tuples representing missing data
   defp check_data_availability(symbol, timeframe, start_time, end_time) do
     # Get the current data range for this symbol/timeframe
-    {db_start, db_end} = MarketDataContext.get_date_range(symbol, timeframe)
+    {db_start, db_end} = Central.Backtest.Contexts.MarketDataContext.get_date_range(symbol, timeframe)
 
     # Initialize empty list for missing ranges
     missing_ranges_list = []

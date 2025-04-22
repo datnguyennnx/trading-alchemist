@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Services.StrategyExecutor do
+defmodule Central.Backtest.Services.Execution.StrategyExecutor do
   @moduledoc """
   Executes trading strategies against historical market data for backtesting.
 
@@ -12,12 +12,10 @@ defmodule Central.Backtest.Services.StrategyExecutor do
 
   alias Central.Backtest.Contexts.BacktestContext
 
-  alias Central.Backtest.Services.{
-    RiskManager,
-    TradeManager,
-    RuleEvaluator,
-    MarketDataHandler
-  }
+  alias Central.Backtest.Services.Risk.RiskManager
+  alias Central.Backtest.Services.Execution.TradeManager
+  alias Central.Backtest.Services.Execution.RuleEvaluator
+  alias Central.Backtest.Services.MarketData.MarketDataHandler
 
   alias Central.Backtest.Utils.DatetimeUtils
   alias Central.Repo

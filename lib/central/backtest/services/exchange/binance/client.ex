@@ -1,4 +1,4 @@
-defmodule Central.Backtest.Services.Binance.Client do
+defmodule Central.Backtest.Services.Exchange.Binance.Client do
   @moduledoc """
   Client for interacting with the Binance REST API.
   Handles rate limiting, error handling, and retry logic.
