@@ -1,355 +1,142 @@
-/* Keep the Tailwind imports */
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+/* tailwind.css - Tailwind CSS v4 Optimized CSS-First Setup */
 
-@layer base {
-  /* --- Theme Variables (Keep as is) --- */
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%; /* Used for focus rings */
-    --radius: 0.3rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+/* Core Import */
+@import "tailwindcss";
 
-    /* --- State/Semantic Colors --- */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
-    --info: 217 92% 51%;
-    --info-foreground: 0 0% 98%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 98%;
-    --error: 0 84% 60%;
-    --error-foreground: 0 0% 98%;
+/* Official Plugins */
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
+@plugin "@tailwindcss/animate";
 
-    /* --- DateTime Picker Variables (Mapped where possible, kept for customization) --- */
-    --dtp-bg-color: hsl(var(--popover));           /* Mapped to popover bg */
-    --dtp-text-color: hsl(var(--popover-foreground));/* Mapped to popover text */
-    --dtp-border-color: hsl(var(--border));         /* Mapped to border */
-    --dtp-primary-color: hsl(var(--primary));       /* Mapped to primary */
-    --dtp-hover-bg-color: hsl(var(--accent));       /* Mapped to accent bg */
-    --dtp-secondary-text-color: hsl(var(--muted-foreground)); /* Mapped to muted text */
-    --dtp-input-bg: hsl(var(--background));             /* Mapped to input bg */
-    --dtp-selected-text-color: hsl(var(--primary-foreground));
-    --dtp-border-radius: 0.375rem;              
-    --dtp-font-family: sans-serif;                
+/* Theme Variables (Light & Dark) */
+@theme root {
+  /* Sizing & Radius */
+  --radius: 0.3rem;
 
-    /* --- Sidebar Variables (Light Theme - Keep as is) --- */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+  /* Palette */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
 
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%; /* Used for focus rings */
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+  --card: var(--background);
+  --card-foreground: var(--foreground);
+  --popover: var(--background);
+  --popover-foreground: var(--foreground);
 
-    /* --- State/Semantic Colors (Dark Theme) --- */
-    --success: 142 76% 45%;
-    --success-foreground: 0 0% 98%;
-    --info: 217 92% 60%;
-    --info-foreground: 0 0% 98%;
-    --warning: 38 92% 60%;
-    --warning-foreground: 0 0% 98%;
-    --error: 0 74% 50%;
-    --error-foreground: 0 0% 98%;
+  --primary: oklch(0.21 0.006 285.885);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: var(--primary);
 
-    /* --- Sidebar Variables (Dark Theme - Keep as is) --- */
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+  --muted: var(--secondary);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: var(--secondary);
+  --accent-foreground: var(--primary);
 
-  * {
-    @apply border-border !important;
-  }
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: var(--primary-foreground);
 
-  /* --- Base Body Styles --- */
-  body {
-    @apply bg-background text-foreground;
-  }
+  /* Border & Rings */
+  --border: oklch(0.92 0.004 286.32);
+  --input: var(--border);
+  --ring: oklch(0.705 0.015 286.067);
+
+  /* Charts */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+
+  /* States */
+  --success: oklch(0.563 0.191 142.105);
+  --success-foreground: var(--primary-foreground);
+  --info: oklch(0.584 0.224 231.648);
+  --info-foreground: var(--primary-foreground);
+  --warning: oklch(0.8 0.199 83.868);
+  --warning-foreground: var(--primary-foreground);
+  --error: var(--destructive);
+  --error-foreground: var(--primary-foreground);
+
+  /* DateTime Picker */
+  --dtp-border-radius: 0.375rem;
+  --dtp-font-family: sans-serif;
 }
 
-/* --- Component Styles --- */
+@theme .dark {
+  /* Invert base & foreground */
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+
+  /* Adjust semantic & accents for dark */
+  --card: var(--background);
+  --card-foreground: var(--foreground);
+  --popover: var(--background);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.92 0.004 286.32);
+  --primary-foreground: var(--foreground);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: var(--foreground);
+
+  --muted: var(--secondary);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: var(--secondary);
+  --accent-foreground: var(--foreground);
+
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: var(--foreground);
+
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.552 0.016 285.938);
+}
+
+/* Base Resets */
+@layer base {
+  *, ::before, ::after { @apply border-border !important; }
+  body { @apply bg-background text-foreground font-sans; }
+}
+
+/* Components */
 @layer components {
+  /* Animations */
+  @keyframes appear { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+  .animate-appear { animation: appear 0.2s ease-out forwards; }
 
-  /* --- Animation Classes --- */
-  @keyframes appear {
-    0% {
-      opacity: 0;
-      transform: scale(0.8);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
+  /* TradingView Chart Wrapper */
+  .tradingview-chart { @apply relative h-full w-full overflow-hidden rounded-[--radius] transition-all duration-200 ease-in-out; }
 
-  .animate-appear {
-    animation: appear 0.2s ease-out forwards;
-  }
+  /* Price Cards */
+  .price-card { @apply rounded-[--radius] border border-border bg-card p-3 transition-all duration-200 ease-in-out; }
+  .price-card:hover { @apply shadow-md hover:-translate-y-px; }
+  .price-label { @apply mb-1 text-sm text-muted-foreground; }
+  .price-value { @apply text-base font-medium; }
+  .price-value.up { @apply text-[hsl(var(--success))]; }
+  .price-value.down { @apply text-[hsl(var(--error))]; }
 
-  /* --- TradingView Chart Component Styles --- */
-  .tradingview-chart {
-    @apply relative h-full w-full overflow-hidden rounded-[--radius] transition-all duration-200 ease-in-out;
-  }
-
-  .price-card {
-    @apply rounded-[--radius] border border-border bg-card p-3 transition-all duration-200 ease-in-out;
-  }
-
-  .price-card:hover {
-    @apply shadow-md hover:-translate-y-px;
-  }
-
-  .price-label {
-    @apply mb-1 text-sm text-muted-foreground;
-  }
-
-  .price-value {
-    @apply text-base font-medium;
-  }
-
-  .price-value.up {
-    @apply text-[hsl(var(--success))];
-  }
-
-  .price-value.down {
-    @apply text-[hsl(var(--error))];
-  }
-
-  /* --- DateTime Picker Styles --- */
-  .date_time_picker {
-    @apply relative font-sans text-popover-foreground;
-  }
-
-  /* Input Display */
+  /* DateTime Picker */
+  .date_time_picker { @apply relative text-popover-foreground; }
   .date-time-field .input-wrapper {
-    @apply cursor-pointer rounded-[--dtp-border-radius] border border-border p-2 px-3 transition-colors duration-200 ease-in-out;
+    @apply cursor-pointer rounded-[--dtp-border-radius] border border-border px-3 py-2 transition-colors duration-200 ease-in-out;
   }
-  
-  .dark .date-time-field .input-wrapper {
-    @apply bg-neutral-800 border-neutral-700;
-  }
-
-  .date-time-field .input-wrapper:hover {
-    @apply border-primary;
-  }
-  
-  .dark .date-time-field .input-wrapper:hover {
-    @apply border-neutral-600;
-  }
-
-  .date-time-field .display-value {
-    @apply flex items-center justify-between;
-  }
-
-  .date-time-field .display-value span {
-    @apply flex-grow;
-  }
-
-  .date-time-field .display-value svg {
-    @apply ml-2 h-4 w-4 stroke-muted-foreground;
-  }
-  
-  .dark .date-time-field .display-value svg {
-    @apply stroke-neutral-400;
-  }
-
-  /* Dropdown */
-  .calendar-dropdown {
-    @apply absolute z-10 mt-1 hidden w-max rounded-[--dtp-border-radius] border border-border bg-popover p-3 shadow-md;
-  }
-  
-  .dark .calendar-dropdown {
-    @apply bg-neutral-800 border-neutral-700;
-  }
-
-  .calendar-dropdown.show {
-    @apply block;
-  }
-
-  /* Calendar Header */
-  .calendar-header {
-    @apply mb-3 flex items-center justify-between;
-  }
-
-  .calendar-header .current-month {
-    @apply font-semibold;
-  }
-
-  .calendar-header .nav-btn {
-    @apply cursor-pointer rounded-[--dtp-border-radius] p-1 text-popover-foreground transition-colors;
-  }
-  .calendar-header .nav-btn:hover {
-     @apply bg-accent;
-  }
-  .calendar-header .nav-btn:focus-visible {
-     @apply bg-accent outline-none ring-2 ring-ring ring-offset-2;
-  }
-  .calendar-header .nav-btn svg {
-    @apply block h-4 w-4 stroke-current;
-  }
-
-  /* Calendar Grid */
-  .calendar-grid {
-    @apply mb-3;
-  }
-
-  .weekdays {
-    @apply mb-1 grid grid-cols-7 text-center;
-  }
-
-  .weekday {
-    @apply p-1 text-xs font-semibold text-muted-foreground;
-  }
-  
-  .dark .weekday {
-    @apply text-neutral-400;
-  }
-
-  .days {
-    @apply grid grid-cols-7 gap-[4px];
-  }
-
-  .day-btn {
-    @apply w-full min-w-[32px] cursor-pointer rounded-[--dtp-border-radius] px-0 py-2 text-center text-sm leading-tight text-popover-foreground transition-colors duration-200 ease-in-out;
-  }
-  
-  .dark .day-btn {
-    @apply text-neutral-300;
-  }
-  
-  .day-btn:not(:disabled):not(.empty):hover {
-     @apply bg-accent;
-  }
-  
-  .dark .day-btn:not(:disabled):not(.empty):hover {
-    @apply bg-neutral-700 text-neutral-100;
-  }
-   
-  .day-btn:focus-visible {
-     @apply bg-accent outline-none ring-2 ring-ring ring-offset-2;
-   }
-
-  .day-btn.other-month {
-    @apply text-muted-foreground;
-  }
-
-  .day-btn.today {
-    @apply border-border;
-  }
-  
-  .dark .day-btn.today {
-    @apply border-neutral-600 text-neutral-200;
-  }
-
-  .day-btn.selected {
-    @apply border-primary bg-primary text-primary-foreground hover:bg-primary/90;
-  }
-  
-  .dark .day-btn.selected {
-    @apply bg-neutral-600 border-neutral-600 text-white hover:bg-neutral-500;
-  }
-  
-  .day-btn.selected:focus-visible {
-     @apply bg-primary text-primary-foreground ring-2 ring-ring ring-offset-2 ring-offset-popover;
-  }
-  
-  .day-btn.selected:hover {
-      @apply bg-primary/90;
-  }
-
-  .day-btn:disabled {
-    @apply cursor-not-allowed text-muted-foreground opacity-50;
-  }
-  
-  .day-btn.empty {
-    @apply cursor-default bg-transparent hover:bg-transparent;
-  }
+  .date-time-field .display-value { @apply flex items-center justify-between; }
+  .calendar-dropdown { @apply absolute z-10 mt-1 hidden w-max rounded-[--dtp-border-radius] border border-border bg-popover p-3 shadow-md; }
+  .calendar-dropdown.show { @apply block; }
+  .calendar-header { @apply mb-3 flex items-center justify-between; }
+  .weekdays { @apply mb-1 grid grid-cols-7 text-center; }
+  .weekday { @apply p-1 text-xs font-semibold text-muted-foreground; }
+  .days { @apply grid grid-cols-7 gap-1; }
+  .day-btn { @apply w-full min-w-[32px] cursor-pointer rounded-[--dtp-border-radius] py-2 text-center text-sm transition-colors; }
+  .day-btn:hover:not(:disabled):not(.empty) { @apply bg-accent; }
+  .day-btn.today { @apply border-border; }
+  .day-btn.selected { @apply border-primary bg-primary text-primary-foreground hover:bg-primary/90; }
+  .day-btn:disabled { @apply cursor-not-allowed opacity-50; }
 
   /* Time Picker */
-  .time-picker {
-    @apply mt-3 border-t border-border pt-3;
-  }
-  
-  .dark .time-picker {
-    @apply border-neutral-700;
-  }
-
-  .time-selector {
-    @apply flex items-center justify-center gap-2;
-  }
-
+  .time-picker { @apply mt-3 border-t border-border pt-3; }
+  .time-selector { @apply flex items-center justify-center gap-2; }
   .time-unit select {
-    @apply h-9 cursor-pointer appearance-none rounded-[--dtp-border-radius] border border-border px-2.5 py-1.5 text-center text-sm text-popover-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+    @apply h-9 rounded-[--dtp-border-radius] border border-border px-2.5 py-1.5 text-center text-sm appearance-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
   }
-  
-  .dark .time-unit select {
-    @apply bg-neutral-700 text-neutral-200 border-0;
-  }
-  
-  .time-unit select:hover {
-     @apply border-primary;
-  }
-
-  .time-separator {
-    @apply font-bold text-muted-foreground;
-  }
-  
-  .dark .time-separator {
-    @apply text-neutral-300;
-  }
+  .time-separator { @apply font-bold text-muted-foreground; }
 }
