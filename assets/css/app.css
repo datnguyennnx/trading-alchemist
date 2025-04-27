@@ -1,4 +1,4 @@
-/* tailwind.css - Tailwind CSS v4 Optimized CSS-First Setup */
+/* assets/css/app.css - Tailwind CSS v4 Custom Setup with CSS Variables via Arbitrary Values */
 
 /* Core Import */
 @import "tailwindcss";
@@ -6,137 +6,152 @@
 /* Official Plugins */
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
-@plugin "@tailwindcss/animate";
 
-/* Theme Variables (Light & Dark) */
+/* Animation Plugin */
+@import "tw-animate-css";
+
+/* --- Theme Variables (Light & Dark) --- */
 @theme root {
-  /* Sizing & Radius */
   --radius: 0.3rem;
-
-  /* Palette */
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
-
-  --card: var(--background);
-  --card-foreground: var(--foreground);
-  --popover: var(--background);
-  --popover-foreground: var(--foreground);
-
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
   --primary: oklch(0.21 0.006 285.885);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: var(--primary);
-
-  --muted: var(--secondary);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
   --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: var(--secondary);
-  --accent-foreground: var(--primary);
-
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.21 0.006 285.885);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: var(--primary-foreground);
-
-  /* Border & Rings */
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.92 0.004 286.32);
-  --input: var(--border);
   --ring: oklch(0.705 0.015 286.067);
-
-  /* Charts */
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-
-  /* States */
-  --success: oklch(0.563 0.191 142.105);
-  --success-foreground: var(--primary-foreground);
-  --info: oklch(0.584 0.224 231.648);
-  --info-foreground: var(--primary-foreground);
-  --warning: oklch(0.8 0.199 83.868);
-  --warning-foreground: var(--primary-foreground);
-  --error: var(--destructive);
-  --error-foreground: var(--primary-foreground);
-
-  /* DateTime Picker */
-  --dtp-border-radius: 0.375rem;
-  --dtp-font-family: sans-serif;
 }
 
 @theme .dark {
-  /* Invert base & foreground */
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0);
-
-  /* Adjust semantic & accents for dark */
-  --card: var(--background);
-  --card-foreground: var(--foreground);
-  --popover: var(--background);
-  --popover-foreground: var(--foreground);
-
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: var(--foreground);
+  --primary-foreground: oklch(0.21 0.006 285.885);
   --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: var(--foreground);
-
-  --muted: var(--secondary);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
   --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: var(--secondary);
-  --accent-foreground: var(--foreground);
-
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: var(--foreground);
-
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.552 0.016 285.938);
 }
 
-/* Base Resets */
+/* --- Base Resets --- */
 @layer base {
-  *, ::before, ::after { @apply border-border !important; }
-  body { @apply bg-background text-foreground font-sans; }
+  /* Apply border width/style and use CSS variable for color */
+  *, ::before, ::after {
+    @apply border;
+    border-color: var(--border);
+  }
+  body {
+    /* Use arbitrary values for background and text colors */
+    @apply font-sans;
+    background-color: var(--background);
+    color: var(--foreground);
+  }
 }
 
-/* Components */
+/* --- Components --- */
 @layer components {
-  /* Animations */
+  /* Appear Animation */
   @keyframes appear { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
   .animate-appear { animation: appear 0.2s ease-out forwards; }
 
-  /* TradingView Chart Wrapper */
-  .tradingview-chart { @apply relative h-full w-full overflow-hidden rounded-[--radius] transition-all duration-200 ease-in-out; }
+  /* TradingView Chart */
+  .tradingview-chart {
+    @apply relative h-full w-full overflow-hidden;
+    border-radius: var(--radius);
+    transition: all 0.2s ease-in-out;
+  }
 
-  /* Price Cards */
-  .price-card { @apply rounded-[--radius] border border-border bg-card p-3 transition-all duration-200 ease-in-out; }
-  .price-card:hover { @apply shadow-md hover:-translate-y-px; }
-  .price-label { @apply mb-1 text-sm text-muted-foreground; }
-  .price-value { @apply text-base font-medium; }
-  .price-value.up { @apply text-[hsl(var(--success))]; }
-  .price-value.down { @apply text-[hsl(var(--error))]; }
+  /* Price Card */
+  .price-card {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background-color: var(--card);
+    padding: 0.75rem;
+    transition: all 0.2s ease-in-out;
+  }
+  .price-card:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+  .price-label { margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--muted-foreground); }
+  .price-value { font-size: 1rem; font-weight: 500; }
+  .price-value.up { color: var(--success); }
+  .price-value.down { color: var(--destructive); }
 
   /* DateTime Picker */
-  .date_time_picker { @apply relative text-popover-foreground; }
+  .date_time_picker { position: relative; color: var(--popover-foreground); }
   .date-time-field .input-wrapper {
-    @apply cursor-pointer rounded-[--dtp-border-radius] border border-border px-3 py-2 transition-colors duration-200 ease-in-out;
+    cursor: pointer;
+    border-radius: var(--dtp-border-radius);
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.2s;
   }
-  .date-time-field .display-value { @apply flex items-center justify-between; }
-  .calendar-dropdown { @apply absolute z-10 mt-1 hidden w-max rounded-[--dtp-border-radius] border border-border bg-popover p-3 shadow-md; }
-  .calendar-dropdown.show { @apply block; }
-  .calendar-header { @apply mb-3 flex items-center justify-between; }
-  .weekdays { @apply mb-1 grid grid-cols-7 text-center; }
-  .weekday { @apply p-1 text-xs font-semibold text-muted-foreground; }
-  .days { @apply grid grid-cols-7 gap-1; }
-  .day-btn { @apply w-full min-w-[32px] cursor-pointer rounded-[--dtp-border-radius] py-2 text-center text-sm transition-colors; }
-  .day-btn:hover:not(:disabled):not(.empty) { @apply bg-accent; }
-  .day-btn.today { @apply border-border; }
-  .day-btn.selected { @apply border-primary bg-primary text-primary-foreground hover:bg-primary/90; }
-  .day-btn:disabled { @apply cursor-not-allowed opacity-50; }
+  .date-time-field .input-wrapper:hover { border-color: var(--primary); }
+  .date-time-field .display-value { display: flex; align-items: center; justify-content: space-between; }
+
+  .calendar-dropdown {
+    position: absolute;
+    z-index: 10;
+    margin-top: 0.25rem;
+    display: none;
+    border-radius: var(--dtp-border-radius);
+    border: 1px solid var(--border);
+    background-color: var(--popover);
+    padding: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  }
+  .calendar-dropdown.show { display: block; }
+
+  .calendar-header { margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; }
+  .weekdays  { margin-bottom: 0.25rem; display: grid; grid-template-columns: repeat(7,1fr); text-align: center; }
+  .weekday   { padding: 0.25rem; font-size: 0.75rem; font-weight: 600; color: var(--muted-foreground); }
+  .days      { display: grid; grid-template-columns: repeat(7,1fr); gap: 0.25rem; }
+  .day-btn   {
+    width: 100%; min-width: 32px; cursor: pointer;
+    border-radius: var(--dtp-border-radius);
+    padding: 0.5rem 0;
+    text-align: center;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+  }
+  .day-btn:hover:not(:disabled):not(.empty) { background-color: var(--accent); }
+  .day-btn.today  { border: 1px solid var(--border); }
+  .day-btn.selected { border: 1px solid var(--primary); background-color: var(--primary); color: var(--primary-foreground); }
+  .day-btn:disabled { cursor: not-allowed; opacity: 0.5; }
 
   /* Time Picker */
-  .time-picker { @apply mt-3 border-t border-border pt-3; }
-  .time-selector { @apply flex items-center justify-center gap-2; }
+  .time-picker { margin-top: 0.75rem; border-top: 1px solid var(--border); padding-top: 0.75rem; }
+  .time-selector { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
   .time-unit select {
-    @apply h-9 rounded-[--dtp-border-radius] border border-border px-2.5 py-1.5 text-center text-sm appearance-none transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+    height: 2.25rem;
+    border-radius: var(--dtp-border-radius);
+    border: 1px solid var(--border);
+    padding: 0.375rem;
+    font-size: 0.875rem;
+    text-align: center;
+    appearance: none;
+    transition: border-color 0.2s;
   }
-  .time-separator { @apply font-bold text-muted-foreground; }
+  .time-unit select:hover { border-color: var(--primary); }
+  .time-unit select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+  .time-separator { font-weight: bold; color: var(--muted-foreground); }
 }
