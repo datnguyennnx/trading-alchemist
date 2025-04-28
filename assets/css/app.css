@@ -169,8 +169,10 @@
   }
 
   /* Firefox */
-  input[type=number] {
-    -moz-appearance: textfield;
+  input[type='number'] {
+    @apply appearance-textfield;
+    /* Ensure the unprefixed appearance is present */
+    appearance: textfield;
   }
 }
 
