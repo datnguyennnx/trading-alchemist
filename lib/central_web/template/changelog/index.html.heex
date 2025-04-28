@@ -2,6 +2,48 @@
   title="Changelog"
   entries={[
     %{
+      version: "0.2.4",
+      title: "Market Data & Chart Refactoring for Reusability",
+      date: "April 24, 2025",
+      description:
+        "Major refactoring to decouple market data synchronization from backtesting, enhance chart component reusability, and improve data processing pipeline clarity. Introduces a dedicated data sync service and centralizes helper functions.",
+      features: [
+        %{
+          title: "Refactoring Strategy and Backtest UI",
+          description: "This initiative focuses on refactoring the user interface (UI) and user experience (UX) for the Strategy and Backtest modules. A key aspect of this refactoring is the implementation of a new dynamic configuration form, which requires a corresponding adjustment to the UI/UX flow. Furthermore, the way information is structured and presented to the user is being revised to better align with the capabilities of the new dynamic form and enhance overall user interaction."
+        },
+        %{
+          title: "Market Data Sync Service",
+          description: "Created a centralized service (MarketData.SyncService) to check data availability and trigger historical fetching (HistoricalDataFetcher), decoupled from the backtesting process. Uses Task.async_stream for concurrent fetching."
+        },
+        %{
+          title: "Reusable Chart Component Architecture",
+          description: "Enhanced the generic ChartComponent to manage its own data loading lifecycle (initial and historical) and respect time constraints. Simplified BacktestChartComponent to delegate rendering and data loading to ChartComponent."
+        },
+        %{
+          title: "Improved Data Ingestion Pipeline",
+          description: "Clarified DataProcessor role by adding data validation (validate_candle_data/1) used by HistoricalDataFetcher during ingestion before database storage. Removed redundant/unused normalization code."
+        },
+        %{
+          title: "Centralized Helpers",
+          description: "Created TimeframeHelper module to consolidate timeframe logic, used across data fetching and chart management."
+        }
+      ],
+      changes: [
+        %{description: "Moved HistoricalDataFetcher to lib/central/market_data/."},
+        %{description: "Created MarketData.SyncService in lib/central/market_data/."},
+        %{description: "Refactored MarketDataHandler to use SyncService."},
+        %{description: "Refactored ChartComponent for internal data loading and constraint handling."},
+        %{description: "Refactored BacktestChartComponent to use ChartComponent via <.live_component>."},
+        %{description: "Simplified ChartDataManager, removing backtest-specific logic."},
+        %{description: "Added DataProcessor.validate_candle_data/1 and updated HistoricalDataFetcher to use it."},
+        %{description: "Removed unused validation/normalization functions from DataProcessor."},
+        %{description: "Created Helpers.TimeframeHelper and updated callers."},
+        %{description: "Fixed missing :backtest assign error when rendering BacktestChartComponent in BacktestLive.ShowLive."},
+        %{description: "Fixed linter warnings (unused functions) and type errors (Decimal.parse) in DataProcessor."}
+      ]
+    },
+    %{
       version: "0.2.3",
       title: "Dynamic Form, Indicator Trading, Historical Data Sync, and Backtest Enhancements",
       date: "April 20, 2025",
