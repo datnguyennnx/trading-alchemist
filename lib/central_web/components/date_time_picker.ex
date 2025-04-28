@@ -49,15 +49,15 @@ defmodule CentralWeb.Components.DateTimePicker do
 
         <div
           id={"#{@id}-calendar"}
-          class="date-picker-dropdown absolute z-50 mt-1 hidden rounded-md border border-border bg-popover p-4 shadow-md animate-in fade-in-80 w-[280px]"
+          class="date-picker-dropdown absolute z-50 mt-1 hidden rounded-md border border-border bg-popover p-4 shadow-md animate-in fade-in-80 w-[280px] space-y-4"
         >
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center justify-between">
             <.button variant="outline" size="icon" class="prev-month-btn" aria-label="Previous month">
-              <.icon name="hero-chevron-left" class="h-4 w-4" />
+              <.icon name="hero-chevron-left" class="h-3 w-3" />
             </.button>
-            <span class="text-sm font-medium current-month-display"></span>
+            <p class="text-sm font-medium current-month-display"></p>
             <.button variant="outline" size="icon" class="next-month-btn" aria-label="Next month">
-              <.icon name="hero-chevron-right" class="h-4 w-4" />
+              <.icon name="hero-chevron-right" class="h-3 w-3" />
             </.button>
           </div>
 
@@ -77,7 +77,7 @@ defmodule CentralWeb.Components.DateTimePicker do
             </div>
           </div>
 
-          <div class="flex items-center space-x-2 pt-4 border-t border-border mt-4">
+          <div class="flex items-center space-x-2">
             <.input
               id={"#{@id}-hour-input"}
               type="number"
@@ -87,7 +87,7 @@ defmodule CentralWeb.Components.DateTimePicker do
               value={selected_hour(@value)}
               placeholder="HH"
             />
-            <span class="text-muted-foreground">:</span>
+            <p class="text-muted-foreground">:</p>
             <.input
               id={"#{@id}-minute-input"}
               type="number"
@@ -106,7 +106,7 @@ defmodule CentralWeb.Components.DateTimePicker do
                 value={selected_period(@value)}
                 class="period-select w-full"
               >
-                <.select_trigger builder={builder} class="h-9" />
+                <.select_trigger builder={builder} />
                 <.select_content builder={builder} class="w-full min-w-[5rem]">
                   <.select_group>
                     <.select_item builder={builder} value="AM" label="AM" />

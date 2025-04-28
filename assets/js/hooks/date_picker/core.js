@@ -209,59 +209,83 @@ const DatePickerCore = {
     elements.calendarDays.innerHTML = '';
     
     // Generate calendar grid
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+    const lastDayOfPrevMonth = new Date(year, month, 0);
     
-    // Adjust for Monday as first day of week (0 = Monday, 6 = Sunday)
-    let firstDayIndex = firstDay.getDay() - 1;
-    if (firstDayIndex === -1) firstDayIndex = 6;
+    const daysInMonth = lastDayOfMonth.getDate();
+    const daysInPrevMonth = lastDayOfPrevMonth.getDate();
+    
+    // Adjust for Monday as first day of week (0 = Sunday, 1 = Monday ... 6 = Saturday -> 0 = Monday ... 6 = Sunday)
+    let startDayIndex = firstDayOfMonth.getDay() - 1;
+    if (startDayIndex === -1) startDayIndex = 6; // Adjust Sunday (0) to be 6
+    
+    let endDayIndex = lastDayOfMonth.getDay() - 1;
+    if (endDayIndex === -1) endDayIndex = 6; // Adjust Sunday (0) to be 6
     
     const grid = document.createElement('div');
     grid.className = 'grid grid-cols-7 gap-1';
     
     const fragment = document.createDocumentFragment();
-    
-    // Empty cells for days before the 1st of the month
-    for (let i = 0; i < firstDayIndex; i++) {
-      const emptyCell = document.createElement('div');
-      emptyCell.className = 'p-0 h-9 w-9 flex items-center justify-center text-sm opacity-50 cursor-default';
-      fragment.appendChild(emptyCell);
+    const totalCells = 35;
+
+    // -- Common styling for all cells --
+    const cellBaseClasses = 'p-0 h-8 w-8 flex items-center justify-center rounded-md text-sm';
+
+    // -- Render days from previous month --
+    for (let i = startDayIndex - 1; i >= 0; i--) {
+      const day = daysInPrevMonth - i;
+      const prevMonthCell = document.createElement('div');
+      prevMonthCell.textContent = day;
+      prevMonthCell.className = `${cellBaseClasses} text-muted-foreground opacity-50 cursor-default`;
+      fragment.appendChild(prevMonthCell);
     }
     
-    // Day cells
+    // -- Render days from current month --
     for (let day = 1; day <= daysInMonth; day++) {
       const dayCell = document.createElement('button');
       dayCell.type = 'button';
       dayCell.dataset.day = day;
       dayCell.textContent = day;
       
-      // Base styling
-      let classes = 'p-0 h-9 w-9 flex items-center justify-center rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground';
-      
-      // Check if this day is today
       const today = new Date();
       const isToday = day === today.getDate() && 
-                     currentDate.getMonth() === today.getMonth() && 
-                     currentDate.getFullYear() === today.getFullYear();
+                     month === today.getMonth() && 
+                     year === today.getFullYear();
       
-      // Check if this day is selected
       const isSelected = state.selectedDate && 
                         state.selectedDate.getDate() === day && 
-                        state.selectedDate.getMonth() === currentDate.getMonth() && 
-                        state.selectedDate.getFullYear() === currentDate.getFullYear();
+                        state.selectedDate.getMonth() === month && 
+                        state.selectedDate.getFullYear() === year;
       
-      // Apply appropriate styling based on state
+      // Base classes + transition/focus/disabled for buttons
+      let buttonBaseClasses = `${cellBaseClasses} transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50`;
+      let stateClasses = ''; // State-specific classes (including hover)
+      
       if (isSelected) {
-        classes += ' bg-primary text-primary-foreground font-semibold hover:bg-primary/90';
+        stateClasses = 'bg-primary text-primary-foreground font-semibold';
       } else if (isToday) {
-        classes += ' bg-accent/50 font-medium';
+        stateClasses = 'bg-accent/50 font-medium hover:bg-accent hover:text-accent-foreground';
+      } else {
+        stateClasses = 'hover:bg-accent hover:text-accent-foreground';
       }
       
-      dayCell.className = classes;
+      dayCell.className = `${buttonBaseClasses} ${stateClasses}`;
       fragment.appendChild(dayCell);
     }
     
+    // -- Render days from next month --
+    const cellsRendered = startDayIndex + daysInMonth;
+    if (cellsRendered < totalCells) {
+        const remainingCells = totalCells - cellsRendered;
+        for (let day = 1; day <= remainingCells; day++) {
+            const nextMonthCell = document.createElement('div');
+            nextMonthCell.textContent = day;
+            nextMonthCell.className = `${cellBaseClasses} text-muted-foreground opacity-50 cursor-default`;
+            fragment.appendChild(nextMonthCell);
+        }
+    }
+
     grid.appendChild(fragment);
     elements.calendarDays.appendChild(grid);
     
