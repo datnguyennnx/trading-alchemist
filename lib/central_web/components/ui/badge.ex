@@ -13,7 +13,7 @@ defmodule CentralWeb.Components.UI.Badge do
   attr :class, :string, default: nil
 
   attr :variant, :string,
-    values: ~w(default secondary destructive outline),
+    values: ~w(default secondary destructive outline success warning info accent),
     default: "default",
     doc: "the badge variant style"
 
@@ -27,7 +27,7 @@ defmodule CentralWeb.Components.UI.Badge do
     <div
       class={
         classes([
-          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
           @variant_class,
           @class
         ])
@@ -44,7 +44,11 @@ defmodule CentralWeb.Components.UI.Badge do
       "default" => "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
       "secondary" => "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
       "destructive" => "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-      "outline" => "text-foreground"
+      "outline" => "text-foreground",
+      "success" => "border-transparent bg-success text-success-foreground hover:bg-success/80",
+      "warning" => "border-transparent bg-warning text-warning-foreground hover:bg-warning/80",
+      "info" => "border-transparent bg-info text-info-foreground hover:bg-info/80",
+      "accent" => "border-transparent bg-accent text-accent-foreground hover:bg-accent/80"
     }
   }
 

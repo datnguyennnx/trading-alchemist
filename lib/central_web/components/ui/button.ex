@@ -14,7 +14,7 @@ defmodule CentralWeb.Components.UI.Button do
   attr :class, :any, default: nil
 
   attr :variant, :string,
-    values: ~w(default secondary destructive outline ghost link),
+    values: ~w(default secondary destructive outline ghost link success warning info accent),
     default: "default",
     doc: "the button variant style"
 

@@ -69,15 +69,16 @@ defmodule CentralWeb.Components.UI.Accordion do
 
   def accordion_trigger(assigns) do
     ~H"""
-    <details {@rest} name={@group} class={classes(["group/accordion peer/accordion cursor-pointer", @disabled && "opacity-50 pointer-events-none"])} open={@open} disabled={@disabled}>
-      <summary class={
-        classes([
-          "flex flex-1 items-center justify-between p-4 font-medium transition-all rounded-md border border-input bg-background shadow-sm",
+    <details name={@group} class={classes(["group/accordion peer/accordion", @disabled && "opacity-50 pointer-events-none"])} open={@open} disabled={@disabled}>
+      <summary
+        {@rest}
+        class={classes([
+          "flex flex-1 items-center justify-between p-4 font-medium transition-all rounded-md border border-input bg-background shadow-sm cursor-pointer",
           !@disabled && "hover:bg-accent hover:text-accent-foreground",
           !@disabled && "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           @class
-        ])
-      }>
+        ])}
+      >
         <p class="font-medium">
           {render_slot(@inner_block)}
         </p>

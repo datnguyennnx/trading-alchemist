@@ -196,7 +196,7 @@ defmodule CentralWeb.Components.UI.DataTable do
               <%= @empty_message %>
             </div>
           <% else %>
-            <div class="rounded-md border">
+            <div class="rounded-md border-2 p-2">
               <.table>
                 <.table_header>
                   <.table_row>

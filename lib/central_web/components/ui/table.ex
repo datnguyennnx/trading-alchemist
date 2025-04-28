@@ -50,8 +50,8 @@ defmodule CentralWeb.Components.UI.Table do
 
   def table(assigns) do
     ~H"""
-    <div class="w-full overflow-auto">
-      <table class={classes(["w-full caption-bottom text-sm border-collapse", @class])} {@rest}>
+    <div class="relative w-full overflow-auto">
+      <table class={classes(["w-full caption-bottom text-sm", @class])} {@rest}>
         {render_slot(@inner_block)}
       </table>
     </div>
@@ -64,7 +64,7 @@ defmodule CentralWeb.Components.UI.Table do
 
   def table_header(assigns) do
     ~H"""
-    <thead class={classes(["sticky top-0 bg-background border-b border-border z-10", @class])} {@rest}>
+    <thead class={classes(["[&_tr]:border-b", @class])} {@rest}>
       {render_slot(@inner_block)}
     </thead>
     """
@@ -79,7 +79,7 @@ defmodule CentralWeb.Components.UI.Table do
     <tr
       class={
         classes([
-          "border-b transition-colors duration-200 ease-in-out hover:bg-muted/70 data-[state=selected]:bg-muted even:bg-muted/20",
+          "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
           @class
         ])
       }
@@ -100,7 +100,7 @@ defmodule CentralWeb.Components.UI.Table do
     <th
       class={
         classes([
-          "h-10 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 border-b border-border/50",
+          "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
           @numeric && "text-right",
           @class
         ])
@@ -134,7 +134,7 @@ defmodule CentralWeb.Components.UI.Table do
     <td
       class={
         classes([
-          "p-4 align-middle [&:has([role=checkbox])]:pr-0",
+          "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
           @numeric && "text-right tabular-nums",
           @class
         ])
@@ -158,7 +158,7 @@ defmodule CentralWeb.Components.UI.Table do
     <tfoot
       class={
         classes([
-          "bg-muted/50 font-medium border-t",
+          "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
           @class
         ])
       }

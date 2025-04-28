@@ -135,7 +135,7 @@ defmodule CentralWeb.Components.UI.Select do
       type="button"
       class={
         classes([
-          "flex h-10 w-full items-center justify-between rounded-[--radius] border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm ring-offset-background transition-colors",
+          "flex h-10 w-full items-center justify-between rounded-[var(--radius)] border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm ring-offset-background transition-colors",
           "hover:bg-accent hover:text-accent-foreground",
           "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
           "disabled:cursor-not-allowed disabled:opacity-50",
@@ -211,7 +211,7 @@ defmodule CentralWeb.Components.UI.Select do
       class={
         classes([
           "select-content absolute hidden w-full",
-          "z-50 min-w-[12rem] rounded-[--radius] border border-input bg-popover text-popover-foreground shadow-lg",
+          "z-50 min-w-[12rem] rounded-[var(--radius)] border border-input bg-popover text-popover-foreground shadow-lg",
           "group-data-[state=open]:animate-in group-data-[state=closed]:animate-out",
           "group-data-[state=closed]:fade-out-0 group-data-[state=open]:fade-in-0",
           "group-data-[state=closed]:zoom-out-95 group-data-[state=open]:zoom-in-95",
