@@ -147,7 +147,7 @@ defmodule CentralWeb.StrategyLive.ShowLive do
             end_time={@end_time}
             strategy_id={@strategy.id}
           />
-          
+
     <!-- Backtest History -->
           <.live_component
             module={BacktestHistory}
@@ -156,10 +156,10 @@ defmodule CentralWeb.StrategyLive.ShowLive do
             max_items={5}
           />
         </div>
-        
+
     <!-- Right Column: Strategy Information -->
         <div class="space-y-6 col-span-2">
-          
+
     <!-- Latest Performance -->
           <%= if @recent_backtest do %>
             <.live_component
@@ -168,7 +168,7 @@ defmodule CentralWeb.StrategyLive.ShowLive do
               backtest={@recent_backtest}
             />
           <% end %>
-          
+
     <!-- Trading Rules -->
           <.live_component
             module={TradingRules}

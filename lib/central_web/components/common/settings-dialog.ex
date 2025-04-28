@@ -40,7 +40,7 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
               </div>
             </div>
           </div>
-          
+
     <!-- Settings Content -->
           <div class="m-4 flex-1 p-6 bg-background text-foreground">
             <div class="flex flex-col gap-6">
@@ -73,7 +73,7 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
       <span class="h-4 w-4 flex items-center">
         <.icon name={"hero-#{@item.icon}"} class="h-4 w-4" />
       </span>
-      <span>{@item.title}</span>
+      <p>{@item.title}</p>
     </.button>
     """
   end

@@ -98,7 +98,7 @@ defmodule CentralWeb.Components.Common.AppSidebar do
       <span class="mr-2 h-4 w-4 flex items-center">
         <.icon name={@settings_data.icon} class="h-4 w-4" />
       </span>
-      <span>{@settings_data.title}</span>
+      <p>{@settings_data.title}</p>
     </.sidebar_menu_button>
     """
   end
@@ -112,7 +112,7 @@ defmodule CentralWeb.Components.Common.AppSidebar do
         <span class="mr-2 h-4 w-4 flex items-center">
           <Lucideicons.log_out class="h-4 w-4" />
         </span>
-        <span>Log out</span>
+        <p>Log out</p>
       </.sidebar_menu_button>
     </form>
     """
@@ -146,9 +146,9 @@ defmodule CentralWeb.Components.Common.AppSidebar do
         <.as_child tag={&collapsible_trigger/1} child={&sidebar_menu_button/1} tooltip={@item.title}>
           <.dynamic :if={not is_nil(@item.icon)} tag={@item.icon} />
 
-          <span>
+          <p>
             {@item.title}
-          </span>
+          </p>
           <.chevron_right class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
         </.as_child>
         <.collapsible_content>
@@ -167,9 +167,9 @@ defmodule CentralWeb.Components.Common.AppSidebar do
     ~H"""
     <.sidebar_menu_sub_item>
       <.as_child tag={&sidebar_menu_sub_button/1} child="a" href={@sub_item.url}>
-        <span>
+        <p>
           {@sub_item.title}
-        </span>
+        </p>
       </.as_child>
     </.sidebar_menu_sub_item>
     """

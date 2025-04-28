@@ -58,24 +58,24 @@ defmodule CentralWeb.StrategyLive.IndexLive do
               <.card_content>
                 <div class="space-y-4">
                   <div class="flex justify-between">
-                    <span class="text-muted-foreground">Symbol:</span>
-                    <span class="font-medium">{strategy.config["symbol"]}</span>
+                    <p class="text-muted-foreground">Symbol:</p>
+                    <p class="font-medium">{strategy.config["symbol"]}</p>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-muted-foreground">Timeframe:</span>
-                    <span class="font-medium">{strategy.config["timeframe"]}</span>
+                    <p class="text-muted-foreground">Timeframe:</p>
+                    <p class="font-medium">{strategy.config["timeframe"]}</p>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-muted-foreground">Rules:</span>
-                    <span class="font-medium">
+                    <p class="text-muted-foreground">Rules:</p>
+                    <p class="font-medium">
                       {count_entry_rules(strategy)} entries, {count_exit_rules(strategy)} exits
-                    </span>
+                    </p>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-muted-foreground">Indicators:</span>
-                    <span class="font-medium">
+                    <p class="text-muted-foreground">Indicators:</p>
+                    <p class="font-medium">
                       {summary_indicators(strategy, @indicators)}
-                    </span>
+                    </p>
                   </div>
                 </div>
               </.card_content>

@@ -64,7 +64,7 @@ defmodule CentralWeb.StrategyLive.Components.TradingRules do
               </.table_body>
             </.table>
           </div>
-          
+
     <!-- Exit Rules Section -->
           <div class="p-4 py-1">
             <div class="flex items-center py-3">

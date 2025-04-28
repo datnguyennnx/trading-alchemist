@@ -68,9 +68,9 @@ defmodule CentralWeb.Components.UI.DataTable do
       <%= TableFormatters.format_currency(tx.amount) %>
     </:col>
     <:col :let={tx} field={:profit} label="Profit" numeric pnl>
-      <span class={TableFormatters.pnl_class(tx.profit)}>
+      <p class={TableFormatters.pnl_class(tx.profit)}>
         <%= TableFormatters.format_currency(tx.profit) %>
-      </span>
+      </p>
     </:col>
   </.data_table>
   """
@@ -100,7 +100,7 @@ defmodule CentralWeb.Components.UI.DataTable do
         <:col :let={payment} field={:status} label="Status" sortable>
           <div class="flex items-center gap-2">
             <div class="h-2 w-2 rounded-full bg-green-500"></div>
-            <span>Completed</span>
+            <p>Completed</p>
           </div>
         </:col>
         <:col :let={payment} field={:email} label="Email">
