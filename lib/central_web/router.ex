@@ -83,7 +83,7 @@ defmodule CentralWeb.Router do
 
       # Backtest routes
       live "/backtest", BacktestLive.IndexLive, :index
-      live "/backtest/:strategy_id", BacktestLive.ShowLive, :show
+      live "/backtest/:id", BacktestLive.ShowLive, :show
     end
   end
 

@@ -7,7 +7,7 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
   import Ecto.Query
   alias Central.Backtest.Schemas.MarketData
   alias Central.Repo
-  alias Central.Backtest.Workers.MarketSyncWorker
+  require Logger
 
   # In-memory cache using ETS
   @ets_table :market_data_cache
@@ -136,21 +136,97 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
   end
 
   @doc """
-  Gets candles for a symbol and timeframe within a date range.
+  Gets candles for a symbol and timeframe within a date range, with limit and optional sorting.
+  This is an optimized version of get_candles that supports limiting results and custom sort order.
+
+  ## Parameters
+    - symbol: Trading pair symbol (e.g., "BTCUSDT")
+    - timeframe: Candle timeframe (e.g., "1h")
+    - start_time: The required start DateTime (UTC)
+    - end_time: The required end DateTime (UTC)
+    - opts: Additional options
+      - limit: Maximum number of candles to return
+      - order_by: Sort order (:asc or :desc for timestamp, default: :asc)
+      - use_cache: Whether to check/use cache (default: true)
 
   ## Examples
 
-      iex> get_candles("BTCUSDT", "1h", ~U[2025-01-01 00:00:00Z], ~U[2025-01-02 00:00:00Z])
+      iex> get_candles_with_limit("BTCUSDT", "1h", ~U[2025-01-01 00:00:00Z], ~U[2025-01-02 00:00:00Z], limit: 10)
+      [%MarketData{}, ...]
+
+      iex> get_candles_with_limit("BTCUSDT", "1h", ~U[2025-01-01 00:00:00Z], ~U[2025-01-02 00:00:00Z], limit: 20, order_by: :desc)
       [%MarketData{}, ...]
   """
-  def get_candles(symbol, timeframe, start_time, end_time) do
-    MarketData
-    |> where([m], m.symbol == ^symbol)
-    |> where([m], m.timeframe == ^timeframe)
-    |> where([m], m.timestamp >= ^start_time)
-    |> where([m], m.timestamp <= ^end_time)
-    |> order_by([m], asc: m.timestamp)
-    |> Repo.all()
+  def get_candles_with_limit(symbol, timeframe, start_time, end_time, opts \\ []) do
+    limit = Keyword.get(opts, :limit)
+    order_by = Keyword.get(opts, :order_by, :asc)
+    use_cache = Keyword.get(opts, :use_cache, true)
+
+    # Generate a cache key if caching is enabled
+    cache_key = if use_cache do
+      {:candles, symbol, timeframe, DateTime.to_unix(start_time), DateTime.to_unix(end_time), limit, order_by}
+    else
+      nil
+    end
+
+    # Try to get from cache first if enabled
+    if use_cache && cache_key do
+      case :ets.lookup(@ets_table, cache_key) do
+        [{^cache_key, candles, cached_at}] ->
+          # Check if cache is fresh (less than 10 seconds old)
+          if DateTime.diff(DateTime.utc_now(), cached_at, :second) < 10 do
+            IO.puts("[MarketDataContext] get_candles_with_limit cache hit for #{symbol}/#{timeframe}")
+            candles
+          else
+            fetch_and_cache_candles(symbol, timeframe, start_time, end_time, limit, order_by, cache_key)
+          end
+        [] ->
+          fetch_and_cache_candles(symbol, timeframe, start_time, end_time, limit, order_by, cache_key)
+      end
+    else
+      # Skip cache if disabled
+      fetch_candles(symbol, timeframe, start_time, end_time, limit, order_by)
+    end
+  end
+
+  # Private helper for fetching and caching candles
+  defp fetch_and_cache_candles(symbol, timeframe, start_time, end_time, limit, order_by, cache_key) do
+    candles = fetch_candles(symbol, timeframe, start_time, end_time, limit, order_by)
+
+    # Cache the result if we have a cache key
+    if cache_key do
+      :ets.insert(@ets_table, {cache_key, candles, DateTime.utc_now()})
+    end
+
+    candles
+  end
+
+  # Actual database query for fetching candles
+  defp fetch_candles(symbol, timeframe, start_time, end_time, limit, order_by) do
+    IO.puts("[MarketDataContext] fetch_candles: symbol=#{symbol}, timeframe=#{timeframe}, limit=#{limit || "none"}, order=#{order_by}")
+
+    # Build base query
+    query =
+      MarketData
+      |> where([m], m.symbol == ^symbol)
+      |> where([m], m.timeframe == ^timeframe)
+      |> where([m], m.timestamp >= ^start_time)
+      |> where([m], m.timestamp <= ^end_time)
+
+    # Add ordering
+    query = case order_by do
+      :desc -> query |> order_by([m], desc: m.timestamp)
+      _ -> query |> order_by([m], asc: m.timestamp)
+    end
+
+    # Add limit if provided
+    query = if limit, do: query |> limit(^limit), else: query
+
+    # Execute query
+    result = Repo.all(query)
+    IO.puts("[MarketDataContext] fetch_candles found #{length(result)} records")
+
+    result
   end
 
   @doc """
@@ -304,21 +380,6 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
   end
 
   @doc """
-  Triggers a sync for a specific symbol and timeframe.
-  Delegates to the MarketSyncWorker.
-  """
-  def trigger_sync(symbol, timeframe) do
-    MarketSyncWorker.trigger_sync(symbol, timeframe)
-  end
-
-  @doc """
-  Gets the current status of the market sync worker.
-  """
-  def get_sync_status do
-    MarketSyncWorker.get_status()
-  end
-
-  @doc """
   Invalidates cache for a specific symbol and timeframe.
   Used by the sync worker when new data is added.
 
@@ -392,6 +453,98 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
     end
 
     :ok
+  end
+
+  @doc """
+  Inserts a list of MarketData attribute maps in bulk.
+
+  Uses `Repo.insert_all` for efficiency and handles conflicts based on the
+  unique index (symbol, timeframe, timestamp, source).
+
+  ## Parameters
+    - data_to_insert: A list of maps, where each map represents a MarketData record.
+                      Example: `[%{symbol: "BTCUSDT", timestamp: ~U[...], open: Decimal.new(...), ...}, ...]`
+
+  ## Returns
+    - `{:ok, count}` where `count` is the number of rows inserted.
+    - `{:error, term}` if insertion fails.
+  """
+  def bulk_insert_candles(data_to_insert) when is_list(data_to_insert) do
+    if Enum.empty?(data_to_insert) do
+      IO.puts("[MarketDataContext] bulk_insert_candles called with empty list. Nothing to insert.")
+      {:ok, 0}
+    else
+      # Validate the structure of the first map (basic check)
+      first_item = List.first(data_to_insert)
+      required_keys = [:symbol, :timeframe, :timestamp, :open, :high, :low, :close, :volume, :source, :inserted_at]
+      if is_map(first_item) and Enum.all?(required_keys, &Map.has_key?(first_item, &1)) do
+        IO.puts("[MarketDataContext] Attempting Repo.insert_all with #{length(data_to_insert)} records.") # Log attempt
+        # IO.inspect(data_to_insert, label: "[MarketDataContext] Data for insert_all") # Keep inspect for now?
+        # Use insert_all with on_conflict: :nothing to ignore duplicates
+        # based on the unique constraint [symbol, timeframe, timestamp, source]
+        case Repo.insert_all(MarketData, data_to_insert, on_conflict: :nothing, returning: false) do
+          {count, nil} ->
+            # Invalidate cache after successful insertion
+            # Invalidate broadly for now, could be more specific if needed
+            invalidate_cache()
+            IO.puts("[MarketDataContext] Repo.insert_all successful, inserted/ignored #{count} records.") # Log success
+            {:ok, count}
+          {_count, error_info} ->
+             # This part might not be reached with :nothing strategy, but good to have
+            Logger.error("Bulk candle insert failed: #{inspect(error_info)}")
+            IO.puts("[MarketDataContext] Repo.insert_all failed: #{inspect(error_info)}") # Log error
+            {:error, error_info} # Return error info
+        end
+      else
+        Logger.error("[MarketDataContext] bulk_insert_candles received list with invalid map structure. First item: #{inspect first_item}")
+        {:error, :invalid_data_structure}
+      end
+    end
+  end
+
+  @doc """
+  Gets a chunk of historical candles for a symbol and timeframe *before* a given end timestamp.
+  Results are ordered newest-first (descending timestamp) within the chunk.
+
+  ## Parameters
+    - symbol: Trading pair (e.g., "BTCUSDT")
+    - timeframe: Timeframe (e.g., "1m", "1h", "1d")
+    - end_time_exclusive: Fetch candles strictly *before* this timestamp.
+    - limit: Maximum number of candles to fetch.
+
+  ## Examples
+
+      iex> get_historical_candles("BTCUSDT", "1h", ~U[2025-01-10 00:00:00Z], 100)
+      [%MarketData{timestamp: ~U[2025-01-09 23:00:00Z]}, ..., %MarketData{timestamp: ~U[2025-01-09 19:00:00Z]}]
+  """
+  def get_historical_candles(symbol, timeframe, end_time_exclusive, limit) do
+    IO.puts("[MarketDataContext] get_historical_candles called: symbol=#{symbol}, timeframe=#{timeframe}, before=#{inspect end_time_exclusive}, limit=#{limit}") # Log call
+    query =
+      MarketData
+      |> where([m], m.symbol == ^symbol)
+      |> where([m], m.timeframe == ^timeframe)
+      |> where([m], m.timestamp < ^end_time_exclusive) # Use '<' for exclusive end time
+      |> order_by([m], desc: m.timestamp) # Order newest first within the chunk
+      |> limit(^limit)
+
+    # Note: The result here is newest-first. The frontend will need to reverse this
+    # list before prepending it to its existing data to maintain ascending order.
+    result = Repo.all(query)
+    IO.puts("[MarketDataContext] get_historical_candles found #{length(result)} records.") # Log result count
+    result
+  end
+
+  @doc """
+  Gets candles for a symbol and timeframe within a date range.
+  This is a convenience wrapper around get_candles_with_limit without a limit.
+
+  ## Examples
+      iex> get_candles("BTCUSDT", "1h", ~U[2025-01-01 00:00:00Z], ~U[2025-01-02 00:00:00Z])
+      [%MarketData{}, ...]
+  """
+  def get_candles(symbol, timeframe, start_time, end_time) do
+    IO.puts("[MarketDataContext] get_candles called: symbol=#{symbol}, timeframe=#{timeframe}, start=#{inspect start_time}, end=#{inspect end_time}")
+    get_candles_with_limit(symbol, timeframe, start_time, end_time)
   end
 
   # PRIVATE FUNCTIONS

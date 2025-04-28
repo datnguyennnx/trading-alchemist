@@ -1,6 +1,6 @@
-defmodule Central.Backtest.Services.Exchange.Binance.Stream do
+defmodule Central.MarketData.Exchange.Binance.Stream do
   @moduledoc """
-  GenServer for handling WebSocket connections to Binance streams.
+  Handles WebSocket connections to Binance for real-time data streams.
   Manages connection lifecycle, subscription, and broadcasting of data.
   """
 
@@ -248,29 +248,13 @@ defmodule Central.Backtest.Services.Exchange.Binance.Stream do
   defp process_kline_data(data) do
     # Process raw WebSocket data into a structured format
     # This is a simplified example - actual implementation would parse JSON
-    # and transform to your application's format
-    %{
-      symbol: data["s"],
-      interval: data["k"]["i"],
-      start_time: DateTime.from_unix!(data["k"]["t"], :millisecond),
-      close_time: DateTime.from_unix!(data["k"]["T"], :millisecond),
-      open: Decimal.new(data["k"]["o"]),
-      high: Decimal.new(data["k"]["h"]),
-      low: Decimal.new(data["k"]["l"]),
-      close: Decimal.new(data["k"]["c"]),
-      volume: Decimal.new(data["k"]["v"]),
-      is_closed: data["k"]["x"]
-    }
+    # and potentially use Binance.Client.parse_kline or similar logic
+    %{raw: data} # Placeholder
   end
 
   defp broadcast_to_subscribers(subscribers, message) do
-    for subscriber <- subscribers do
-      try do
-        send(subscriber, message)
-      rescue
-        # Skip failed sends
-        _ -> :ok
-      end
-    end
+    Enum.each(subscribers, fn pid ->
+      send(pid, message)
+    end)
   end
 end

@@ -1,53 +1,14 @@
-defmodule Central.Backtest.Services.MarketData.DataProcessor do
+defmodule Central.MarketData.DataProcessor do
   @moduledoc """
-  Responsible for transforming, normalizing, and validating market data.
+  Processes raw market data into usable format for storage and potentially backtesting.
+  Handles validation, normalization, and preparation for database insertion.
   """
 
   alias Central.Backtest.Schemas.MarketData
-  alias Central.Backtest.Utils.BacktestUtils, as: Utils
+  alias Central.Backtest.Utils.DecimalUtils
+  alias Central.Backtest.Utils.DatetimeUtils
 
-  @doc """
-  Normalizes raw binance kline data into a standard format.
-
-  ## Parameters
-    - candles: List of candle data from Binance API
-    - symbol: Trading pair symbol
-    - timeframe: Candle timeframe
-
-  ## Returns
-    - List of normalized candle maps
-  """
-  def normalize_binance_candles(candles, symbol, timeframe) do
-    candles
-    |> Enum.map(fn [
-                     open_time,
-                     open,
-                     high,
-                     low,
-                     close,
-                     volume,
-                     _close_time,
-                     _quote_volume,
-                     _trades,
-                     _taker_buy_base,
-                     _taker_buy_quote,
-                     _ignore
-                   ] ->
-      %{
-        symbol: symbol,
-        timeframe: timeframe,
-        timestamp: Utils.DateTime.from_unix(open_time, :millisecond),
-        open: Utils.Decimal.parse(open),
-        high: Utils.Decimal.parse(high),
-        low: Utils.Decimal.parse(low),
-        close: Utils.Decimal.parse(close),
-        volume: Utils.Decimal.parse(volume),
-        source: "binance"
-      }
-    end)
-    |> Enum.filter(&validate_candle/1)
-  end
-
+  require Logger
   @doc """
   Transforms candle structs to maps for API responses or caching.
 
@@ -153,24 +114,100 @@ defmodule Central.Backtest.Services.MarketData.DataProcessor do
 
   # PRIVATE FUNCTIONS
 
-  defp validate_candle(candle) do
-    # Check for required fields
-    has_required =
-      Map.has_key?(candle, :timestamp) and
-        Map.has_key?(candle, :open) and
-        Map.has_key?(candle, :high) and
-        Map.has_key?(candle, :low) and
-        Map.has_key?(candle, :close)
+  # Add the new validation function here as private
+  # Validates candle data typically received from an exchange client (map/struct)
+  # before full normalization or storage. Checks presence of keys and basic value logic.
+  def validate_candle_data(candle) when is_map(candle) do
+    required_keys = [:timestamp, :open, :high, :low, :close, :volume]
+    has_required = Enum.all?(required_keys, &Map.has_key?(candle, &1))
 
-    # Validate values using utility functions
-    valid_values =
-      Utils.Decimal.compare(candle.high, candle.low) != :lt and
-        Utils.Decimal.positive?(candle.open) and
-        Utils.Decimal.positive?(candle.high) and
-        Utils.Decimal.positive?(candle.low) and
-        Utils.Decimal.positive?(candle.close)
+    if !has_required do
+       Logger.warning("Raw candle data missing required keys: #{inspect(candle)}")
+      false
+    else
+      # Call parse/1 directly, assuming it returns Decimal or raises
+      try do
+        open = DecimalUtils.parse(candle.open)
+        high = DecimalUtils.parse(candle.high)
+        low = DecimalUtils.parse(candle.low)
+        close = DecimalUtils.parse(candle.close)
+        volume = DecimalUtils.parse(candle.volume)
 
-    has_required and valid_values
+        # Proceed with validation checks
+        valid_values =
+          # Ensure high >= low
+          (DecimalUtils.compare(high, low) != :lt) and
+          # Ensure OHLC are positive
+          DecimalUtils.positive?(open) and
+          DecimalUtils.positive?(high) and
+          DecimalUtils.positive?(low) and
+          DecimalUtils.positive?(close) and
+          # Ensure Volume is non-negative
+          (DecimalUtils.compare(volume, Decimal.new(0)) != :lt)
+
+        unless valid_values do
+          Logger.warning("Raw candle data has invalid values (e.g., H < L, negative price): #{inspect(candle)}")
+        end
+        valid_values
+
+      rescue
+         # Catch potential errors during parsing (e.g., if parse/1 raises)
+        _error ->
+           Logger.warning("Failed to parse decimal values in raw candle data: #{inspect(candle)}")
+          false
+      end
+    end
+  end
+  def validate_candle_data(_other), do: false # Not a map
+
+  @doc """
+  Validates raw candle data from an external source and prepares it for database storage.
+
+  Filters out invalid candles and transforms valid ones into the MarketData schema format.
+
+  ## Parameters
+    - raw_data: List of raw candle data maps/structs (e.g., from BinanceClient)
+    - symbol: The trading symbol (e.g., "BTCUSDT")
+    - timeframe: The timeframe (e.g., "1h")
+
+  ## Returns
+    - List of maps suitable for Repo.insert_all(MarketData, ...)
+  """
+  def prepare_for_storage(raw_data, symbol, timeframe) when is_list(raw_data) do
+    now = DatetimeUtils.naive_utc_now_sec()
+
+    raw_data
+    |> Enum.filter(&validate_candle_data/1)
+    |> Enum.map(fn candle ->
+      open = DecimalUtils.parse(candle.open)
+      high = DecimalUtils.parse(candle.high)
+      low = DecimalUtils.parse(candle.low)
+      close = DecimalUtils.parse(candle.close)
+      volume = DecimalUtils.parse(candle.volume)
+
+      timestamp = DatetimeUtils.to_utc_datetime(candle.timestamp)
+
+      if timestamp do
+        %{
+          id: Ecto.UUID.generate(),
+          symbol: symbol,
+          timeframe: timeframe,
+          timestamp: timestamp,
+          open: open,
+          high: high,
+          low: low,
+          close: close,
+          volume: volume,
+          source: Map.get(candle, :source, "binance"),
+          inserted_at: now
+        }
+      else
+        Logger.warning("Skipping candle during preparation due to invalid parsed values or timestamp: #{inspect(candle)}")
+        nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq_by(fn prepared_candle -> {prepared_candle.symbol, prepared_candle.timeframe, prepared_candle.timestamp} end)
   end
 
   # Simple Moving Average calculation

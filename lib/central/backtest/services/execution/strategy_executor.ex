@@ -15,7 +15,7 @@ defmodule Central.Backtest.Services.Execution.StrategyExecutor do
   alias Central.Backtest.Services.Risk.RiskManager
   alias Central.Backtest.Services.Execution.TradeManager
   alias Central.Backtest.Services.Execution.RuleEvaluator
-  alias Central.Backtest.Services.MarketData.MarketDataHandler
+  alias Central.Backtest.Services.Fetching.MarketDataHandler
 
   alias Central.Backtest.Utils.DatetimeUtils
   alias Central.Repo

@@ -2,7 +2,9 @@ defmodule Central.Backtest.Schemas.Trade do
   use Ecto.Schema
   import Ecto.Changeset
   alias Central.Backtest.Utils.BacktestUtils, as: Utils
+  alias Decimal
 
+  @derive {Jason.Encoder, only: [:id, :entry_time, :entry_price, :exit_time, :exit_price, :side]}
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "trades" do

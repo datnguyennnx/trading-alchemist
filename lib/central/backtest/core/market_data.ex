@@ -23,30 +23,6 @@ defmodule Central.Backtest.Core.MarketData do
   end
 
   @doc """
-  Triggers a synchronization of market data.
-
-  ## Parameters
-    - symbol: Optional specific symbol to sync
-    - timeframe: Optional specific timeframe to sync
-
-  ## Returns
-    - :ok
-  """
-  def sync_market_data(symbol \\ nil, timeframe \\ nil) do
-    MarketDataContext.trigger_sync(symbol, timeframe)
-  end
-
-  @doc """
-  Gets the sync status of the market data.
-
-  ## Returns
-    - Map with sync status information
-  """
-  def get_sync_status do
-    MarketDataContext.get_sync_status()
-  end
-
-  @doc """
   Gets available symbols for market data.
 
   ## Returns

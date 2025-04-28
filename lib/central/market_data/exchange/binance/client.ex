@@ -1,6 +1,6 @@
-defmodule Central.Backtest.Services.Exchange.Binance.Client do
+defmodule Central.MarketData.Exchange.Binance.Client do
   @moduledoc """
-  Client for interacting with the Binance REST API.
+  Binance API Client for fetching market data.
   Handles rate limiting, error handling, and retry logic.
   """
 
@@ -9,6 +9,9 @@ defmodule Central.Backtest.Services.Exchange.Binance.Client do
 
   alias Central.Config.DateTime, as: DateTimeConfig
   alias Central.Config.HTTP, as: HTTPConfig
+  # Assuming MarketData schema might live under MarketData now - Removed unused
+  # alias Central.MarketData.Schemas.MarketData
+  # Or keep Central.Backtest.Schemas.MarketData if it's staying there
 
   import HTTPConfig,
     only: [
@@ -40,7 +43,7 @@ defmodule Central.Backtest.Services.Exchange.Binance.Client do
   @doc """
   Get kline/candlestick data for a symbol and interval
 
-  Returns a list of market data for the given symbol and interval.
+  Returns a list of market data structures suitable for processing/storage.
 
   ## Parameters
     - symbol: String - The trading pair symbol (e.g., "BTCUSDT")
@@ -50,7 +53,7 @@ defmodule Central.Backtest.Services.Exchange.Binance.Client do
     - limit: Integer - Optional limit (default: 500, max: 1000)
 
   ## Returns
-    - {:ok, [%MarketData{}]} - List of market data
+    - {:ok, list_of_candle_maps} - List of maps with :timestamp, :open, :high, :low, :close, :volume
     - {:error, reason} - Error reason
   """
   def get_klines(symbol, interval, opts \\ []) do
@@ -83,17 +86,8 @@ defmodule Central.Backtest.Services.Exchange.Binance.Client do
     end)
   end
 
-  @doc """
-  Parse a single kline/candlestick data point
-
-  ## Parameters
-    - kline: List - The raw kline data from Binance API
-    - symbol: String - The trading pair symbol
-    - interval: String - The interval
-
-  ## Returns
-    - %MarketData{} - Parsed market data
-  """
+  @doc false
+  # Parse a single kline/candlestick data point from the raw API list format
   def parse_kline(kline, symbol, interval) do
     # Extract data from the kline
     [
@@ -116,9 +110,10 @@ defmodule Central.Backtest.Services.Exchange.Binance.Client do
       open_time
       |> div(1000)
       |> DateTime.from_unix!()
-      |> DateTimeConfig.truncate()
+      |> DateTimeConfig.truncate() # Use centralized config
 
-    # Build the MarketData struct
+    # Return a map, not a MarketData struct directly
+    # Let the caller (e.g., HistoricalDataFetcher) handle struct creation/DB mapping
     %{
       symbol: symbol,
       timeframe: interval,
@@ -128,7 +123,7 @@ defmodule Central.Backtest.Services.Exchange.Binance.Client do
       low: low,
       close: close,
       volume: volume,
-      source: "binance"
+      source: "binance" # Hardcoded for now
     }
   end
 
@@ -230,166 +225,30 @@ defmodule Central.Backtest.Services.Exchange.Binance.Client do
   end
 
   @doc """
-  Download historical market data for a symbol and interval in chunks
-  to avoid rate limits
+  Download historical market data for a symbol and interval.
+  This function directly calls `get_klines` and assumes the caller
+  (e.g., HistoricalDataFetcher, MarketSyncWorker) handles chunking if needed.
 
   ## Parameters
     - symbol: Trading pair (e.g., "BTCUSDT")
     - interval: Timeframe (e.g., "1m", "5m", "1h", "1d")
     - start_time: Starting time (DateTime)
     - end_time: Ending time (DateTime)
+    - limit: Optional limit (default: 1000)
 
   ## Returns
-    - {:ok, candles} on success
+    - {:ok, list_of_candle_maps} on success
     - {:error, reason} on failure
   """
-  def download_historical_data(symbol, interval, start_time, end_time) do
-    # Calculate total time range in milliseconds
-    start_ms = DateTime.to_unix(start_time, :millisecond)
-    end_ms = DateTime.to_unix(end_time, :millisecond)
+  def download_historical_data(symbol, interval, start_time, end_time, limit \\ 1000) do
+    # Use get_klines to fetch data for the specified range
+    # The caller is responsible for handling potential chunking for larger ranges
+    opts = [
+      start_time: start_time,
+      end_time: end_time,
+      limit: limit
+    ]
 
-    # Calculate optimal chunk size based on timeframe and Binance's 1000 candle limit
-    chunk_size = calculate_optimal_chunk_size(interval)
-
-    # Create chunks of time ranges
-    chunks = create_time_chunks(start_ms, end_ms, chunk_size)
-
-    # Make parallel requests for each chunk with rate limiting
-    results =
-      chunks
-      |> Enum.map(fn {chunk_start, chunk_end} ->
-        Task.async(fn ->
-          # Add exponential backoff for rate limiting
-          backoff = 100
-          max_retries = 5
-
-          retry_with_backoff(
-            fn ->
-              # Add delay to avoid rate limits
-              Process.sleep(backoff)
-
-              get_klines(symbol, interval,
-                start_time: chunk_start,
-                end_time: chunk_end,
-                limit: 1000
-              )
-            end,
-            max_retries,
-            backoff
-          )
-        end)
-      end)
-      # 5 minute timeout for all tasks
-      |> Task.await_many(300_000)
-
-    # Check if any chunk failed
-    case Enum.find(results, fn result -> match?({:error, _}, result) end) do
-      nil ->
-        # All chunks succeeded
-        candles =
-          results
-          |> Enum.map(fn {:ok, chunk_data} -> chunk_data end)
-          |> List.flatten()
-          |> Enum.sort_by(& &1.timestamp, DateTime)
-          |> validate_data_continuity(interval)
-
-        {:ok, candles}
-
-      {:error, reason} ->
-        # At least one chunk failed
-        {:error, reason}
-    end
-  end
-
-  # Calculate optimal chunk size based on timeframe and Binance's 1000 candle limit
-  defp calculate_optimal_chunk_size(interval) do
-    case interval do
-      # 1000 minutes = ~16.67 hours
-      "1m" -> 60_000 * 1000
-      # 1000 * 5 minutes = ~83.33 hours
-      "5m" -> 300_000 * 1000
-      # 1000 * 15 minutes = ~250 hours
-      "15m" -> 900_000 * 1000
-      # 1000 hours = ~41.67 days
-      "1h" -> 3_600_000 * 1000
-      # 1000 * 4 hours = ~166.67 days
-      "4h" -> 14_400_000 * 1000
-      # 1000 days
-      "1d" -> 86_400_000 * 1000
-      # Default to 1 day
-      _ -> 86_400_000
-    end
-  end
-
-  # Retry with exponential backoff
-  defp retry_with_backoff(fun, max_retries, backoff) do
-    try do
-      fun.()
-    rescue
-      e ->
-        if max_retries > 0 do
-          Process.sleep(backoff)
-          retry_with_backoff(fun, max_retries - 1, backoff * 2)
-        else
-          {:error, "Max retries exceeded: #{inspect(e)}"}
-        end
-    end
-  end
-
-  # Create time chunks for pagination
-  defp create_time_chunks(start_ms, end_ms, chunk_size) do
-    Stream.unfold(start_ms, fn current_start ->
-      if current_start >= end_ms do
-        nil
-      else
-        current_end = min(current_start + chunk_size, end_ms)
-
-        chunk = {
-          DateTime.from_unix!(current_start, :millisecond),
-          DateTime.from_unix!(current_end, :millisecond)
-        }
-
-        {chunk, current_end}
-      end
-    end)
-    |> Enum.to_list()
-  end
-
-  # Validate data continuity with more lenient gap detection
-  defp validate_data_continuity(candles, interval) do
-    # Calculate expected interval in milliseconds
-    interval_ms =
-      case interval do
-        "1m" -> 60_000
-        "5m" -> 300_000
-        "15m" -> 900_000
-        "1h" -> 3_600_000
-        "4h" -> 14_400_000
-        "1d" -> 86_400_000
-        _ -> 60_000
-      end
-
-    # Sort candles by timestamp
-    sorted_candles = Enum.sort_by(candles, & &1.timestamp, DateTime)
-
-    # Check for gaps with a more lenient threshold (2x interval)
-    Enum.reduce(sorted_candles, [], fn candle, acc ->
-      case acc do
-        [] ->
-          [candle]
-
-        [prev | _] ->
-          gap = DateTime.diff(candle.timestamp, prev.timestamp, :millisecond)
-
-          if gap > interval_ms * 2 do
-            Logger.warning(
-              "Data gap detected: #{gap}ms between #{prev.timestamp} and #{candle.timestamp}"
-            )
-          end
-
-          [candle | acc]
-      end
-    end)
-    |> Enum.reverse()
+    get_klines(symbol, interval, opts)
   end
 end

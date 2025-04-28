@@ -5,6 +5,8 @@ defmodule Central.Application do
 
   use Application
 
+  alias Central.MarketData.CacheManager # Add alias
+
   @impl true
   def start(_type, _args) do
     children = [
@@ -19,15 +21,18 @@ defmodule Central.Application do
       {Phoenix.PubSub, name: Central.PubSub},
       # Task Supervisor for background jobs
       {Task.Supervisor, name: Central.TaskSupervisor},
-      # Initialize the market data cache
-      {Task, fn -> Central.Backtest.Contexts.MarketDataContext.init_cache() end},
-      # Start the market data sync worker
-      Central.Backtest.Workers.MarketSyncWorker,
+      # Start the Market Data Cache Manager (owns the ETS table)
+      CacheManager,
       # Start the BacktestRunner GenServer
       {Central.Backtest.Workers.BacktestRunnerWorker, []},
       # Start to serve requests, typically the last entry
       CentralWeb.Endpoint,
-      TwMerge.Cache
+      TwMerge.Cache,
+      # Start the MarketData Sync Worker (periodic sync) - AFTER CacheManager
+      Central.MarketData.MarketDataSyncWorker,
+      # Start the MarketData History Fetcher (on-demand) - AFTER CacheManager
+      Central.MarketData.MarketDataHistoryFetcher,
+      # Add other workers and supervisors as needed
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

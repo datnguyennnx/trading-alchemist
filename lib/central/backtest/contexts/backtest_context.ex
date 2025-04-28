@@ -21,7 +21,7 @@ defmodule Central.Backtest.Contexts.BacktestContext do
   Gets a backtest by ID, raises if not found.
   """
   def get_backtest!(id) do
-    Repo.get!(Backtest, id)
+    Repo.get!(Backtest, id) |> Repo.preload(:strategy)
   end
 
   @doc """
