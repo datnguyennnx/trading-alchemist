@@ -22,16 +22,15 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 
 // Import hooks
-import { FlickeringGrid, ThemeManager, DatePicker, BacktestForm } from "./hooks";
-import TradingViewChart from "./hooks/tradingview";
+import { FlickeringGrid, ThemeManager, DatePicker, BacktestForm, TradingViewChart } from "./hooks";
 
 // Register all hooks
 const Hooks = {
   FlickeringGrid,
   ThemeManager,
-  TradingViewChart,
   DateTimePicker: DatePicker,
-  BacktestForm
+  BacktestForm,
+  TradingViewChart
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

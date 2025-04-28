@@ -20,46 +20,47 @@ const BacktestForm = {
   
   handleSubmit(e) {
     // If this was triggered by a date picker change rather than the submit button, prevent submission
-    if (e.submitter !== document.querySelector('#backtest-config-form button[type="submit"]')) {
+    const submitButton = this.el.querySelector('button[type="submit"]');
+    if (e.submitter !== submitButton) {
       e.preventDefault();
       e.stopPropagation();
       return;
     }
-    
-    // Get references to date picker containers
-    const startTimeContainer = document.getElementById('start_time_container');
-    const endTimeContainer = document.getElementById('end_time_container');
-    
-    // Find date picker elements
-    const startTimePicker = startTimeContainer?.querySelector('[id^="backtest-start-time"]');
-    const endTimePicker = endTimeContainer?.querySelector('[id^="backtest-end-time"]');
-    
+
+    // Get dynamic IDs from dataset
+    const startTimePickerId = this.el.dataset.startTimeId;
+    const endTimePickerId = this.el.dataset.endTimeId;
+
+    // Find date picker elements using dynamic IDs
+    const startTimePicker = startTimePickerId ? document.getElementById(startTimePickerId) : null;
+    const endTimePicker = endTimePickerId ? document.getElementById(endTimePickerId) : null;
+
     // Update start date value
-    if (startTimePicker && window.DateTimePickerRegistry && 
+    if (startTimePicker && window.DateTimePickerRegistry &&
         window.DateTimePickerRegistry[startTimePicker.id]) {
-      
+
       const pickerInstance = window.DateTimePickerRegistry[startTimePicker.id];
       const startDateValue = pickerInstance.getCurrentValue();
-      
+
       if (!startDateValue) {
         console.warn("Warning: start_time value is null or undefined");
       }
-      
+
       // Create/replace hidden input for start_time
       this.createOrUpdateHiddenInput('start_time', startDateValue || '');
     }
-    
+
     // Update end date value
-    if (endTimePicker && window.DateTimePickerRegistry && 
+    if (endTimePicker && window.DateTimePickerRegistry &&
         window.DateTimePickerRegistry[endTimePicker.id]) {
-      
+
       const pickerInstance = window.DateTimePickerRegistry[endTimePicker.id];
       const endDateValue = pickerInstance.getCurrentValue();
-      
+
       if (!endDateValue) {
         console.warn("Warning: end_time value is null or undefined");
       }
-      
+
       // Create/replace hidden input for end_time
       this.createOrUpdateHiddenInput('end_time', endDateValue || '');
     }
