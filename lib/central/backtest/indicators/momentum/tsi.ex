@@ -32,7 +32,14 @@ defmodule Central.Backtest.Indicators.Momentum.Tsi do
   @doc """
   Calculates the True Strength Index.
   """
-  def calculate(candles, long_period \\ 25, short_period \\ 13, signal_period \\ 7, price_key \\ :close) when is_list(candles) do
+  def calculate(
+        candles,
+        long_period \\ 25,
+        short_period \\ 13,
+        signal_period \\ 7,
+        price_key \\ :close
+      )
+      when is_list(candles) do
     prices =
       candles
       |> Enum.map(&Map.get(&1, price_key))
@@ -43,7 +50,8 @@ defmodule Central.Backtest.Indicators.Momentum.Tsi do
          first_smoothed_momentum <- exponential_smoothing(price_changes, long_period),
          first_smoothed_abs_momentum <- exponential_smoothing(abs_price_changes, long_period),
          double_smoothed_momentum <- exponential_smoothing(first_smoothed_momentum, short_period),
-         double_smoothed_abs_momentum <- exponential_smoothing(first_smoothed_abs_momentum, short_period),
+         double_smoothed_abs_momentum <-
+           exponential_smoothing(first_smoothed_abs_momentum, short_period),
          tsi <- calculate_tsi_values(double_smoothed_momentum, double_smoothed_abs_momentum),
          signal <- calculate_signal_line(tsi, signal_period) do
       {:ok, %{tsi: tsi, signal: signal}}
@@ -56,10 +64,13 @@ defmodule Central.Backtest.Indicators.Momentum.Tsi do
     cond do
       not is_list(prices) ->
         {:error, "Prices must be a list"}
+
       length(prices) < long_period + short_period ->
         {:error, "Not enough data points for the given periods"}
+
       long_period <= 0 or short_period <= 0 or signal_period <= 0 ->
         {:error, "Periods must be greater than 0"}
+
       true ->
         true
     end
@@ -151,22 +162,24 @@ defmodule Central.Backtest.Indicators.Momentum.Tsi do
     divergence_list = []
 
     # Check for bullish divergence
-    divergence_list = if Enum.min(lows) == List.last(lows) and
-       Enum.min(tsi_values) != List.last(tsi_values) and
-       Enum.min(tsi_values) < List.last(tsi_values) do
-      [{:bullish_divergence, index} | divergence_list]
-    else
-      divergence_list
-    end
+    divergence_list =
+      if Enum.min(lows) == List.last(lows) and
+           Enum.min(tsi_values) != List.last(tsi_values) and
+           Enum.min(tsi_values) < List.last(tsi_values) do
+        [{:bullish_divergence, index} | divergence_list]
+      else
+        divergence_list
+      end
 
     # Check for bearish divergence
-    divergence_list = if Enum.max(highs) == List.last(highs) and
-       Enum.max(tsi_values) != List.last(tsi_values) and
-       Enum.max(tsi_values) > List.last(tsi_values) do
-      [{:bearish_divergence, index} | divergence_list]
-    else
-      divergence_list
-    end
+    divergence_list =
+      if Enum.max(highs) == List.last(highs) and
+           Enum.max(tsi_values) != List.last(tsi_values) and
+           Enum.max(tsi_values) > List.last(tsi_values) do
+        [{:bearish_divergence, index} | divergence_list]
+      else
+        divergence_list
+      end
 
     divergence_list
   end

@@ -40,12 +40,18 @@ defmodule CentralWeb.StrategyLive.Components.TradingRules do
                 <%= for rule <- get_entry_rules(@strategy) do %>
                   <.table_row>
                     <.table_cell class="font-medium px-2 py-1.5">
-                      <p class="font-bold"><%= format_rule_name(get_indicator_display_name(rule["indicator"], @indicators)) %></p>
+                      <p class="font-bold">
+                        {format_rule_name(get_indicator_display_name(rule["indicator"], @indicators))}
+                      </p>
                     </.table_cell>
                     <.table_cell class="px-2 py-1.5">
-                      <p class="underline decoration-dotted"><%= format_condition(rule["comparison"]) %></p>
+                      <p class="underline decoration-dotted">
+                        {format_condition(rule["comparison"])}
+                      </p>
                     </.table_cell>
-                    <.table_cell numeric class="font-medium px-2 py-1.5"><%= format_value(rule["value"]) %></.table_cell>
+                    <.table_cell numeric class="font-medium px-2 py-1.5">
+                      {format_value(rule["value"])}
+                    </.table_cell>
                   </.table_row>
                 <% end %>
                 <%= if Enum.empty?(get_entry_rules(@strategy)) do %>
@@ -58,8 +64,8 @@ defmodule CentralWeb.StrategyLive.Components.TradingRules do
               </.table_body>
             </.table>
           </div>
-
-          <!-- Exit Rules Section -->
+          
+    <!-- Exit Rules Section -->
           <div class="p-4 py-1">
             <div class="flex items-center py-3">
               <.icon name="hero-arrow-down-circle" class="h-5 w-5 text-destructive mr-2" />
@@ -79,17 +85,23 @@ defmodule CentralWeb.StrategyLive.Components.TradingRules do
                 <%= for rule <- get_exit_rules(@strategy) do %>
                   <.table_row>
                     <.table_cell class="font-medium px-2 py-1.5">
-                      <p class="font-bold"><%= format_rule_name(get_indicator_display_name(rule["indicator"], @indicators)) %></p>
+                      <p class="font-bold">
+                        {format_rule_name(get_indicator_display_name(rule["indicator"], @indicators))}
+                      </p>
                     </.table_cell>
                     <.table_cell class="px-2 py-1.5">
-                      <p class="underline decoration-dotted"><%= format_condition(rule["comparison"]) %></p>
+                      <p class="underline decoration-dotted">
+                        {format_condition(rule["comparison"])}
+                      </p>
                     </.table_cell>
-                    <.table_cell class="font-medium px-2 py-1.5"><%= format_value(rule["value"]) %></.table_cell>
+                    <.table_cell class="font-medium px-2 py-1.5">
+                      {format_value(rule["value"])}
+                    </.table_cell>
                     <.table_cell numeric class="font-medium text-destructive px-2 py-1.5">
-                      <%= if rule["stop_loss"], do: rule["stop_loss"], else: "-" %>
+                      {if rule["stop_loss"], do: rule["stop_loss"], else: "-"}
                     </.table_cell>
                     <.table_cell numeric class="font-medium text-success px-2 py-1.5">
-                      <%= if rule["take_profit"], do: rule["take_profit"], else: "-" %>
+                      {if rule["take_profit"], do: rule["take_profit"], else: "-"}
                     </.table_cell>
                   </.table_row>
                 <% end %>
@@ -115,7 +127,7 @@ defmodule CentralWeb.StrategyLive.Components.TradingRules do
 
   defp get_indicator_display_name(indicator_id, indicators) do
     indicator = Enum.find(indicators, &(&1.id == indicator_id))
-    indicator && indicator.name || format_rule_name(indicator_id)
+    (indicator && indicator.name) || format_rule_name(indicator_id)
   end
 
   defp format_condition(condition) when is_binary(condition), do: condition
@@ -132,5 +144,6 @@ defmodule CentralWeb.StrategyLive.Components.TradingRules do
     |> String.split()
     |> Enum.map_join(" ", &String.capitalize/1)
   end
+
   defp format_rule_name(name), do: to_string(name)
 end

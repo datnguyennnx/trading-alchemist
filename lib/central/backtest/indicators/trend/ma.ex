@@ -24,7 +24,8 @@ defmodule Central.Backtest.Indicators.Trend.MA do
   ## Returns
     - List of SMA values aligned with the input candles (first period-1 values are nil)
   """
-  def sma(candles, period, price_key \\ :close) when is_list(candles) and is_integer(period) and period > 0 do
+  def sma(candles, period, price_key \\ :close)
+      when is_list(candles) and is_integer(period) and period > 0 do
     MovingAverage.sma(candles, period, price_key)
   end
 
@@ -39,7 +40,8 @@ defmodule Central.Backtest.Indicators.Trend.MA do
   ## Returns
     - List of EMA values aligned with the input candles (first period-1 values are nil)
   """
-  def ema(candles, period, price_key \\ :close) when is_list(candles) and is_integer(period) and period > 0 do
+  def ema(candles, period, price_key \\ :close)
+      when is_list(candles) and is_integer(period) and period > 0 do
     MovingAverage.ema(candles, period, price_key)
   end
 
@@ -54,7 +56,8 @@ defmodule Central.Backtest.Indicators.Trend.MA do
   ## Returns
     - List of WMA values aligned with the input candles (first period-1 values are nil)
   """
-  def wma(candles, period, price_key \\ :close) when is_list(candles) and is_integer(period) and period > 0 do
+  def wma(candles, period, price_key \\ :close)
+      when is_list(candles) and is_integer(period) and period > 0 do
     prices = ListOperations.extract_key(candles, price_key)
 
     # Calculate weights: 1, 2, 3, ..., period
@@ -91,7 +94,8 @@ defmodule Central.Backtest.Indicators.Trend.MA do
   ## Returns
     - List of HMA values aligned with the input candles (first period-1 values are nil)
   """
-  def hma(candles, period, price_key \\ :close) when is_list(candles) and is_integer(period) and period > 0 do
+  def hma(candles, period, price_key \\ :close)
+      when is_list(candles) and is_integer(period) and period > 0 do
     # Hull MA = WMA(2*WMA(n/2) - WMA(n)), sqrt(n))
 
     # Calculate period/2 rounded down
@@ -110,8 +114,12 @@ defmodule Central.Backtest.Indicators.Trend.MA do
     raw_data =
       Enum.zip(wma_half, wma_full)
       |> Enum.map(fn
-        {nil, _} -> nil
-        {_, nil} -> nil
+        {nil, _} ->
+          nil
+
+        {_, nil} ->
+          nil
+
         {half, full} ->
           Decimal.sub(
             Decimal.mult(half, Decimal.new(2)),
@@ -141,7 +149,8 @@ defmodule Central.Backtest.Indicators.Trend.MA do
   ## Returns
     - List of VWMA values aligned with the input candles (first period-1 values are nil)
   """
-  def vwma(candles, period, price_key \\ :close) when is_list(candles) and is_integer(period) and period > 0 do
+  def vwma(candles, period, price_key \\ :close)
+      when is_list(candles) and is_integer(period) and period > 0 do
     # Need at least period candles with volume
     if length(candles) < period do
       List.duplicate(nil, length(candles))
@@ -150,20 +159,22 @@ defmodule Central.Backtest.Indicators.Trend.MA do
       candles
       |> Enum.chunk_every(period, 1, :discard)
       |> Enum.map(fn window ->
-        volume_sum = Enum.reduce(window, Decimal.new(0), fn candle, acc ->
-          Decimal.add(acc, Map.get(candle, :volume))
-        end)
+        volume_sum =
+          Enum.reduce(window, Decimal.new(0), fn candle, acc ->
+            Decimal.add(acc, Map.get(candle, :volume))
+          end)
 
         if Decimal.equal?(volume_sum, Decimal.new(0)) do
           # If no volume, return nil (or could use a regular SMA instead)
           nil
         else
           # Calculate sum of price * volume
-          price_volume_sum = Enum.reduce(window, Decimal.new(0), fn candle, acc ->
-            price = Map.get(candle, price_key)
-            volume = Map.get(candle, :volume)
-            Decimal.add(acc, Decimal.mult(price, volume))
-          end)
+          price_volume_sum =
+            Enum.reduce(window, Decimal.new(0), fn candle, acc ->
+              price = Map.get(candle, price_key)
+              volume = Map.get(candle, :volume)
+              Decimal.add(acc, Decimal.mult(price, volume))
+            end)
 
           # VWMA = sum(price * volume) / sum(volume)
           Decimal.div(price_volume_sum, volume_sum)

@@ -111,9 +111,10 @@ defmodule CentralWeb.StrategyLive.Components.TradingForm do
   end
 
   def update(assigns, socket) do
-    assigns = assigns
-    |> Map.put(:timeframe_labels, @timeframe_labels)
-    |> Map.put(:symbol_labels, @symbol_labels)
+    assigns =
+      assigns
+      |> Map.put(:timeframe_labels, @timeframe_labels)
+      |> Map.put(:symbol_labels, @symbol_labels)
 
     {:ok, assign(socket, assigns)}
   end
@@ -134,7 +135,8 @@ defmodule CentralWeb.StrategyLive.Components.TradingForm do
 
     # Sort by the predefined order
     Enum.sort_by(timeframes, fn {id, _name} ->
-      Map.get(timeframe_order, id, 999) # Default high value for unknown timeframes
+      # Default high value for unknown timeframes
+      Map.get(timeframe_order, id, 999)
     end)
   end
 
@@ -146,7 +148,8 @@ defmodule CentralWeb.StrategyLive.Components.TradingForm do
 
     # Sort by the predefined order
     Enum.sort_by(symbols, fn {id, _name} ->
-      Map.get(symbol_order, id, 999) # Default high value for unknown symbols
+      # Default high value for unknown symbols
+      Map.get(symbol_order, id, 999)
     end)
   end
 end

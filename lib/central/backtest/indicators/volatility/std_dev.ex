@@ -24,8 +24,8 @@ defmodule Central.Backtest.Indicators.Volatility.StdDev do
     - List of Standard Deviation values aligned with input candles (first period-1 values are nil)
   """
   def standard_deviation(candles, period \\ 20, price_key \\ :close, type \\ :population)
-    when is_list(candles) and is_integer(period) and period > 0 and type in [:population, :sample] do
-
+      when is_list(candles) and is_integer(period) and period > 0 and
+             type in [:population, :sample] do
     # Extract price data
     prices = ListOperations.extract_key(candles, price_key)
 
@@ -47,22 +47,26 @@ defmodule Central.Backtest.Indicators.Volatility.StdDev do
   ## Returns
     - Standard Deviation as a Decimal
   """
-  def calculate_std_dev(prices, type \\ :population) when is_list(prices) and length(prices) > 0 do
+  def calculate_std_dev(prices, type \\ :population)
+      when is_list(prices) and length(prices) > 0 do
     # Calculate mean
     mean = Math.average(prices)
 
     # Calculate sum of squared differences
-    sum_of_squares = Enum.reduce(prices, Decimal.new(0), fn price, acc ->
-      diff = Decimal.sub(price, mean)
-      squared_diff = Decimal.mult(diff, diff)
-      Decimal.add(acc, squared_diff)
-    end)
+    sum_of_squares =
+      Enum.reduce(prices, Decimal.new(0), fn price, acc ->
+        diff = Decimal.sub(price, mean)
+        squared_diff = Decimal.mult(diff, diff)
+        Decimal.add(acc, squared_diff)
+      end)
 
     # Adjust divisor based on type of standard deviation
-    divisor = case type do
-      :population -> length(prices)
-      :sample -> max(1, length(prices) - 1)  # Avoid division by zero
-    end
+    divisor =
+      case type do
+        :population -> length(prices)
+        # Avoid division by zero
+        :sample -> max(1, length(prices) - 1)
+      end
 
     # Calculate variance
     variance = Decimal.div(sum_of_squares, Decimal.new(divisor))
@@ -83,8 +87,7 @@ defmodule Central.Backtest.Indicators.Volatility.StdDev do
     - List of CV values aligned with input candles (first period-1 values are nil)
   """
   def coefficient_of_variation(candles, period \\ 20, price_key \\ :close)
-    when is_list(candles) and is_integer(period) and period > 0 do
-
+      when is_list(candles) and is_integer(period) and period > 0 do
     # Extract price data
     prices = ListOperations.extract_key(candles, price_key)
 
@@ -95,18 +98,23 @@ defmodule Central.Backtest.Indicators.Volatility.StdDev do
     std_values = rolling_std_dev(prices, period)
 
     # Calculate Coefficient of Variation: CV = StdDev / Mean
-    cv_values = Enum.zip(std_values, sma_values)
-    |> Enum.map(fn
-      {nil, _} -> nil
-      {_, nil} -> nil
-      {std, mean} ->
-        # Avoid division by zero
-        if Decimal.equal?(mean, Decimal.new(0)) do
-          Decimal.new(0)
-        else
-          Decimal.div(std, mean)
-        end
-    end)
+    cv_values =
+      Enum.zip(std_values, sma_values)
+      |> Enum.map(fn
+        {nil, _} ->
+          nil
+
+        {_, nil} ->
+          nil
+
+        {std, mean} ->
+          # Avoid division by zero
+          if Decimal.equal?(mean, Decimal.new(0)) do
+            Decimal.new(0)
+          else
+            Decimal.div(std, mean)
+          end
+      end)
 
     # Align results with input data (pad with nils)
     padding_length = length(candles) - length(cv_values)
@@ -115,6 +123,7 @@ defmodule Central.Backtest.Indicators.Volatility.StdDev do
 
   # Calculate rolling standard deviation for each window of prices
   defp rolling_std_dev(prices, period, type \\ :population)
+
   defp rolling_std_dev(prices, period, type) when length(prices) >= period do
     # Create sliding windows
     price_windows = Enum.chunk_every(prices, period, 1, :discard)
@@ -124,6 +133,7 @@ defmodule Central.Backtest.Indicators.Volatility.StdDev do
       calculate_std_dev(window, type)
     end)
   end
+
   defp rolling_std_dev(_prices, _period, _type), do: []
 
   @doc """
@@ -139,9 +149,8 @@ defmodule Central.Backtest.Indicators.Volatility.StdDev do
     - List of volatility ratio values aligned with input candles
   """
   def volatility_ratio(candles, short_period \\ 5, long_period \\ 20, price_key \\ :close)
-    when is_list(candles) and is_integer(short_period) and short_period > 0
-    and is_integer(long_period) and long_period > 0 and short_period < long_period do
-
+      when is_list(candles) and is_integer(short_period) and short_period > 0 and
+             is_integer(long_period) and long_period > 0 and short_period < long_period do
     # Calculate short-term standard deviation
     short_std = standard_deviation(candles, short_period, price_key)
 
@@ -151,12 +160,17 @@ defmodule Central.Backtest.Indicators.Volatility.StdDev do
     # Calculate ratio: ShortStdDev / LongStdDev
     Enum.zip(short_std, long_std)
     |> Enum.map(fn
-      {nil, _} -> nil
-      {_, nil} -> nil
+      {nil, _} ->
+        nil
+
+      {_, nil} ->
+        nil
+
       {short, long} ->
         # Avoid division by zero
         if Decimal.equal?(long, Decimal.new(0)) do
-          Decimal.new(1)  # Default to 1 (neutral) when long-term vol is zero
+          # Default to 1 (neutral) when long-term vol is zero
+          Decimal.new(1)
         else
           Decimal.div(short, long)
         end

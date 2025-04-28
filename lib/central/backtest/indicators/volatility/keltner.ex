@@ -29,10 +29,9 @@ defmodule Central.Backtest.Indicators.Volatility.Keltner do
       }
   """
   def keltner(candles, ema_period \\ 20, atr_period \\ 10, multiplier \\ 2, price_key \\ :close)
-    when is_list(candles) and is_integer(ema_period) and ema_period > 0
-    and is_integer(atr_period) and atr_period > 0
-    and is_number(multiplier) and multiplier > 0 do
-
+      when is_list(candles) and is_integer(ema_period) and ema_period > 0 and
+             is_integer(atr_period) and atr_period > 0 and
+             is_number(multiplier) and multiplier > 0 do
     # Calculate EMA (middle channel)
     middle_line = MovingAverage.ema(candles, ema_period, price_key)
 
@@ -45,8 +44,12 @@ defmodule Central.Backtest.Indicators.Volatility.Keltner do
     # Zip EMA and ATR values
     Enum.zip(middle_line, atr_values)
     |> Enum.map(fn
-      {nil, _} -> nil
-      {_, nil} -> nil
+      {nil, _} ->
+        nil
+
+      {_, nil} ->
+        nil
+
       {ema, atr} ->
         # Upper = EMA + (ATR * multiplier)
         upper = Decimal.add(ema, Decimal.mult(atr, decimal_multiplier))

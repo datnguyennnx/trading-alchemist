@@ -39,7 +39,8 @@ defmodule Central.Backtest.Indicators.Momentum.SimpleMomentum do
   Calculates Simple Momentum for candles with specific parameters.
   This function matches the signature in indicators.ex.
   """
-  def calculate(candles, period, return_percentage, price_key) when is_list(candles) and is_atom(price_key) do
+  def calculate(candles, period, return_percentage, price_key)
+      when is_list(candles) and is_atom(price_key) do
     prices = Enum.map(candles, &Map.get(&1, price_key))
     calculate(prices, period, return_percentage)
   end
@@ -57,9 +58,13 @@ defmodule Central.Backtest.Indicators.Momentum.SimpleMomentum do
     - {:ok, momentum_values} on success
     - {:error, reason} on failure
   """
-  def calculate_from_candles(candles, period \\ 10, return_percentage \\ false, price_type \\ :close)
+  def calculate_from_candles(
+        candles,
+        period \\ 10,
+        return_percentage \\ false,
+        price_type \\ :close
+      )
       when is_list(candles) and is_atom(price_type) do
-
     prices = Enum.map(candles, &Map.get(&1, price_type))
     calculate(prices, period, return_percentage)
   end
@@ -68,10 +73,13 @@ defmodule Central.Backtest.Indicators.Momentum.SimpleMomentum do
     cond do
       not is_list(prices) ->
         {:error, "Prices must be a list"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       length(prices) < period ->
         {:error, "Not enough data points for the given period"}
+
       true ->
         true
     end
@@ -179,22 +187,24 @@ defmodule Central.Backtest.Indicators.Momentum.SimpleMomentum do
     divergences = []
 
     # Check for bullish divergence
-    divergences = if Enum.min(prices) == List.last(prices) and
-       Enum.min(momentum_values) != List.last(momentum_values) and
-       Enum.min(momentum_values) < List.last(momentum_values) do
-      [{:bullish_divergence, index} | divergences]
-    else
-      divergences
-    end
+    divergences =
+      if Enum.min(prices) == List.last(prices) and
+           Enum.min(momentum_values) != List.last(momentum_values) and
+           Enum.min(momentum_values) < List.last(momentum_values) do
+        [{:bullish_divergence, index} | divergences]
+      else
+        divergences
+      end
 
     # Check for bearish divergence
-    divergences = if Enum.max(prices) == List.last(prices) and
-       Enum.max(momentum_values) != List.last(momentum_values) and
-       Enum.max(momentum_values) > List.last(momentum_values) do
-      [{:bearish_divergence, index} | divergences]
-    else
-      divergences
-    end
+    divergences =
+      if Enum.max(prices) == List.last(prices) and
+           Enum.max(momentum_values) != List.last(momentum_values) and
+           Enum.max(momentum_values) > List.last(momentum_values) do
+        [{:bearish_divergence, index} | divergences]
+      else
+        divergences
+      end
 
     divergences
   end

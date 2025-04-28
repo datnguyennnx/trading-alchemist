@@ -143,13 +143,21 @@ defmodule CentralWeb.Components.UI.DataTable do
   attr :selectable, :boolean, default: false
   attr :selected_rows, :list, default: []
   attr :on_select, :string, default: nil
-  attr :phx_value_keys, :map, default: %{}, doc: "Map of extra values to include in select/sort/page events"
+
+  attr :phx_value_keys, :map,
+    default: %{},
+    doc: "Map of extra values to include in select/sort/page events"
+
   attr :class, :string, default: nil
   attr :row_class, :string, default: nil
   attr :row_numbers, :boolean, default: false, doc: "Show row numbers starting from 1"
   attr :compact, :boolean, default: false, doc: "Use compact styling with reduced padding"
   attr :sticky_first_col, :boolean, default: false, doc: "Make the first column sticky"
-  attr :empty_message, :string, default: "No data available", doc: "Message to show when there are no rows"
+
+  attr :empty_message, :string,
+    default: "No data available",
+    doc: "Message to show when there are no rows"
+
   attr :loading, :boolean, default: false, doc: "Show loading state"
 
   slot :filter, doc: "Optional content for filtering controls placed above the table"
@@ -181,19 +189,19 @@ defmodule CentralWeb.Components.UI.DataTable do
     <div id={@id} class={classes(["w-full space-y-4", @class])}>
       <%= if @filter != [] do %>
         <div class="mb-4">
-          <%= render_slot(@filter) %>
+          {render_slot(@filter)}
         </div>
       <% end %>
 
       <%= if @loading and @loading_state != [] do %>
-        <%= render_slot(@loading_state) %>
+        {render_slot(@loading_state)}
       <% else %>
         <%= if Enum.empty?(@rows) and @empty_state != [] do %>
-          <%= render_slot(@empty_state) %>
+          {render_slot(@empty_state)}
         <% else %>
           <%= if Enum.empty?(@rows) do %>
             <div class="bg-muted/20 rounded-md p-8 text-center text-muted-foreground">
-              <%= @empty_message %>
+              {@empty_message}
             </div>
           <% else %>
             <div class="rounded-md border-2 p-2">
@@ -205,11 +213,18 @@ defmodule CentralWeb.Components.UI.DataTable do
                         <div class="flex items-center justify-center">
                           <%!-- Calculate if all rows on the current page are selected --%>
                           <% current_page_row_ids = Enum.map(@rows, @row_id) %>
-                          <% all_on_page_selected? = !Enum.empty?(current_page_row_ids) && Enum.all?(current_page_row_ids, fn id -> id in @selected_rows end) %>
+                          <% all_on_page_selected? =
+                            !Enum.empty?(current_page_row_ids) &&
+                              Enum.all?(current_page_row_ids, fn id -> id in @selected_rows end) %>
                           <.checkbox
                             id={"#{@id}-checkbox-select-all"}
                             value={all_on_page_selected?}
-                            phx-click={@on_select && JS.push(@on_select, value: Map.merge(@phx_value_keys, %{select_all: "toggle"}))}
+                            phx-click={
+                              @on_select &&
+                                JS.push(@on_select,
+                                  value: Map.merge(@phx_value_keys, %{select_all: "toggle"})
+                                )
+                            }
                             class="h-4 w-4"
                           />
                         </div>
@@ -217,7 +232,12 @@ defmodule CentralWeb.Components.UI.DataTable do
                     <% end %>
 
                     <%= if @row_numbers do %>
-                      <.table_head class={classes(["w-[40px] text-center", @sticky_first_col && "sticky left-0 z-20 bg-background"])}>
+                      <.table_head class={
+                        classes([
+                          "w-[40px] text-center",
+                          @sticky_first_col && "sticky left-0 z-20 bg-background"
+                        ])
+                      }>
                         #
                       </.table_head>
                     <% end %>
@@ -230,8 +250,9 @@ defmodule CentralWeb.Components.UI.DataTable do
                             col[:min_width],
                             col[:sticky] && "sticky z-20 bg-background",
                             col[:sticky] && col_index == 0 && "left-0",
-                            (@sticky_first_col && col_index == 0 && !@row_numbers) && "sticky left-0 z-20 bg-background",
-                            col[:header_class],
+                            @sticky_first_col && col_index == 0 && !@row_numbers &&
+                              "sticky left-0 z-20 bg-background",
+                            col[:header_class]
                           ])
                         }
                         numeric={col[:numeric]}
@@ -241,11 +262,11 @@ defmodule CentralWeb.Components.UI.DataTable do
                             class="flex cursor-pointer items-center gap-1"
                             phx-click={@on_sort && JS.push(@on_sort, value: %{field: col[:field]})}
                           >
-                            <%= col.label %>
+                            {col.label}
                             <%= if @sort_field == col[:field] do %>
                               <.icon
                                 name={
-                                  @sort_direction == :asc && "hero-arrow-up-circle" ||
+                                  (@sort_direction == :asc && "hero-arrow-up-circle") ||
                                     "hero-arrow-down-circle"
                                 }
                                 class="h-4 w-4"
@@ -253,7 +274,7 @@ defmodule CentralWeb.Components.UI.DataTable do
                             <% end %>
                           </div>
                         <% else %>
-                          <%= col.label %>
+                          {col.label}
                         <% end %>
                       </.table_head>
                     <% end %>
@@ -271,12 +292,19 @@ defmodule CentralWeb.Components.UI.DataTable do
                       data-state={if row_id in @selected_rows, do: "selected"}
                     >
                       <%= if @selectable do %>
-                        <.table_cell class={classes(["w-[42px] px-0 text-center", @compact && "py-1"])}>
+                        <.table_cell class={
+                          classes(["w-[42px] px-0 text-center", @compact && "py-1"])
+                        }>
                           <div class="flex items-center justify-center">
                             <.checkbox
                               id={"#{@id}-checkbox-select-#{row_id}"}
                               value={row_id in @selected_rows}
-                              phx-click={@on_select && JS.push(@on_select, value: Map.merge(@phx_value_keys, %{select: row_id}))}
+                              phx-click={
+                                @on_select &&
+                                  JS.push(@on_select,
+                                    value: Map.merge(@phx_value_keys, %{select: row_id})
+                                  )
+                              }
                               class="h-4 w-4"
                             />
                           </div>
@@ -291,7 +319,7 @@ defmodule CentralWeb.Components.UI.DataTable do
                             @compact && "p-1"
                           ])
                         }>
-                          <%= index + 1 + (@page - 1) * @page_size %>
+                          {index + 1 + (@page - 1) * @page_size}
                         </.table_cell>
                       <% end %>
 
@@ -305,17 +333,18 @@ defmodule CentralWeb.Components.UI.DataTable do
                               col[:min_width],
                               col[:sticky] && "sticky z-10 bg-background",
                               col[:sticky] && col_index == 0 && "left-0",
-                              (@sticky_first_col && col_index == 0 && !@row_numbers) && "sticky left-0 z-10 bg-background",
+                              @sticky_first_col && col_index == 0 && !@row_numbers &&
+                                "sticky left-0 z-10 bg-background",
                               @compact && "p-1"
                             ])
                           }
                         >
-                          <%= render_slot(col, row) %>
+                          {render_slot(col, row)}
                         </.table_cell>
                       <% end %>
                       <%= if @actions != [] do %>
                         <.table_cell class={@compact && "p-1"}>
-                          <%= render_slot(@actions, row) %>
+                          {render_slot(@actions, row)}
                         </.table_cell>
                       <% end %>
                     </.table_row>
@@ -327,10 +356,13 @@ defmodule CentralWeb.Components.UI.DataTable do
             <div class="flex items-center justify-between px-2">
               <div class="text-sm text-muted-foreground">
                 <%= if @selectable do %>
-                  <%= length(@selected_rows) %> of <%= length(@rows) %> row(s) selected.
+                  {length(@selected_rows)} of {length(@rows)} row(s) selected.
                 <% else %>
                   <%= if @page_size do %>
-                    Showing <%= min((@page - 1) * @page_size + 1, @total_entries) %> to <%= min(@page * @page_size, @total_entries) %> of <%= @total_entries %> entries
+                    Showing {min((@page - 1) * @page_size + 1, @total_entries)} to {min(
+                      @page * @page_size,
+                      @total_entries
+                    )} of {@total_entries} entries
                   <% end %>
                 <% end %>
               </div>
@@ -340,18 +372,28 @@ defmodule CentralWeb.Components.UI.DataTable do
                   <.button
                     variant="outline"
                     size="sm"
-                    phx-click={@on_page_change && JS.push(@on_page_change, value: Map.merge(@phx_value_keys, %{page: @page - 1}))}
+                    phx-click={
+                      @on_page_change &&
+                        JS.push(@on_page_change,
+                          value: Map.merge(@phx_value_keys, %{page: @page - 1})
+                        )
+                    }
                     disabled={@page <= 1}
                   >
                     Previous
                   </.button>
                   <div class="text-sm">
-                    Page <%= @page %> of <%= ceil(@total_entries / @page_size) %>
+                    Page {@page} of {ceil(@total_entries / @page_size)}
                   </div>
                   <.button
                     variant="outline"
                     size="sm"
-                    phx-click={@on_page_change && JS.push(@on_page_change, value: Map.merge(@phx_value_keys, %{page: @page + 1}))}
+                    phx-click={
+                      @on_page_change &&
+                        JS.push(@on_page_change,
+                          value: Map.merge(@phx_value_keys, %{page: @page + 1})
+                        )
+                    }
                     disabled={@page >= ceil(@total_entries / @page_size)}
                   >
                     Next

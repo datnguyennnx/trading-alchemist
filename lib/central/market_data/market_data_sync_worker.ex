@@ -8,13 +8,16 @@ defmodule Central.MarketData.MarketDataSyncWorker do
   # Add alias for your HTTP client if you have one, e.g., Tesla or Finch
   # alias Central.HttpClient
 
-  @sync_interval_ms 5 * 60 * 1000 # 5 minutes
-  @initial_sync_delay_ms 5 * 1000 # 5 seconds
+  # 5 minutes
+  @sync_interval_ms 5 * 60 * 1000
+  # 5 seconds
+  @initial_sync_delay_ms 5 * 1000
 
   # Define symbols/timeframes to sync periodically
   # TODO: Make this dynamic based on usage or configuration
   @default_sync_symbols ["BTCUSDT"]
-  @default_sync_timeframes ["1m", "5m", "15m", "1h", "4h", "1d"] # Restored full list
+  # Restored full list
+  @default_sync_timeframes ["1m", "5m", "15m", "1h", "4h", "1d"]
 
   # --- Client API ---
 
@@ -67,7 +70,8 @@ defmodule Central.MarketData.MarketDataSyncWorker do
           {:error, :invalid_data_structure} = error ->
             {:error, error}
 
-          {:error, reason} -> # Catch other potential errors
+          # Catch other potential errors
+          {:error, reason} ->
             {:error, reason}
         end
 
@@ -83,8 +87,11 @@ defmodule Central.MarketData.MarketDataSyncWorker do
   end
 
   # Transform the maps returned by BinanceClient into maps suitable for insert_all
-  defp transform_binance_data(_symbol, _timeframe, binance_candle_maps) when is_list(binance_candle_maps) do
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second) # REVERTING to NaiveDateTime
+  defp transform_binance_data(_symbol, _timeframe, binance_candle_maps)
+       when is_list(binance_candle_maps) do
+    # REVERTING to NaiveDateTime
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
     Enum.map(binance_candle_maps, fn candle_map ->
       # The BinanceClient already parsed the data into a map with correct keys
       # We just need to ensure data types are compatible if necessary (client seems to handle decimals)
@@ -105,7 +112,8 @@ defmodule Central.MarketData.MarketDataSyncWorker do
       attrs = Map.put(attrs, :inserted_at, now)
 
       # Return the attributes map directly
-      attrs # Ensure this is the last expression
+      # Ensure this is the last expression
+      attrs
       # MarketData.changeset(%MarketData{}, attrs) <-- No longer create changeset here
     end)
   end
@@ -126,21 +134,30 @@ defmodule Central.MarketData.MarketDataSyncWorker do
       # Use do_fetch_and_store, which handles fetching and saving
       do_fetch_and_store(symbol, timeframe, start_time, end_time)
       # TODO: Add a small delay between requests? Binance might rate limit.
-      Process.sleep(500) # Small delay between symbol/timeframe fetches
+      # Small delay between symbol/timeframe fetches
+      Process.sleep(500)
     end
   end
 
   # Calculate how far back to fetch for periodic sync based on timeframe
   defp calculate_recent_start_time(end_time, timeframe) do
-    seconds_back = case timeframe do
-      "1m" -> 15 * 60        # Last 15 mins for 1m
-      "5m" -> 60 * 60        # Last 1 hour for 5m
-      "15m" -> 3 * 60 * 60   # Last 3 hours for 15m
-      "1h" -> 12 * 60 * 60  # Last 12 hours for 1h
-      "4h" -> 2 * 24 * 60 * 60 # Last 2 days for 4h
-      "1d" -> 7 * 24 * 60 * 60 # Last 7 days for 1d
-      _ -> 60 * 60           # Default to 1 hour
-    end
+    seconds_back =
+      case timeframe do
+        # Last 15 mins for 1m
+        "1m" -> 15 * 60
+        # Last 1 hour for 5m
+        "5m" -> 60 * 60
+        # Last 3 hours for 15m
+        "15m" -> 3 * 60 * 60
+        # Last 12 hours for 1h
+        "1h" -> 12 * 60 * 60
+        # Last 2 days for 4h
+        "4h" -> 2 * 24 * 60 * 60
+        # Last 7 days for 1d
+        "1d" -> 7 * 24 * 60 * 60
+        # Default to 1 hour
+        _ -> 60 * 60
+      end
 
     DateTime.add(end_time, -seconds_back, :second)
   end

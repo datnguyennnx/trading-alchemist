@@ -48,10 +48,13 @@ defmodule Central.Backtest.Indicators.Volume.NviPvi do
     cond do
       not (is_list(prices) and is_list(volume)) ->
         {:error, "Prices and volume must be lists"}
+
       length(prices) != length(volume) ->
         {:error, "Prices and volume must have the same length"}
+
       length(prices) < 2 ->
         {:error, "At least 2 data points are required"}
+
       true ->
         true
     end
@@ -63,37 +66,42 @@ defmodule Central.Backtest.Indicators.Volume.NviPvi do
     price_pairs = Enum.chunk_every(prices, 2, 1, :discard)
 
     # Calculate daily percentage price changes
-    price_changes = Enum.map(price_pairs, fn [prev, curr] ->
-      if prev == 0, do: 0, else: (curr - prev) / prev
-    end)
+    price_changes =
+      Enum.map(price_pairs, fn [prev, curr] ->
+        if prev == 0, do: 0, else: (curr - prev) / prev
+      end)
 
     # Determine volume direction (increase or decrease)
-    volume_directions = Enum.map(volume_pairs, fn [prev, curr] ->
-      cond do
-        curr > prev -> :increase
-        curr < prev -> :decrease
-        true -> :unchanged
-      end
-    end)
+    volume_directions =
+      Enum.map(volume_pairs, fn [prev, curr] ->
+        cond do
+          curr > prev -> :increase
+          curr < prev -> :decrease
+          true -> :unchanged
+        end
+      end)
 
     # Calculate NVI and PVI
     {nvi_values, pvi_values} =
       Enum.zip([price_changes, volume_directions])
-      |> Enum.reduce({[initial_value], [initial_value]}, fn {price_change, volume_dir}, {nvi_acc, pvi_acc} ->
+      |> Enum.reduce({[initial_value], [initial_value]}, fn {price_change, volume_dir},
+                                                            {nvi_acc, pvi_acc} ->
         current_nvi = List.first(nvi_acc)
         current_pvi = List.first(pvi_acc)
 
         # Update NVI only when volume decreases
-        new_nvi = case volume_dir do
-          :decrease -> current_nvi * (1 + price_change)
-          _ -> current_nvi
-        end
+        new_nvi =
+          case volume_dir do
+            :decrease -> current_nvi * (1 + price_change)
+            _ -> current_nvi
+          end
 
         # Update PVI only when volume increases
-        new_pvi = case volume_dir do
-          :increase -> current_pvi * (1 + price_change)
-          _ -> current_pvi
-        end
+        new_pvi =
+          case volume_dir do
+            :increase -> current_pvi * (1 + price_change)
+            _ -> current_pvi
+          end
 
         {[new_nvi | nvi_acc], [new_pvi | pvi_acc]}
       end)
@@ -113,8 +121,10 @@ defmodule Central.Backtest.Indicators.Volume.NviPvi do
   - {:error, reason} on failure
   """
   def calculate_signal_lines({nvi, pvi}, period \\ 255) do
-    with {:ok, nvi_signal} <- Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(nvi, period),
-         {:ok, pvi_signal} <- Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(pvi, period) do
+    with {:ok, nvi_signal} <-
+           Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(nvi, period),
+         {:ok, pvi_signal} <-
+           Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(pvi, period) do
       {:ok, {nvi_signal, pvi_signal}}
     else
       {:error, reason} -> {:error, reason}
@@ -137,22 +147,30 @@ defmodule Central.Backtest.Indicators.Volume.NviPvi do
     Enum.zip([nvi, pvi, nvi_signal, pvi_signal])
     |> Enum.chunk_every(2, 1, :discard)
     |> Enum.map(fn [
-      {prev_nvi, prev_pvi, prev_nvi_signal, prev_pvi_signal},
-      {curr_nvi, curr_pvi, curr_nvi_signal, curr_pvi_signal}
-    ] ->
+                     {prev_nvi, prev_pvi, prev_nvi_signal, prev_pvi_signal},
+                     {curr_nvi, curr_pvi, curr_nvi_signal, curr_pvi_signal}
+                   ] ->
       # Generate NVI signals
-      nvi_signal = cond do
-        prev_nvi < prev_nvi_signal and curr_nvi > curr_nvi_signal -> 1  # Bullish
-        prev_nvi > prev_nvi_signal and curr_nvi < curr_nvi_signal -> -1 # Bearish
-        true -> 0 # No signal
-      end
+      nvi_signal =
+        cond do
+          # Bullish
+          prev_nvi < prev_nvi_signal and curr_nvi > curr_nvi_signal -> 1
+          # Bearish
+          prev_nvi > prev_nvi_signal and curr_nvi < curr_nvi_signal -> -1
+          # No signal
+          true -> 0
+        end
 
       # Generate PVI signals
-      pvi_signal = cond do
-        prev_pvi < prev_pvi_signal and curr_pvi > curr_pvi_signal -> 1  # Bullish
-        prev_pvi > prev_pvi_signal and curr_pvi < curr_pvi_signal -> -1 # Bearish
-        true -> 0 # No signal
-      end
+      pvi_signal =
+        cond do
+          # Bullish
+          prev_pvi < prev_pvi_signal and curr_pvi > curr_pvi_signal -> 1
+          # Bearish
+          prev_pvi > prev_pvi_signal and curr_pvi < curr_pvi_signal -> -1
+          # No signal
+          true -> 0
+        end
 
       {nvi_signal, pvi_signal}
     end)
@@ -188,12 +206,16 @@ defmodule Central.Backtest.Indicators.Volume.NviPvi do
       cond do
         nvi_change > 2.0 and pvi_change < 0.5 ->
           [{:smart_money_accumulation, index}]
+
         nvi_change < -2.0 and pvi_change > -0.5 ->
           [{:smart_money_distribution, index}]
+
         pvi_change > 5.0 and nvi_change > 0 and nvi_change < pvi_change / 2 ->
           [{:public_participation, index}]
+
         pvi_change > 5.0 and nvi_change < 0 ->
           [{:market_top, index}]
+
         true ->
           []
       end

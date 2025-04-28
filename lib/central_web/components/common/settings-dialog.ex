@@ -40,7 +40,7 @@ defmodule CentralWeb.Components.Common.SettingsDialog do
               </div>
             </div>
           </div>
-
+          
     <!-- Settings Content -->
           <div class="m-4 flex-1 p-6 bg-background text-foreground">
             <div class="flex flex-col gap-6">

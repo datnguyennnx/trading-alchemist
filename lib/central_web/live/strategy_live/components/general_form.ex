@@ -12,7 +12,13 @@ defmodule CentralWeb.StrategyLive.Components.GeneralForm do
         <h2 class="font-bold text-foreground">General Information</h2>
       </div>
 
-      <input type="hidden" name="creation_method" value="form" phx-click="set_form_mode" phx-target={@myself} />
+      <input
+        type="hidden"
+        name="creation_method"
+        value="form"
+        phx-click="set_form_mode"
+        phx-target={@myself}
+      />
 
       <.form_item>
         <.form_label>Strategy Name</.form_label>

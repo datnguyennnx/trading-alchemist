@@ -110,7 +110,8 @@ defmodule Central.MarketData.Exchange.Binance.Client do
       open_time
       |> div(1000)
       |> DateTime.from_unix!()
-      |> DateTimeConfig.truncate() # Use centralized config
+      # Use centralized config
+      |> DateTimeConfig.truncate()
 
     # Return a map, not a MarketData struct directly
     # Let the caller (e.g., HistoricalDataFetcher) handle struct creation/DB mapping
@@ -123,7 +124,8 @@ defmodule Central.MarketData.Exchange.Binance.Client do
       low: low,
       close: close,
       volume: volume,
-      source: "binance" # Hardcoded for now
+      # Hardcoded for now
+      source: "binance"
     }
   end
 

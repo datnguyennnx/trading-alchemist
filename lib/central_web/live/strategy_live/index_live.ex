@@ -8,6 +8,7 @@ defmodule CentralWeb.StrategyLive.IndexLive do
 
   def mount(_params, _session, socket) do
     strategies = list_strategies()
+
     {:ok,
      socket
      |> assign(:strategies, strategies)
@@ -128,25 +129,35 @@ defmodule CentralWeb.StrategyLive.IndexLive do
       case strategy.entry_rules do
         %{"conditions" => conditions} when is_list(conditions) ->
           Enum.map(conditions, & &1["indicator"])
-        _ -> []
+
+        _ ->
+          []
       end
 
     exit_indicators =
       case strategy.exit_rules do
         %{"conditions" => conditions} when is_list(conditions) ->
           Enum.map(conditions, & &1["indicator"])
-        _ -> []
+
+        _ ->
+          []
       end
 
     all_indicators = entry_indicators ++ exit_indicators
     unique_indicators = Enum.uniq(all_indicators)
 
     case length(unique_indicators) do
-      0 -> "None"
-      1 -> display_indicator_name(hd(unique_indicators), indicators)
+      0 ->
+        "None"
+
+      1 ->
+        display_indicator_name(hd(unique_indicators), indicators)
+
       2 ->
         "#{display_indicator_name(Enum.at(unique_indicators, 0), indicators)}, #{display_indicator_name(Enum.at(unique_indicators, 1), indicators)}"
-      n when n > 2 -> "#{n} indicators"
+
+      n when n > 2 ->
+        "#{n} indicators"
     end
   end
 
@@ -154,10 +165,13 @@ defmodule CentralWeb.StrategyLive.IndexLive do
     case Enum.find(indicators, fn i -> i.id == indicator_id end) do
       %{id: id} when id in ["sma", "ema", "rsi", "macd"] ->
         String.upcase(id)
+
       %{id: "bollinger_bands"} ->
         "BB"
+
       %{name: name} ->
         name
+
       _ ->
         indicator_id || "Unknown"
     end

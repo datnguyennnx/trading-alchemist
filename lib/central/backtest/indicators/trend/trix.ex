@@ -43,10 +43,13 @@ defmodule Central.Backtest.Indicators.Trend.Trix do
     cond do
       not is_list(prices) ->
         {:error, "Prices must be a list"}
+
       length(prices) < period * 3 ->
         {:error, "Not enough data points for the given period"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       true ->
         true
     end
@@ -110,9 +113,12 @@ defmodule Central.Backtest.Indicators.Trend.Trix do
           |> Enum.chunk_every(2, 1, :discard)
           |> Enum.map(fn [prev, curr] ->
             cond do
-              prev < 0 and curr >= 0 -> 1      # Crossed above zero (bullish)
-              prev > 0 and curr <= 0 -> -1     # Crossed below zero (bearish)
-              true -> 0                        # No zero-cross
+              # Crossed above zero (bullish)
+              prev < 0 and curr >= 0 -> 1
+              # Crossed below zero (bearish)
+              prev > 0 and curr <= 0 -> -1
+              # No zero-cross
+              true -> 0
             end
           end)
           |> List.insert_at(0, 0)

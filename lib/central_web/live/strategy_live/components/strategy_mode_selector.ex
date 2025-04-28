@@ -23,8 +23,8 @@ defmodule CentralWeb.StrategyLive.Components.StrategyModeSelector do
             </p>
           </div>
         </div>
-
-        <!-- JSON Mode Card -->
+        
+    <!-- JSON Mode Card -->
         <div
           class={"bg-card rounded-md p-4 cursor-pointer border transition-all duration-200
             #{if @current_mode == "json",

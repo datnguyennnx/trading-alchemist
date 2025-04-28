@@ -15,6 +15,7 @@ defmodule Central.MarketData.CacheManager do
   @impl true
   def init(_state) do
     Logger.info("[#{__MODULE__}] Initializing ETS table '#{@table_name}'...")
+
     :ets.new(@table_name, [
       :set,
       :public,
@@ -22,8 +23,10 @@ defmodule Central.MarketData.CacheManager do
       read_concurrency: true,
       write_concurrency: true
     ])
+
     Logger.info("[#{__MODULE__}] ETS table '#{@table_name}' created successfully.")
-    {:ok, %{}} # Initial state can be empty for now
+    # Initial state can be empty for now
+    {:ok, %{}}
   end
 
   @impl true

@@ -84,24 +84,28 @@ defmodule CentralWeb.BacktestLive.ChartLive do
 
   @impl true
   def handle_event(
-    "load-historical-data",
-    %{"timestamp" => timestamp, "symbol" => symbol, "timeframe" => timeframe} = params,
-    socket
-  ) do
+        "load-historical-data",
+        %{"timestamp" => timestamp, "symbol" => symbol, "timeframe" => timeframe} = params,
+        socket
+      ) do
     batch_size = Map.get(params, "batchSize", 200)
-    result = ChartDataManager.load_historical_data(symbol, timeframe, timestamp, batch_size: batch_size)
 
-    socket = push_event(socket, "chart-data-updated", %{
-      data: result.data,
-      symbol: symbol,
-      timeframe: timeframe,
-      append: true
-    })
+    result =
+      ChartDataManager.load_historical_data(symbol, timeframe, timestamp, batch_size: batch_size)
 
-    {:reply, %{
-      has_more: result.has_more,
-      batchSize: result.recommended_batch_size
-    }, socket}
+    socket =
+      push_event(socket, "chart-data-updated", %{
+        data: result.data,
+        symbol: symbol,
+        timeframe: timeframe,
+        append: true
+      })
+
+    {:reply,
+     %{
+       has_more: result.has_more,
+       batchSize: result.recommended_batch_size
+     }, socket}
   end
 
   @impl true

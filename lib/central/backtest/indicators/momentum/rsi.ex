@@ -16,7 +16,8 @@ defmodule Central.Backtest.Indicators.Momentum.Rsi do
   ## Returns
     - List of RSI values aligned with the input candles (first period values are nil)
   """
-  def rsi(candles, period \\ 14, price_key \\ :close) when is_list(candles) and is_integer(period) and period > 0 do
+  def rsi(candles, period \\ 14, price_key \\ :close)
+      when is_list(candles) and is_integer(period) and period > 0 do
     # Extract prices
     prices = ListOperations.extract_key(candles, price_key)
 

@@ -64,24 +64,30 @@ defmodule CentralWeb.StrategyLive.Components.BacktestForm do
               <.form_item>
                 <.form_label>Start Time</.form_label>
                 <div phx-update="ignore" id={"start_time_container_#{@strategy_id}"}>
-                  <.date_time_picker id={"backtest-start-time-#{@strategy_id}"} name="start_time" value={@start_time} suppress_events={true} />
+                  <.date_time_picker
+                    id={"backtest-start-time-#{@strategy_id}"}
+                    name="start_time"
+                    value={@start_time}
+                    suppress_events={true}
+                  />
                 </div>
               </.form_item>
 
               <.form_item>
                 <.form_label>End Time</.form_label>
                 <div phx-update="ignore" id={"end_time_container_#{@strategy_id}"}>
-                  <.date_time_picker id={"backtest-end-time-#{@strategy_id}"} name="end_time" value={@end_time} suppress_events={true} />
+                  <.date_time_picker
+                    id={"backtest-end-time-#{@strategy_id}"}
+                    name="end_time"
+                    value={@end_time}
+                    suppress_events={true}
+                  />
                 </div>
               </.form_item>
             </div>
 
             <div class="flex justify-end gap-2 pt-2">
-              <.button
-                type="submit"
-                variant="default"
-                phx-disable-with="Running..."
-              >
+              <.button type="submit" variant="default" phx-disable-with="Running...">
                 Run Backtest
               </.button>
             </div>

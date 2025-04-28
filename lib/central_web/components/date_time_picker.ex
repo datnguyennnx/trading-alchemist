@@ -100,11 +100,11 @@ defmodule CentralWeb.Components.DateTimePicker do
             />
             <div class="relative w-20">
               <.select
+                :let={builder}
                 id={"#{@id}-period-select"}
                 name={"#{@id}-period"}
                 value={selected_period(@value)}
                 class="period-select w-full"
-                :let={builder}
               >
                 <.select_trigger builder={builder} class="h-9" />
                 <.select_content builder={builder} class="w-full min-w-[5rem]">

@@ -7,8 +7,15 @@ defmodule CentralWeb.Live.Components.Chart.ChartComponent do
   require Logger
 
   # Chart type determines if it expects backtest data (all at once) or generic (initial + potential updates)
-  attr :chart_type, :atom, required: true, values: [:generic, :backtest], doc: "Indicates the type of data handling expected."
-  attr :chart_id, :string, required: true, doc: "Unique ID for the chart element and JS Hook targeting."
+  attr :chart_type, :atom,
+    required: true,
+    values: [:generic, :backtest],
+    doc: "Indicates the type of data handling expected."
+
+  attr :chart_id, :string,
+    required: true,
+    doc: "Unique ID for the chart element and JS Hook targeting."
+
   attr :symbol, :string, required: true, doc: "The trading symbol (e.g., BTCUSDT)."
   attr :timeframe, :string, required: true, doc: "The chart timeframe (e.g., 1h)."
   attr :theme, :string, default: "light", doc: "Chart theme ('light' or 'dark')."
@@ -17,7 +24,10 @@ defmodule CentralWeb.Live.Components.Chart.ChartComponent do
   attr :start_time_limit, DateTime, default: nil, doc: "Optional earliest data timestamp limit."
   attr :end_time_limit, DateTime, default: nil, doc: "Optional latest data timestamp limit."
   # Loading state controlled by the parent
-  attr :loading, :boolean, default: true, doc: "Indicates if the parent is currently loading data."
+  attr :loading, :boolean,
+    default: true,
+    doc: "Indicates if the parent is currently loading data."
+
   # Chart data directly passed by parent
   attr :chart_data, :list, default: [], doc: "OHLC candle data for chart."
   # Options passed directly to the JS hook (e.g., trade markers for backtest)
@@ -51,7 +61,8 @@ defmodule CentralWeb.Live.Components.Chart.ChartComponent do
           push_event(socket, "set-initial-data", %{
             chartId: socket.assigns.chart_id,
             data: socket.assigns.chart_data,
-            opts: socket.assigns.opts # Sending opts again
+            # Sending opts again
+            opts: socket.assigns.opts
           })
         else
           # IO.puts("--- CHART DATA PUSH SKIPPED (EMPTY DATA) ---")
@@ -98,7 +109,9 @@ defmodule CentralWeb.Live.Components.Chart.ChartComponent do
         data-symbol={@symbol}
         data-timeframe={@timeframe}
         data-theme={@theme}
-        data-start-time-limit={if @start_time_limit, do: DateTime.to_unix(@start_time_limit), else: nil}
+        data-start-time-limit={
+          if @start_time_limit, do: DateTime.to_unix(@start_time_limit), else: nil
+        }
         data-end-time-limit={if @end_time_limit, do: DateTime.to_unix(@end_time_limit), else: nil}
         data-opts={Jason.encode!(@opts)}
         class="w-full rounded-lg border border-border bg-card"
@@ -110,7 +123,7 @@ defmodule CentralWeb.Live.Components.Chart.ChartComponent do
           id={"#{@chart_id}-no-data-text"}
           class="absolute inset-0 flex items-center justify-center text-muted-foreground hidden"
         >
-         No data available for display.
+          No data available for display.
         </p>
       </div>
     </div>

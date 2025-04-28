@@ -7,7 +7,8 @@ defmodule Central.Backtest.Services.Fetching.MarketDataHandler do
   alias Central.Backtest.Contexts.MarketDataContext
   # Remove alias to HistoricalDataFetcher, as it's now handled by SyncService
   # alias Central.Backtest.Services.MarketData.HistoricalDataFetcher
-  alias Central.MarketData.SyncService # Use the new service
+  # Use the new service
+  alias Central.MarketData.SyncService
   alias Central.Backtest.Contexts.BacktestContext
   alias Central.Backtest.Utils.DecimalUtils
 
@@ -41,14 +42,18 @@ defmodule Central.Backtest.Services.Fetching.MarketDataHandler do
         fetch_and_format_candles(symbol, timeframe, start_time, end_time)
 
       {:ok, :synced} ->
-         # If backtest has an ID, update status to pending as fetching is now complete.
-         # This assumes the status might have been 'fetching_data' if triggered elsewhere,
-         # or simply ensures it's ready after potentially blocking fetches.
+        # If backtest has an ID, update status to pending as fetching is now complete.
+        # This assumes the status might have been 'fetching_data' if triggered elsewhere,
+        # or simply ensures it's ready after potentially blocking fetches.
         if backtest.id do
-           Logger.info("SyncService fetched missing data. Updating backtest status to pending.")
-           BacktestContext.update_backtest(backtest, %{status: :pending})
+          Logger.info("SyncService fetched missing data. Updating backtest status to pending.")
+          BacktestContext.update_backtest(backtest, %{status: :pending})
         end
-        Logger.info("SyncService fetched missing data for #{symbol}/#{timeframe}. Fetching from DB...")
+
+        Logger.info(
+          "SyncService fetched missing data for #{symbol}/#{timeframe}. Fetching from DB..."
+        )
+
         fetch_and_format_candles(symbol, timeframe, start_time, end_time)
 
       {:error, reason} ->
@@ -61,6 +66,7 @@ defmodule Central.Backtest.Services.Fetching.MarketDataHandler do
             error_message: error_message
           })
         end
+
         {:error, error_message}
     end
   end
@@ -92,8 +98,11 @@ defmodule Central.Backtest.Services.Fetching.MarketDataHandler do
       Logger.warning(
         "No market data found in database for #{symbol} #{timeframe} from #{inspect(start_time)} to #{inspect(end_time)} despite SyncService success."
       )
-       # Decide if this should be an error for the backtest or an empty dataset
-      {:ok, []} # Returning empty list might be acceptable for backtesting
+
+      # Decide if this should be an error for the backtest or an empty dataset
+      # Returning empty list might be acceptable for backtesting
+      {:ok, []}
+
       # Or: {:error, "No market data available for the specified time period, even after sync check."}
     else
       # Convert to maps with consistent structure
@@ -101,7 +110,8 @@ defmodule Central.Backtest.Services.Fetching.MarketDataHandler do
         Enum.map(candles, fn candle ->
           %{
             timestamp: candle.timestamp,
-            open: DecimalUtils.to_float(candle.open), # Use DecimalUtils
+            # Use DecimalUtils
+            open: DecimalUtils.to_float(candle.open),
             high: DecimalUtils.to_float(candle.high),
             low: DecimalUtils.to_float(candle.low),
             close: DecimalUtils.to_float(candle.close),

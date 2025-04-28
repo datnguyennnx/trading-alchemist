@@ -21,7 +21,9 @@ defmodule CentralWeb.Components.UI.Checkbox do
       prepare_assign(assigns)
 
     assigns =
-      assign_new(assigns, :checked, fn -> Phoenix.HTML.Form.normalize_value("checkbox", assigns.value) end)
+      assign_new(assigns, :checked, fn ->
+        Phoenix.HTML.Form.normalize_value("checkbox", assigns.value)
+      end)
 
     ~H"""
     <input type="hidden" name={@name} value="false" />

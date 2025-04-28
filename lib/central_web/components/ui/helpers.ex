@@ -131,10 +131,8 @@ defmodule CentralWeb.ComponentHelpers do
         "bg-success text-success-foreground hover:bg-success/90 dark:hover:bg-success/80",
       "warning" =>
         "bg-warning text-warning-foreground hover:bg-warning/90 dark:hover:bg-warning/80",
-      "info" =>
-        "bg-info text-info-foreground hover:bg-info/90 dark:hover:bg-info/80",
-      "accent" =>
-        "bg-accent text-accent-foreground hover:bg-accent/90 dark:hover:bg-accent/80"
+      "info" => "bg-info text-info-foreground hover:bg-info/90 dark:hover:bg-info/80",
+      "accent" => "bg-accent text-accent-foreground hover:bg-accent/90 dark:hover:bg-accent/80"
     },
     size: %{
       "default" => "h-9 px-4 py-2",

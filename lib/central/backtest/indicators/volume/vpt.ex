@@ -57,8 +57,10 @@ defmodule Central.Backtest.Indicators.Volume.Vpt do
     cond do
       not is_list(close) or not is_list(volume) ->
         {:error, "Inputs must be lists"}
+
       length(close) != length(volume) ->
         {:error, "Input lists must have the same length"}
+
       true ->
         true
     end
@@ -127,20 +129,22 @@ defmodule Central.Backtest.Indicators.Volume.Vpt do
     divergences = []
 
     # Check for bullish divergence
-    divergences = if Enum.min(lows) == List.last(lows) and
-       Enum.min(vpts) != List.last(vpts) do
-      [{:bullish_divergence, index} | divergences]
-    else
-      divergences
-    end
+    divergences =
+      if Enum.min(lows) == List.last(lows) and
+           Enum.min(vpts) != List.last(vpts) do
+        [{:bullish_divergence, index} | divergences]
+      else
+        divergences
+      end
 
     # Check for bearish divergence
-    divergences = if Enum.max(highs) == List.last(highs) and
-       Enum.max(vpts) != List.last(vpts) do
-      [{:bearish_divergence, index} | divergences]
-    else
-      divergences
-    end
+    divergences =
+      if Enum.max(highs) == List.last(highs) and
+           Enum.max(vpts) != List.last(vpts) do
+        [{:bearish_divergence, index} | divergences]
+      else
+        divergences
+      end
 
     divergences
   end

@@ -38,14 +38,16 @@ defmodule Central.Backtest.Indicators.Trend.Gmma do
     prices = IndicatorUtils.extract_price(candles, price_key)
 
     # Calculate all short-term EMAs
-    short_emas = Enum.map(short_periods, fn period ->
-      IndicatorUtils.ema(prices, period)
-    end)
+    short_emas =
+      Enum.map(short_periods, fn period ->
+        IndicatorUtils.ema(prices, period)
+      end)
 
     # Calculate all long-term EMAs
-    long_emas = Enum.map(long_periods, fn period ->
-      IndicatorUtils.ema(prices, period)
-    end)
+    long_emas =
+      Enum.map(long_periods, fn period ->
+        IndicatorUtils.ema(prices, period)
+      end)
 
     # Extract dates if they exist
     dates = extract_dates(candles)
@@ -80,37 +82,38 @@ defmodule Central.Backtest.Indicators.Trend.Gmma do
     n_points = length(List.first(short_emas))
 
     # Prepare lists for analysis
-    analysis = for i <- 0..(n_points - 1) do
-      # Extract all EMAs at this index
-      short_values = Enum.map(short_emas, &Enum.at(&1, i))
-      long_values = Enum.map(long_emas, &Enum.at(&1, i))
+    analysis =
+      for i <- 0..(n_points - 1) do
+        # Extract all EMAs at this index
+        short_values = Enum.map(short_emas, &Enum.at(&1, i))
+        long_values = Enum.map(long_emas, &Enum.at(&1, i))
 
-      all_values = short_values ++ long_values
+        all_values = short_values ++ long_values
 
-      # Skip analysis if we don't have enough data yet
-      if Enum.any?(all_values, &is_nil/1) do
-        %{
-          trend: :insufficient_data,
-          strength: :insufficient_data,
-          signal: :insufficient_data,
-          compression: :insufficient_data
-        }
-      else
-        # Analyze the GMMA configuration
-        {trend, strength} = analyze_trend(short_values, long_values)
-        compression = measure_compression(short_values, long_values)
-        signal = determine_signal(short_values, long_values, compression)
+        # Skip analysis if we don't have enough data yet
+        if Enum.any?(all_values, &is_nil/1) do
+          %{
+            trend: :insufficient_data,
+            strength: :insufficient_data,
+            signal: :insufficient_data,
+            compression: :insufficient_data
+          }
+        else
+          # Analyze the GMMA configuration
+          {trend, strength} = analyze_trend(short_values, long_values)
+          compression = measure_compression(short_values, long_values)
+          signal = determine_signal(short_values, long_values, compression)
 
-        %{
-          trend: trend,
-          strength: strength,
-          signal: signal,
-          compression: compression,
-          short_values: short_values,
-          long_values: long_values
-        }
+          %{
+            trend: trend,
+            strength: strength,
+            signal: signal,
+            compression: compression,
+            short_values: short_values,
+            long_values: long_values
+          }
+        end
       end
-    end
 
     {:ok, analysis}
   end
@@ -126,16 +129,12 @@ defmodule Central.Backtest.Indicators.Trend.Gmma do
     cond do
       # Bullish: All short EMAs above long EMAs
       Decimal.gt?(min_short, max_long) -> {:bullish, :strong}
-
       # Bearish: All short EMAs below long EMAs
       Decimal.gt?(min_long, max_short) -> {:bearish, :strong}
-
       # Moderately bullish: Most short EMAs above long EMAs
       Decimal.gt?(Enum.at(short_values, 0), Enum.at(long_values, 5)) -> {:bullish, :moderate}
-
       # Moderately bearish: Most short EMAs below long EMAs
       Decimal.gt?(Enum.at(long_values, 0), Enum.at(short_values, 5)) -> {:bearish, :moderate}
-
       # Mixed: No clear pattern
       true -> {:sideways, :weak}
     end
@@ -149,11 +148,11 @@ defmodule Central.Backtest.Indicators.Trend.Gmma do
     # Determine compression level based on range
     cond do
       Decimal.lt?(short_range, Decimal.mult(Decimal.new("0.1"), Enum.at(short_values, 0))) and
-      Decimal.lt?(long_range, Decimal.mult(Decimal.new("0.1"), Enum.at(long_values, 0))) ->
+          Decimal.lt?(long_range, Decimal.mult(Decimal.new("0.1"), Enum.at(long_values, 0))) ->
         :high_compression
 
       Decimal.lt?(short_range, Decimal.mult(Decimal.new("0.2"), Enum.at(short_values, 0))) and
-      Decimal.lt?(long_range, Decimal.mult(Decimal.new("0.2"), Enum.at(long_values, 0))) ->
+          Decimal.lt?(long_range, Decimal.mult(Decimal.new("0.2"), Enum.at(long_values, 0))) ->
         :moderate_compression
 
       true ->
@@ -196,12 +195,18 @@ defmodule Central.Backtest.Indicators.Trend.Gmma do
     - {:ok, result} where result is a map with :short_emas and :long_emas
   """
   @spec gmma(list(), list(), list(), atom()) :: {:ok, map()}
-  def gmma(candles, short_periods \\ [3, 5, 8, 10, 12, 15], long_periods \\ [30, 35, 40, 45, 50, 60], price_key \\ :close) do
-    result = calculate(candles, [
-      short_periods: short_periods,
-      long_periods: long_periods,
-      price_key: price_key
-    ])
+  def gmma(
+        candles,
+        short_periods \\ [3, 5, 8, 10, 12, 15],
+        long_periods \\ [30, 35, 40, 45, 50, 60],
+        price_key \\ :close
+      ) do
+    result =
+      calculate(candles,
+        short_periods: short_periods,
+        long_periods: long_periods,
+        price_key: price_key
+      )
 
     {:ok, result}
   end

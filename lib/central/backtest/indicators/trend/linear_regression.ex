@@ -26,8 +26,7 @@ defmodule Central.Backtest.Indicators.Trend.LinearRegression do
     - List of linear regression line values aligned with input candles
   """
   def regression_line(candles, period \\ 20, price_key \\ :close)
-    when is_list(candles) and is_integer(period) and period > 0 do
-
+      when is_list(candles) and is_integer(period) and period > 0 do
     # Extract price data
     prices = ListOperations.extract_key(candles, price_key)
 
@@ -39,7 +38,8 @@ defmodule Central.Backtest.Indicators.Trend.LinearRegression do
         {slope, intercept} = calculate_slope_intercept(window)
 
         # Regression line endpoint (predicted value at the last point in window)
-        x = period - 1  # Zero-based index for the last point
+        # Zero-based index for the last point
+        x = period - 1
         Decimal.add(intercept, Decimal.mult(slope, Decimal.new(x)))
       end)
 
@@ -61,8 +61,7 @@ defmodule Central.Backtest.Indicators.Trend.LinearRegression do
     - List of slope values aligned with input candles
   """
   def regression_slope(candles, period \\ 20, price_key \\ :close, normalized \\ true)
-    when is_list(candles) and is_integer(period) and period > 0 and is_boolean(normalized) do
-
+      when is_list(candles) and is_integer(period) and period > 0 and is_boolean(normalized) do
     # Extract price data
     prices = ListOperations.extract_key(candles, price_key)
 
@@ -111,8 +110,8 @@ defmodule Central.Backtest.Indicators.Trend.LinearRegression do
       }
   """
   def regression_channel(candles, period \\ 20, deviations \\ 2, price_key \\ :close)
-    when is_list(candles) and is_integer(period) and period > 0 and is_number(deviations) and deviations > 0 do
-
+      when is_list(candles) and is_integer(period) and period > 0 and is_number(deviations) and
+             deviations > 0 do
     # Extract price data
     prices = ListOperations.extract_key(candles, price_key)
 
@@ -164,8 +163,7 @@ defmodule Central.Backtest.Indicators.Trend.LinearRegression do
     - List of R-squared values aligned with input candles (0 to 1, higher values indicate better fit)
   """
   def r_squared(candles, period \\ 20, price_key \\ :close)
-    when is_list(candles) and is_integer(period) and period > 0 do
-
+      when is_list(candles) and is_integer(period) and period > 0 do
     # Extract price data
     prices = ListOperations.extract_key(candles, price_key)
 
@@ -201,39 +199,49 @@ defmodule Central.Backtest.Indicators.Trend.LinearRegression do
     # Calculate sums for the least squares formula
     sum_x = Enum.reduce(coords, Decimal.new(0), fn {x, _}, acc -> Decimal.add(acc, x) end)
     sum_y = Enum.reduce(coords, Decimal.new(0), fn {_, y}, acc -> Decimal.add(acc, y) end)
-    sum_xy = Enum.reduce(coords, Decimal.new(0), fn {x, y}, acc ->
-      Decimal.add(acc, Decimal.mult(x, y))
-    end)
-    sum_x_squared = Enum.reduce(coords, Decimal.new(0), fn {x, _}, acc ->
-      Decimal.add(acc, Decimal.mult(x, x))
-    end)
+
+    sum_xy =
+      Enum.reduce(coords, Decimal.new(0), fn {x, y}, acc ->
+        Decimal.add(acc, Decimal.mult(x, y))
+      end)
+
+    sum_x_squared =
+      Enum.reduce(coords, Decimal.new(0), fn {x, _}, acc ->
+        Decimal.add(acc, Decimal.mult(x, x))
+      end)
 
     # Calculate slope
     decimal_n = Decimal.new(n)
-    numerator = Decimal.sub(
-      Decimal.mult(decimal_n, sum_xy),
-      Decimal.mult(sum_x, sum_y)
-    )
-    denominator = Decimal.sub(
-      Decimal.mult(decimal_n, sum_x_squared),
-      Decimal.mult(sum_x, sum_x)
-    )
+
+    numerator =
+      Decimal.sub(
+        Decimal.mult(decimal_n, sum_xy),
+        Decimal.mult(sum_x, sum_y)
+      )
+
+    denominator =
+      Decimal.sub(
+        Decimal.mult(decimal_n, sum_x_squared),
+        Decimal.mult(sum_x, sum_x)
+      )
 
     # Handle case where denominator is zero (horizontal line)
-    slope = if Decimal.equal?(denominator, Decimal.new(0)) do
-      Decimal.new(0)
-    else
-      Decimal.div(numerator, denominator)
-    end
+    slope =
+      if Decimal.equal?(denominator, Decimal.new(0)) do
+        Decimal.new(0)
+      else
+        Decimal.div(numerator, denominator)
+      end
 
     # Calculate intercept
-    intercept = Decimal.sub(
-      Decimal.div(sum_y, decimal_n),
-      Decimal.mult(
-        slope,
-        Decimal.div(sum_x, decimal_n)
+    intercept =
+      Decimal.sub(
+        Decimal.div(sum_y, decimal_n),
+        Decimal.mult(
+          slope,
+          Decimal.div(sum_x, decimal_n)
+        )
       )
-    )
 
     {slope, intercept}
   end
@@ -247,36 +255,41 @@ defmodule Central.Backtest.Indicators.Trend.LinearRegression do
   end
 
   # Calculate the standard error (standard deviation of residuals)
-  defp calculate_standard_error(actual_values, regression_values) when length(actual_values) == length(regression_values) do
+  defp calculate_standard_error(actual_values, regression_values)
+       when length(actual_values) == length(regression_values) do
     # Calculate residuals (actual - predicted)
-    residuals = Enum.zip(actual_values, regression_values)
-    |> Enum.map(fn {actual, predicted} ->
-      Decimal.sub(actual, predicted)
-    end)
+    residuals =
+      Enum.zip(actual_values, regression_values)
+      |> Enum.map(fn {actual, predicted} ->
+        Decimal.sub(actual, predicted)
+      end)
 
     # Calculate standard deviation of residuals
     StdDev.calculate_std_dev(residuals)
   end
 
   # Calculate R-squared (coefficient of determination)
-  defp calculate_r_squared(actual_values, regression_values) when length(actual_values) == length(regression_values) do
+  defp calculate_r_squared(actual_values, regression_values)
+       when length(actual_values) == length(regression_values) do
     # Calculate mean of actual values
     mean = Math.average(actual_values)
 
     # Calculate sum of squared residuals (SSR)
-    ssr = Enum.zip(actual_values, regression_values)
-    |> Enum.reduce(Decimal.new(0), fn {actual, predicted}, acc ->
-      residual = Decimal.sub(actual, predicted)
-      sq_residual = Decimal.mult(residual, residual)
-      Decimal.add(acc, sq_residual)
-    end)
+    ssr =
+      Enum.zip(actual_values, regression_values)
+      |> Enum.reduce(Decimal.new(0), fn {actual, predicted}, acc ->
+        residual = Decimal.sub(actual, predicted)
+        sq_residual = Decimal.mult(residual, residual)
+        Decimal.add(acc, sq_residual)
+      end)
 
     # Calculate total sum of squares (SST)
-    sst = Enum.reduce(actual_values, Decimal.new(0), fn actual, acc ->
-      diff = Decimal.sub(actual, mean)
-      sq_diff = Decimal.mult(diff, diff)
-      Decimal.add(acc, sq_diff)
-    end)
+    sst =
+      Enum.reduce(actual_values, Decimal.new(0), fn actual, acc ->
+        diff = Decimal.sub(actual, mean)
+        sq_diff = Decimal.mult(diff, diff)
+        Decimal.add(acc, sq_diff)
+      end)
 
     # R² = 1 - (SSR / SST)
     if Decimal.equal?(sst, Decimal.new(0)) do
@@ -359,10 +372,12 @@ defmodule Central.Backtest.Indicators.Trend.LinearRegression do
 
   # Project trends forward to find potential support/resistance levels
   defp project_trends(trends, projection_periods) do
-    Enum.map(trends, fn %{slope: slope, intercept: intercept, length: length, r_squared: r2} = trend ->
+    Enum.map(trends, fn %{slope: slope, intercept: intercept, length: length, r_squared: r2} =
+                          trend ->
       # Project forward
+      # Zero-based index
       projected_value =
-        (length + projection_periods - 1)  # Zero-based index
+        (length + projection_periods - 1)
         |> Decimal.new()
         |> Decimal.mult(slope)
         |> Decimal.add(intercept)

@@ -39,8 +39,10 @@ defmodule Central.Backtest.Indicators.Calculations.ListOperations do
       cond do
         Decimal.compare(change, Decimal.new(0)) == :gt ->
           {change, Decimal.new(0)}
+
         Decimal.compare(change, Decimal.new(0)) == :lt ->
           {Decimal.new(0), Decimal.abs(change)}
+
         true ->
           {Decimal.new(0), Decimal.new(0)}
       end

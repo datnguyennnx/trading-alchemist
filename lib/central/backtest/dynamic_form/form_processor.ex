@@ -61,11 +61,14 @@ defmodule Central.Backtest.DynamicForm.FormProcessor do
     {entry_rules, exit_rules} = parse_rules_from_form(params)
 
     # Prepare strategy params
-    strategy_params = FormContext.prepare_strategy_params(params, entry_rules, exit_rules, user_id)
+    strategy_params =
+      FormContext.prepare_strategy_params(params, entry_rules, exit_rules, user_id)
 
     # Simple validation
     case validate_strategy(strategy_params) do
-      :ok -> {:ok, strategy_params}
+      :ok ->
+        {:ok, strategy_params}
+
       {:error, message} ->
         {:error, message}
     end
@@ -87,18 +90,20 @@ defmodule Central.Backtest.DynamicForm.FormProcessor do
   """
   def parse_rule_group(params, prefix) do
     # Count how many rules exist by counting indicator fields
-    indicator_keys = params
-                    |> Map.keys()
-                    |> Enum.filter(&String.starts_with?(&1, "#{prefix}_indicator_"))
+    indicator_keys =
+      params
+      |> Map.keys()
+      |> Enum.filter(&String.starts_with?(&1, "#{prefix}_indicator_"))
 
     count = length(indicator_keys)
 
     # Parse each rule
-    rules = 0..(count - 1)
-    |> Enum.map(fn index ->
-      parse_rule(params, prefix, index)
-    end)
-    |> Enum.filter(&(&1 != nil))
+    rules =
+      0..(count - 1)
+      |> Enum.map(fn index ->
+        parse_rule(params, prefix, index)
+      end)
+      |> Enum.filter(&(&1 != nil))
 
     rules
   end
@@ -127,31 +132,32 @@ defmodule Central.Backtest.DynamicForm.FormProcessor do
       params_map = extract_indicator_params(params, prefix, index, indicator_id)
 
       # Add special fields for exit rules
-      rule_attrs = if prefix == "exit" do
-        stop_loss_key = "#{prefix}_stop_loss_#{index}"
-        take_profit_key = "#{prefix}_take_profit_#{index}"
+      rule_attrs =
+        if prefix == "exit" do
+          stop_loss_key = "#{prefix}_stop_loss_#{index}"
+          take_profit_key = "#{prefix}_take_profit_#{index}"
 
-        stop_loss = Map.get(params, stop_loss_key)
-        take_profit = Map.get(params, take_profit_key)
+          stop_loss = Map.get(params, stop_loss_key)
+          take_profit = Map.get(params, take_profit_key)
 
-        %{
-          id: rule_id,
-          indicator_id: indicator_id,
-          condition: condition,
-          value: value,
-          params: params_map,
-          stop_loss: stop_loss,
-          take_profit: take_profit
-        }
-      else
-        %{
-          id: rule_id,
-          indicator_id: indicator_id,
-          condition: condition,
-          value: value,
-          params: params_map
-        }
-      end
+          %{
+            id: rule_id,
+            indicator_id: indicator_id,
+            condition: condition,
+            value: value,
+            params: params_map,
+            stop_loss: stop_loss,
+            take_profit: take_profit
+          }
+        else
+          %{
+            id: rule_id,
+            indicator_id: indicator_id,
+            condition: condition,
+            value: value,
+            params: params_map
+          }
+        end
 
       Rule.new(rule_attrs)
     end
@@ -164,19 +170,21 @@ defmodule Central.Backtest.DynamicForm.FormProcessor do
     # Find all parameter keys for this rule
     param_prefix = "#{prefix}_param_#{rule_index}_"
 
-    param_keys = params
-                |> Map.keys()
-                |> Enum.filter(&String.starts_with?(&1, param_prefix))
+    param_keys =
+      params
+      |> Map.keys()
+      |> Enum.filter(&String.starts_with?(&1, param_prefix))
 
     # Extract parameter values
-    raw_params = param_keys
-                |> Enum.reduce(%{}, fn key, acc ->
-                  # Extract parameter name from key
-                  param_name = String.replace_prefix(key, param_prefix, "")
-                  param_value = Map.get(params, key)
+    raw_params =
+      param_keys
+      |> Enum.reduce(%{}, fn key, acc ->
+        # Extract parameter name from key
+        param_name = String.replace_prefix(key, param_prefix, "")
+        param_value = Map.get(params, key)
 
-                  Map.put(acc, param_name, param_value)
-                end)
+        Map.put(acc, param_name, param_value)
+      end)
 
     # Transform parameters to their correct types
     FormContext.transform_params(raw_params, indicator_id)
@@ -212,8 +220,10 @@ defmodule Central.Backtest.DynamicForm.FormProcessor do
     case rules do
       %{conditions: conditions} when is_list(conditions) ->
         Enum.empty?(conditions)
+
       %{"conditions" => conditions} when is_list(conditions) ->
         Enum.empty?(conditions)
+
       _ ->
         true
     end
@@ -224,8 +234,10 @@ defmodule Central.Backtest.DynamicForm.FormProcessor do
     case rules do
       %{conditions: conditions} when is_list(conditions) ->
         Enum.empty?(conditions)
+
       %{"conditions" => conditions} when is_list(conditions) ->
         Enum.empty?(conditions)
+
       _ ->
         true
     end

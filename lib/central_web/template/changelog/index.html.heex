@@ -10,37 +10,57 @@
       features: [
         %{
           title: "Refactoring Strategy and Backtest UI",
-          description: "This initiative focuses on refactoring the user interface (UI) and user experience (UX) for the Strategy and Backtest modules. A key aspect of this refactoring is the implementation of a new dynamic configuration form, which requires a corresponding adjustment to the UI/UX flow. Furthermore, the way information is structured and presented to the user is being revised to better align with the capabilities of the new dynamic form and enhance overall user interaction."
+          description:
+            "This initiative focuses on refactoring the user interface (UI) and user experience (UX) for the Strategy and Backtest modules. A key aspect of this refactoring is the implementation of a new dynamic configuration form, which requires a corresponding adjustment to the UI/UX flow. Furthermore, the way information is structured and presented to the user is being revised to better align with the capabilities of the new dynamic form and enhance overall user interaction."
         },
         %{
           title: "Market Data Sync Service",
-          description: "Created a centralized service (MarketData.SyncService) to check data availability and trigger historical fetching (HistoricalDataFetcher), decoupled from the backtesting process. Uses Task.async_stream for concurrent fetching."
+          description:
+            "Created a centralized service (MarketData.SyncService) to check data availability and trigger historical fetching (HistoricalDataFetcher), decoupled from the backtesting process. Uses Task.async_stream for concurrent fetching."
         },
         %{
           title: "Reusable Chart Component Architecture",
-          description: "Enhanced the generic ChartComponent to manage its own data loading lifecycle (initial and historical) and respect time constraints. Simplified BacktestChartComponent to delegate rendering and data loading to ChartComponent."
+          description:
+            "Enhanced the generic ChartComponent to manage its own data loading lifecycle (initial and historical) and respect time constraints. Simplified BacktestChartComponent to delegate rendering and data loading to ChartComponent."
         },
         %{
           title: "Improved Data Ingestion Pipeline",
-          description: "Clarified DataProcessor role by adding data validation (validate_candle_data/1) used by HistoricalDataFetcher during ingestion before database storage. Removed redundant/unused normalization code."
+          description:
+            "Clarified DataProcessor role by adding data validation (validate_candle_data/1) used by HistoricalDataFetcher during ingestion before database storage. Removed redundant/unused normalization code."
         },
         %{
           title: "Centralized Helpers",
-          description: "Created TimeframeHelper module to consolidate timeframe logic, used across data fetching and chart management."
+          description:
+            "Created TimeframeHelper module to consolidate timeframe logic, used across data fetching and chart management."
         }
       ],
       changes: [
         %{description: "Moved HistoricalDataFetcher to lib/central/market_data/."},
         %{description: "Created MarketData.SyncService in lib/central/market_data/."},
         %{description: "Refactored MarketDataHandler to use SyncService."},
-        %{description: "Refactored ChartComponent for internal data loading and constraint handling."},
-        %{description: "Refactored BacktestChartComponent to use ChartComponent via <.live_component>."},
+        %{
+          description:
+            "Refactored ChartComponent for internal data loading and constraint handling."
+        },
+        %{
+          description:
+            "Refactored BacktestChartComponent to use ChartComponent via <.live_component>."
+        },
         %{description: "Simplified ChartDataManager, removing backtest-specific logic."},
-        %{description: "Added DataProcessor.validate_candle_data/1 and updated HistoricalDataFetcher to use it."},
+        %{
+          description:
+            "Added DataProcessor.validate_candle_data/1 and updated HistoricalDataFetcher to use it."
+        },
         %{description: "Removed unused validation/normalization functions from DataProcessor."},
         %{description: "Created Helpers.TimeframeHelper and updated callers."},
-        %{description: "Fixed missing :backtest assign error when rendering BacktestChartComponent in BacktestLive.ShowLive."},
-        %{description: "Fixed linter warnings (unused functions) and type errors (Decimal.parse) in DataProcessor."}
+        %{
+          description:
+            "Fixed missing :backtest assign error when rendering BacktestChartComponent in BacktestLive.ShowLive."
+        },
+        %{
+          description:
+            "Fixed linter warnings (unused functions) and type errors (Decimal.parse) in DataProcessor."
+        }
       ]
     },
     %{
@@ -50,37 +70,69 @@
       description:
         "This release implements on-demand historical data fetching, enhances backtest UI components, improves error handling, and optimizes datetime utilities. Key additions include the dynamic form for strategy settings and a comprehensive set of trading indicators.",
       features: [
-         %{
+        %{
           title: "Strategy Rule Component (Dynamic Form & Indicators)",
-          description: "Enhanced dynamic form handling with improved value management and conditional field visibility. Includes a structured implementation for dynamic forms (context, generator, processor, transformer, rules) and a categorized suite of indicators (calculations, levels, momentum, trend, volatility, volume) with utilities."
+          description:
+            "Enhanced dynamic form handling with improved value management and conditional field visibility. Includes a structured implementation for dynamic forms (context, generator, processor, transformer, rules) and a categorized suite of indicators (calculations, levels, momentum, trend, volatility, volume) with utilities."
         },
         %{
           title: "Historical Market Data Sync",
-          description: "Implemented on-demand historical data fetching with chunking, robust error handling, and automatic detection of missing data periods."
+          description:
+            "Implemented on-demand historical data fetching with chunking, robust error handling, and automatic detection of missing data periods."
         },
         %{
           title: "Backtest UI Improvements",
-          description: "Enhanced the date picker handling with automatic background data loading upon selecting historical dates and improved user feedback during loading."
+          description:
+            "Enhanced the date picker handling with automatic background data loading upon selecting historical dates and improved user feedback during loading."
         },
         %{
           title: "Error Handling Enhancements",
-          description: "Resolved function clause errors (e.g., in the date time picker for missing data) and implemented graceful error recovery mechanisms."
+          description:
+            "Resolved function clause errors (e.g., in the date time picker for missing data) and implemented graceful error recovery mechanisms."
         },
         %{
           title: "Technical Optimizations",
-          description: "Unified datetime utilities into a central module, optimized indicator calculations (e.g., Volume Indicator), and improved code maintainability by removing unused imports."
+          description:
+            "Unified datetime utilities into a central module, optimized indicator calculations (e.g., Volume Indicator), and improved code maintainability by removing unused imports."
         }
       ],
       changes: [
-        %{description: "Added HistoricalDataFetcher service for fetching specific date ranges from Binance API."},
-        %{description: "Implemented chunking mechanism in data fetcher to handle large date ranges while respecting API rate limits."},
-        %{description: "Added robust error handling with exponential backoff retry mechanism to the data fetcher."},
-        %{description: "Enhanced the backtest date picker with automatic background data loading when selecting historical dates."},
-        %{description: "Improved user feedback through flash messages during data loading operations."},
-        %{description: "Enhanced rule item handling within the dynamic form with better value processing and default states."},
-        %{description: "Added conditional field visibility in the dynamic form based on selected values."},
-        %{description: "Resolved function clause error for date time picker when historical data is missing."},
-        %{description: "Unified datetime handling by moving functionality to Central.Backtest.Utils.DatetimeUtils."},
+        %{
+          description:
+            "Added HistoricalDataFetcher service for fetching specific date ranges from Binance API."
+        },
+        %{
+          description:
+            "Implemented chunking mechanism in data fetcher to handle large date ranges while respecting API rate limits."
+        },
+        %{
+          description:
+            "Added robust error handling with exponential backoff retry mechanism to the data fetcher."
+        },
+        %{
+          description:
+            "Enhanced the backtest date picker with automatic background data loading when selecting historical dates."
+        },
+        %{
+          description:
+            "Improved user feedback through flash messages during data loading operations."
+        },
+        %{
+          description:
+            "Enhanced rule item handling within the dynamic form with better value processing and default states."
+        },
+        %{
+          description:
+            "Added conditional field visibility in the dynamic form based on selected values."
+        },
+        %{
+          description:
+            "Resolved function clause error for date time picker when historical data is missing."
+        },
+        %{
+          description:
+            "Unified datetime handling by moving functionality to Central.Backtest.Utils.DatetimeUtils."
+        },
         %{description: "Optimized Volume Indicator with improved calculation utilities."},
         %{description: "Fixed compiler warnings by removing unused module imports."}
       ]
@@ -107,9 +159,8 @@
         },
         %{
           title: "Refactoring UI folder for SaladUI like ShadcnUI",
-          description:
-            "Ensured consistent install and storing reusable components."
-        },
+          description: "Ensured consistent install and storing reusable components."
+        }
       ],
       changes: [
         %{description: "Implemented Data Table component."},
@@ -119,16 +170,13 @@
         %{description: "Prevented unexpected backtest runs when changing dates."},
         %{description: "Refactored SaladUI configuration location."},
         %{
-          description:
-            "Successfully converted an existing HTML structure to a LiveView template."
+          description: "Successfully converted an existing HTML structure to a LiveView template."
         },
         %{
-          description:
-            "Fixed styling inconsistencies for select components in different themes."
+          description: "Fixed styling inconsistencies for select components in different themes."
         },
         %{
-          description:
-            "Implemented correct favicon display for LiveView pages."
+          description: "Implemented correct favicon display for LiveView pages."
         },
         %{description: "Removed console logs and standardized logger usage."},
         %{description: "Removed unused code and dependencies."},

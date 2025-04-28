@@ -38,11 +38,12 @@ defmodule Central.Backtest.Indicators do
     indicators = ListIndicator.list_indicators()
 
     # Apply type filter if provided
-    filtered_indicators = if type_filter do
-      Enum.filter(indicators, fn indicator -> indicator.type == type_filter end)
-    else
-      indicators
-    end
+    filtered_indicators =
+      if type_filter do
+        Enum.filter(indicators, fn indicator -> indicator.type == type_filter end)
+      else
+        indicators
+      end
 
     # Calculate pagination
     total_count = length(filtered_indicators)
@@ -74,13 +75,14 @@ defmodule Central.Backtest.Indicators do
   def indicators_for_select(grouped \\ true) do
     indicators = ListIndicator.list_indicators()
 
-    lightweight_indicators = Enum.map(indicators, fn indicator ->
-      %{
-        id: indicator.id,
-        name: indicator.name,
-        type: indicator.type
-      }
-    end)
+    lightweight_indicators =
+      Enum.map(indicators, fn indicator ->
+        %{
+          id: indicator.id,
+          name: indicator.name,
+          type: indicator.type
+        }
+      end)
 
     if grouped do
       Enum.group_by(lightweight_indicators, fn indicator -> indicator.type end)
@@ -97,13 +99,16 @@ defmodule Central.Backtest.Indicators do
     indicator = ListIndicator.get_indicator(indicator_id)
 
     case indicator do
-      nil -> nil
+      nil ->
+        nil
+
       _ ->
         # Prepare parameters in the format expected by FormContext and FormGenerator
-        params = Enum.map(indicator.params || [], fn param ->
-          # Ensure params have consistent keys and format for the form modules
-          Map.put(param, :id, param.name)
-        end)
+        params =
+          Enum.map(indicator.params || [], fn param ->
+            # Ensure params have consistent keys and format for the form modules
+            Map.put(param, :id, param.name)
+          end)
 
         # Return a format compatible with DynamicForm modules
         Map.put(indicator, :params, params)
@@ -132,33 +137,44 @@ defmodule Central.Backtest.Indicators do
   @doc """
   Calculates Simple Moving Average (SMA).
   """
-  defdelegate sma(candles, period \\ 20, price_key \\ :close), to: Central.Backtest.Indicators.Trend.MA
+  defdelegate sma(candles, period \\ 20, price_key \\ :close),
+    to: Central.Backtest.Indicators.Trend.MA
 
   @doc """
   Calculates Exponential Moving Average (EMA).
   """
-  defdelegate ema(candles, period \\ 20, price_key \\ :close), to: Central.Backtest.Indicators.Trend.MA
+  defdelegate ema(candles, period \\ 20, price_key \\ :close),
+    to: Central.Backtest.Indicators.Trend.MA
 
   @doc """
   Calculates Weighted Moving Average (WMA).
   """
-  defdelegate wma(candles, period \\ 20, price_key \\ :close), to: Central.Backtest.Indicators.Trend.MA
+  defdelegate wma(candles, period \\ 20, price_key \\ :close),
+    to: Central.Backtest.Indicators.Trend.MA
 
   @doc """
   Calculates Hull Moving Average (HMA).
   """
-  defdelegate hma(candles, period \\ 20, price_key \\ :close), to: Central.Backtest.Indicators.Trend.MA
+  defdelegate hma(candles, period \\ 20, price_key \\ :close),
+    to: Central.Backtest.Indicators.Trend.MA
 
   @doc """
   Calculates Volume Weighted Moving Average (VWMA).
   """
-  defdelegate vwma(candles, period \\ 20, price_key \\ :close), to: Central.Backtest.Indicators.Trend.MA
+  defdelegate vwma(candles, period \\ 20, price_key \\ :close),
+    to: Central.Backtest.Indicators.Trend.MA
 
   @doc """
   Calculates Moving Average Convergence Divergence (MACD).
   """
-  defdelegate macd(candles, fast_period \\ 12, slow_period \\ 26, signal_period \\ 9, price_key \\ :close),
-    to: Central.Backtest.Indicators.Trend.Macd
+  defdelegate macd(
+                candles,
+                fast_period \\ 12,
+                slow_period \\ 26,
+                signal_period \\ 9,
+                price_key \\ :close
+              ),
+              to: Central.Backtest.Indicators.Trend.Macd
 
   @doc """
   Calculates Ichimoku Cloud.
@@ -169,20 +185,31 @@ defmodule Central.Backtest.Indicators do
   @doc """
   Calculates Parabolic SAR.
   """
-  defdelegate parabolic_sar(candles, initial_acceleration \\ 0.02, acceleration_increment \\ 0.02, max_acceleration \\ 0.2),
-    to: Central.Backtest.Indicators.Trend.ParabolicSar
+  defdelegate parabolic_sar(
+                candles,
+                initial_acceleration \\ 0.02,
+                acceleration_increment \\ 0.02,
+                max_acceleration \\ 0.2
+              ),
+              to: Central.Backtest.Indicators.Trend.ParabolicSar
 
   @doc """
   Calculates Guppy Multiple Moving Average (GMMA).
   """
-  defdelegate gmma(candles, short_periods \\ [3, 5, 8, 10, 12, 15], long_periods \\ [30, 35, 40, 45, 50, 60], price_key \\ :close),
-    to: Central.Backtest.Indicators.Trend.Gmma
+  defdelegate gmma(
+                candles,
+                short_periods \\ [3, 5, 8, 10, 12, 15],
+                long_periods \\ [30, 35, 40, 45, 50, 60],
+                price_key \\ :close
+              ),
+              to: Central.Backtest.Indicators.Trend.Gmma
 
   @doc """
   Analyzes GMMA for trend signals.
   """
   defdelegate analyze_gmma(gmma_result, options \\ [price_key: :close]),
-    to: Central.Backtest.Indicators.Trend.Gmma, as: :analyze
+    to: Central.Backtest.Indicators.Trend.Gmma,
+    as: :analyze
 
   @doc """
   Calculates Donchian Channel.
@@ -200,13 +227,15 @@ defmodule Central.Backtest.Indicators do
   Generates trading signals based on TRIX.
   """
   defdelegate trix_signals(trix_result, zero_line_crossover \\ true),
-    to: Central.Backtest.Indicators.Trend.Trix, as: :generate_signals
+    to: Central.Backtest.Indicators.Trend.Trix,
+    as: :generate_signals
 
   @doc """
   Calculates Average Directional Index (ADX).
   """
   defdelegate adx(candles, period \\ 14),
-    to: Central.Backtest.Indicators.Trend.Adx, as: :calculate
+    to: Central.Backtest.Indicators.Trend.Adx,
+    as: :calculate
 
   @doc """
   Calculates Linear Regression Line.
@@ -235,32 +264,42 @@ defmodule Central.Backtest.Indicators do
   @doc """
   Finds potential support and resistance levels using linear regression.
   """
-  defdelegate linear_regression_support_resistance(candles, threshold \\ 0.7, min_length \\ 5, lookback \\ 100),
-    to: Central.Backtest.Indicators.Trend.LinearRegression, as: :find_support_resistance
+  defdelegate linear_regression_support_resistance(
+                candles,
+                threshold \\ 0.7,
+                min_length \\ 5,
+                lookback \\ 100
+              ),
+              to: Central.Backtest.Indicators.Trend.LinearRegression,
+              as: :find_support_resistance
 
   @doc """
   Calculates Fractals indicator.
   """
   defdelegate fractals(candles, window_size \\ 5),
-    to: Central.Backtest.Indicators.Trend.Fractals, as: :calculate
+    to: Central.Backtest.Indicators.Trend.Fractals,
+    as: :calculate
 
   @doc """
   Extracts price values of fractals.
   """
   defdelegate fractal_values(fractals_result, high, low),
-    to: Central.Backtest.Indicators.Trend.Fractals, as: :extract_fractal_values
+    to: Central.Backtest.Indicators.Trend.Fractals,
+    as: :extract_fractal_values
 
   @doc """
   Identifies trend structure based on fractal patterns.
   """
   defdelegate identify_fractal_trend(fractals_result, lookback \\ 3),
-    to: Central.Backtest.Indicators.Trend.Fractals, as: :identify_trend
+    to: Central.Backtest.Indicators.Trend.Fractals,
+    as: :identify_trend
 
   @doc """
   Finds support and resistance levels from fractals.
   """
   defdelegate fractal_support_resistance(fractals_result, high, low, count \\ 3),
-    to: Central.Backtest.Indicators.Trend.Fractals, as: :find_support_resistance
+    to: Central.Backtest.Indicators.Trend.Fractals,
+    as: :find_support_resistance
 
   # ------------------------------------------------------------------------------
   # Momentum Indicators
@@ -269,7 +308,8 @@ defmodule Central.Backtest.Indicators do
   @doc """
   Calculates Relative Strength Index (RSI).
   """
-  defdelegate rsi(candles, period \\ 14, price_key \\ :close), to: Central.Backtest.Indicators.Momentum.Rsi
+  defdelegate rsi(candles, period \\ 14, price_key \\ :close),
+    to: Central.Backtest.Indicators.Momentum.Rsi
 
   @doc """
   Calculates Stochastic Oscillator.
@@ -292,8 +332,7 @@ defmodule Central.Backtest.Indicators do
   @doc """
   Analyzes ROC data for trading signals.
   """
-  defdelegate analyze_roc(roc_data),
-    to: Central.Backtest.Indicators.Momentum.Roc, as: :analyze
+  defdelegate analyze_roc(roc_data), to: Central.Backtest.Indicators.Momentum.Roc, as: :analyze
 
   @doc """
   Calculates Relative Vigor Index (RVI).
@@ -305,91 +344,123 @@ defmodule Central.Backtest.Indicators do
   Generates trading signals based on RVI.
   """
   defdelegate rvi_signals(rvi_data, use_histogram \\ true),
-    to: Central.Backtest.Indicators.Momentum.Rvi, as: :generate_signals
+    to: Central.Backtest.Indicators.Momentum.Rvi,
+    as: :generate_signals
 
   @doc """
   Detects divergences between price and RVI.
   """
   defdelegate rvi_divergences(candles, rvi_data, lookback \\ 10),
-    to: Central.Backtest.Indicators.Momentum.Rvi, as: :detect_divergences
+    to: Central.Backtest.Indicators.Momentum.Rvi,
+    as: :detect_divergences
 
   @doc """
   Calculates Elder-Ray Index (Bull and Bear Power).
   """
   defdelegate elder_ray(candles, period \\ 13),
-    to: Central.Backtest.Indicators.Momentum.ElderRay, as: :calculate
+    to: Central.Backtest.Indicators.Momentum.ElderRay,
+    as: :calculate
 
   @doc """
   Generates trading signals based on Elder-Ray.
   """
   defdelegate elder_ray_signals(elder_ray_result),
-    to: Central.Backtest.Indicators.Momentum.ElderRay, as: :generate_signals
+    to: Central.Backtest.Indicators.Momentum.ElderRay,
+    as: :generate_signals
 
   @doc """
   Finds divergences between price and Elder-Ray components.
   """
   defdelegate elder_ray_divergences(candles, lookback \\ 5, elder_ray_result),
-    to: Central.Backtest.Indicators.Momentum.ElderRay, as: :find_divergences
+    to: Central.Backtest.Indicators.Momentum.ElderRay,
+    as: :find_divergences
 
   @doc """
   Calculates the True Strength Index (TSI).
   """
-  defdelegate tsi(candles, long_period \\ 25, short_period \\ 13, signal_period \\ 7, price_key \\ :close),
-    to: Central.Backtest.Indicators.Momentum.Tsi, as: :calculate
+  defdelegate tsi(
+                candles,
+                long_period \\ 25,
+                short_period \\ 13,
+                signal_period \\ 7,
+                price_key \\ :close
+              ),
+              to: Central.Backtest.Indicators.Momentum.Tsi,
+              as: :calculate
 
   @doc """
   Generates trading signals based on TSI.
   """
   defdelegate tsi_signals(tsi_result),
-    to: Central.Backtest.Indicators.Momentum.Tsi, as: :generate_signals
+    to: Central.Backtest.Indicators.Momentum.Tsi,
+    as: :generate_signals
 
   @doc """
   Finds divergences between price and TSI.
   """
   defdelegate tsi_divergences(candles, tsi_result, lookback \\ 5),
-    to: Central.Backtest.Indicators.Momentum.Tsi, as: :find_divergences
+    to: Central.Backtest.Indicators.Momentum.Tsi,
+    as: :find_divergences
 
   @doc """
   Calculates Ultimate Oscillator.
   """
-  defdelegate ultimate_oscillator(candles, short_period \\ 7, medium_period \\ 14, long_period \\ 28, weights \\ [4, 2, 1]),
-    to: Central.Backtest.Indicators.Momentum.UltimateOscillator, as: :calculate
+  defdelegate ultimate_oscillator(
+                candles,
+                short_period \\ 7,
+                medium_period \\ 14,
+                long_period \\ 28,
+                weights \\ [4, 2, 1]
+              ),
+              to: Central.Backtest.Indicators.Momentum.UltimateOscillator,
+              as: :calculate
 
   @doc """
   Generates trading signals based on Ultimate Oscillator.
   """
   defdelegate ultimate_oscillator_signals(uo_result, overbought \\ 70, oversold \\ 30),
-    to: Central.Backtest.Indicators.Momentum.UltimateOscillator, as: :generate_signals
+    to: Central.Backtest.Indicators.Momentum.UltimateOscillator,
+    as: :generate_signals
 
   @doc """
   Finds divergences between price and Ultimate Oscillator.
   """
   defdelegate ultimate_oscillator_divergences(high, low, uo_result, lookback \\ 5),
-    to: Central.Backtest.Indicators.Momentum.UltimateOscillator, as: :find_divergences
+    to: Central.Backtest.Indicators.Momentum.UltimateOscillator,
+    as: :find_divergences
 
   @doc """
   Calculates Simple Momentum.
   """
-  defdelegate simple_momentum(candles, period \\ 10, return_percentage \\ false, price_key \\ :close),
-    to: Central.Backtest.Indicators.Momentum.SimpleMomentum, as: :calculate
+  defdelegate simple_momentum(
+                candles,
+                period \\ 10,
+                return_percentage \\ false,
+                price_key \\ :close
+              ),
+              to: Central.Backtest.Indicators.Momentum.SimpleMomentum,
+              as: :calculate
 
   @doc """
   Generates trading signals based on Simple Momentum.
   """
   defdelegate simple_momentum_signals(momentum_result),
-    to: Central.Backtest.Indicators.Momentum.SimpleMomentum, as: :generate_signals
+    to: Central.Backtest.Indicators.Momentum.SimpleMomentum,
+    as: :generate_signals
 
   @doc """
   Analyzes momentum strength by classifying values.
   """
   defdelegate classify_momentum_strength(momentum_result, strong_threshold \\ 5.0),
-    to: Central.Backtest.Indicators.Momentum.SimpleMomentum, as: :classify_strength
+    to: Central.Backtest.Indicators.Momentum.SimpleMomentum,
+    as: :classify_strength
 
   @doc """
   Calculates acceleration of momentum.
   """
   defdelegate momentum_acceleration(momentum_result, period \\ 3),
-    to: Central.Backtest.Indicators.Momentum.SimpleMomentum, as: :calculate_acceleration
+    to: Central.Backtest.Indicators.Momentum.SimpleMomentum,
+    as: :calculate_acceleration
 
   # ------------------------------------------------------------------------------
   # Volatility Indicators
@@ -422,43 +493,57 @@ defmodule Central.Backtest.Indicators do
   Analyzes volatility patterns in standard deviation data.
   """
   defdelegate analyze_volatility(std_dev_data, trend_periods \\ 5),
-    to: Central.Backtest.Indicators.Volatility.StandardDeviation, as: :analyze_volatility
+    to: Central.Backtest.Indicators.Volatility.StandardDeviation,
+    as: :analyze_volatility
 
   @doc """
   Calculates Chaikin Volatility.
   """
   defdelegate chaikin_volatility(candles, ema_period \\ 10, roc_period \\ 10),
-    to: Central.Backtest.Indicators.Volatility.ChaikinVolatility, as: :calculate
+    to: Central.Backtest.Indicators.Volatility.ChaikinVolatility,
+    as: :calculate
 
   @doc """
   Detects potential market reversals based on Chaikin Volatility.
   """
   defdelegate chaikin_volatility_reversals(chaikin_volatility, threshold \\ 10, lookback \\ 5),
-    to: Central.Backtest.Indicators.Volatility.ChaikinVolatility, as: :detect_reversals
+    to: Central.Backtest.Indicators.Volatility.ChaikinVolatility,
+    as: :detect_reversals
 
   @doc """
   Calculates volatility bands around price based on Chaikin Volatility.
   """
   defdelegate chaikin_volatility_bands(close, chaikin_volatility, multiplier \\ 1.0),
-    to: Central.Backtest.Indicators.Volatility.ChaikinVolatility, as: :calculate_bands
+    to: Central.Backtest.Indicators.Volatility.ChaikinVolatility,
+    as: :calculate_bands
 
   @doc """
   Calculates Projection Bands.
   """
-  defdelegate projection_bands(candles, period \\ 20, multiplier \\ 2.0, ma_type \\ :ema, adaptive \\ false, price_key \\ :close),
-    to: Central.Backtest.Indicators.Volatility.ProjectionBands, as: :calculate
+  defdelegate projection_bands(
+                candles,
+                period \\ 20,
+                multiplier \\ 2.0,
+                ma_type \\ :ema,
+                adaptive \\ false,
+                price_key \\ :close
+              ),
+              to: Central.Backtest.Indicators.Volatility.ProjectionBands,
+              as: :calculate
 
   @doc """
   Generates trading signals based on Projection Bands.
   """
   defdelegate projection_bands_signals(prices, projection_bands_result),
-    to: Central.Backtest.Indicators.Volatility.ProjectionBands, as: :generate_signals
+    to: Central.Backtest.Indicators.Volatility.ProjectionBands,
+    as: :generate_signals
 
   @doc """
   Identifies contraction and expansion patterns in Projection Bands.
   """
   defdelegate projection_bands_patterns(projection_bands_result, threshold \\ 0.1),
-    to: Central.Backtest.Indicators.Volatility.ProjectionBands, as: :identify_band_patterns
+    to: Central.Backtest.Indicators.Volatility.ProjectionBands,
+    as: :identify_band_patterns
 
   # ------------------------------------------------------------------------------
   # Volume Indicators
@@ -479,115 +564,132 @@ defmodule Central.Backtest.Indicators do
   Generates signals based on Money Flow Index (MFI).
   """
   defdelegate mfi_signals(mfi_result, overbought \\ 80, oversold \\ 20),
-    to: Central.Backtest.Indicators.Volume.Mfi, as: :generate_signals
+    to: Central.Backtest.Indicators.Volume.Mfi,
+    as: :generate_signals
 
   @doc """
   Detects divergences between price and MFI.
   """
   defdelegate mfi_divergences(candles, mfi_result, lookback \\ 5),
-    to: Central.Backtest.Indicators.Volume.Mfi, as: :detect_divergences
+    to: Central.Backtest.Indicators.Volume.Mfi,
+    as: :detect_divergences
 
   @doc """
   Calculates Chaikin Money Flow (CMF).
   """
   defdelegate cmf(candles, period \\ 20),
-    to: Central.Backtest.Indicators.Volume.Cmf, as: :calculate
+    to: Central.Backtest.Indicators.Volume.Cmf,
+    as: :calculate
 
   @doc """
   Generates signals based on Chaikin Money Flow (CMF).
   """
   defdelegate cmf_signals(cmf_result, threshold \\ 0.05),
-    to: Central.Backtest.Indicators.Volume.Cmf, as: :generate_signals
+    to: Central.Backtest.Indicators.Volume.Cmf,
+    as: :generate_signals
 
   @doc """
   Detects divergences between price and CMF.
   """
   defdelegate cmf_divergences(candles, cmf_result, lookback \\ 5),
-    to: Central.Backtest.Indicators.Volume.Cmf, as: :find_divergences
+    to: Central.Backtest.Indicators.Volume.Cmf,
+    as: :find_divergences
 
   @doc """
   Calculates Volume Price Trend (VPT).
   """
-  defdelegate vpt(candles),
-    to: Central.Backtest.Indicators.Volume.Vpt, as: :calculate
+  defdelegate vpt(candles), to: Central.Backtest.Indicators.Volume.Vpt, as: :calculate
 
   @doc """
   Generates signals based on Volume Price Trend (VPT).
   """
   defdelegate vpt_signals(vpt_result, ma_period \\ 20),
-    to: Central.Backtest.Indicators.Volume.Vpt, as: :generate_signals
+    to: Central.Backtest.Indicators.Volume.Vpt,
+    as: :generate_signals
 
   @doc """
   Calculates rate of change for VPT.
   """
   defdelegate vpt_roc(vpt_result, period \\ 10),
-    to: Central.Backtest.Indicators.Volume.Vpt, as: :calculate_roc
+    to: Central.Backtest.Indicators.Volume.Vpt,
+    as: :calculate_roc
 
   @doc """
   Calculates Ease of Movement (EOM).
   """
   defdelegate eom(candles, period \\ 14, divisor \\ 10000),
-    to: Central.Backtest.Indicators.Volume.Eom, as: :calculate
+    to: Central.Backtest.Indicators.Volume.Eom,
+    as: :calculate
 
   @doc """
   Calculates Ease of Movement with separate components.
   """
   defdelegate eom_with_components(candles, period \\ 14, divisor \\ 10000),
-    to: Central.Backtest.Indicators.Volume.Eom, as: :calculate_with_components
+    to: Central.Backtest.Indicators.Volume.Eom,
+    as: :calculate_with_components
 
   @doc """
   Generates signals based on Ease of Movement.
   """
   defdelegate eom_signals(eom_result),
-    to: Central.Backtest.Indicators.Volume.Eom, as: :generate_signals
+    to: Central.Backtest.Indicators.Volume.Eom,
+    as: :generate_signals
 
   @doc """
   Calculates Force Index.
   """
   defdelegate force_index(candles, period \\ 13),
-    to: Central.Backtest.Indicators.Volume.ForceIndex, as: :calculate
+    to: Central.Backtest.Indicators.Volume.ForceIndex,
+    as: :calculate
 
   @doc """
   Calculates Force Index for multiple timeframes.
   """
   defdelegate force_index_multi_timeframe(candles, long_period \\ 50),
-    to: Central.Backtest.Indicators.Volume.ForceIndex, as: :calculate_multi_timeframe
+    to: Central.Backtest.Indicators.Volume.ForceIndex,
+    as: :calculate_multi_timeframe
 
   @doc """
   Generates signals based on Force Index.
   """
   defdelegate force_index_signals(force_index),
-    to: Central.Backtest.Indicators.Volume.ForceIndex, as: :generate_signals
+    to: Central.Backtest.Indicators.Volume.ForceIndex,
+    as: :generate_signals
 
   @doc """
   Analyzes trend strength based on Force Index.
   """
   defdelegate force_index_trend_analysis(force_index, lookback \\ 10),
-    to: Central.Backtest.Indicators.Volume.ForceIndex, as: :analyze_trend_strength
+    to: Central.Backtest.Indicators.Volume.ForceIndex,
+    as: :analyze_trend_strength
 
   @doc """
   Calculates Negative and Positive Volume Indices (NVI & PVI).
   """
   defdelegate nvi_pvi(candles, initial_value \\ 1000, price_key \\ :close),
-    to: Central.Backtest.Indicators.Volume.NviPvi, as: :calculate
+    to: Central.Backtest.Indicators.Volume.NviPvi,
+    as: :calculate
 
   @doc """
   Calculates signal lines for NVI and PVI.
   """
   defdelegate nvi_pvi_signal_lines(nvi_pvi_result, period \\ 255),
-    to: Central.Backtest.Indicators.Volume.NviPvi, as: :calculate_signal_lines
+    to: Central.Backtest.Indicators.Volume.NviPvi,
+    as: :calculate_signal_lines
 
   @doc """
   Generates signals based on NVI and PVI.
   """
   defdelegate nvi_pvi_signals(nvi_pvi_result, signal_lines_result),
-    to: Central.Backtest.Indicators.Volume.NviPvi, as: :generate_signals
+    to: Central.Backtest.Indicators.Volume.NviPvi,
+    as: :generate_signals
 
   @doc """
   Identifies market phases using NVI and PVI.
   """
   defdelegate identify_market_phases(nvi_pvi_result, lookback \\ 20),
-    to: Central.Backtest.Indicators.Volume.NviPvi, as: :identify_market_phases
+    to: Central.Backtest.Indicators.Volume.NviPvi,
+    as: :identify_market_phases
 
   @doc """
   Calculates volume moving average.
@@ -622,14 +724,27 @@ defmodule Central.Backtest.Indicators do
   @doc """
   Calculates volume-price confirmation.
   """
-  defdelegate volume_price_confirmation(candles, period \\ 20, rel_vol_threshold \\ 1.5, price_key \\ :close, volume_key \\ :volume),
-    to: Central.Backtest.Indicators.Volume.BasicVolume
+  defdelegate volume_price_confirmation(
+                candles,
+                period \\ 20,
+                rel_vol_threshold \\ 1.5,
+                price_key \\ :close,
+                volume_key \\ :volume
+              ),
+              to: Central.Backtest.Indicators.Volume.BasicVolume
 
   @doc """
   Detects volume climax.
   """
-  defdelegate volume_climax(candles, period \\ 20, volume_threshold \\ 3.0, trend_lookback \\ 5, price_key \\ :close, volume_key \\ :volume),
-    to: Central.Backtest.Indicators.Volume.BasicVolume
+  defdelegate volume_climax(
+                candles,
+                period \\ 20,
+                volume_threshold \\ 3.0,
+                trend_lookback \\ 5,
+                price_key \\ :close,
+                volume_key \\ :volume
+              ),
+              to: Central.Backtest.Indicators.Volume.BasicVolume
 
   @doc """
   Calculates volume force.
@@ -645,43 +760,56 @@ defmodule Central.Backtest.Indicators do
   Calculates Standard Pivot Points.
   """
   defdelegate standard_pivot_points(candle),
-    to: Central.Backtest.Indicators.Levels.PivotPoints, as: :standard
+    to: Central.Backtest.Indicators.Levels.PivotPoints,
+    as: :standard
 
   @doc """
   Calculates Fibonacci Pivot Points.
   """
   defdelegate fibonacci_pivot_points(candle),
-    to: Central.Backtest.Indicators.Levels.PivotPoints, as: :fibonacci
+    to: Central.Backtest.Indicators.Levels.PivotPoints,
+    as: :fibonacci
 
   @doc """
   Calculates Camarilla Pivot Points.
   """
   defdelegate camarilla_pivot_points(candle),
-    to: Central.Backtest.Indicators.Levels.PivotPoints, as: :camarilla
+    to: Central.Backtest.Indicators.Levels.PivotPoints,
+    as: :camarilla
 
   @doc """
   Calculates Woodie's Pivot Points.
   """
   defdelegate woodie_pivot_points(candle),
-    to: Central.Backtest.Indicators.Levels.PivotPoints, as: :woodie
+    to: Central.Backtest.Indicators.Levels.PivotPoints,
+    as: :woodie
 
   @doc """
   Identifies Psychological Price Levels.
   """
-  defdelegate psych_levels(start_price, end_price, increment \\ 1, include_halves \\ false, include_quarters \\ false),
-    to: Central.Backtest.Indicators.Levels.PsychLevels, as: :identify_levels
+  defdelegate psych_levels(
+                start_price,
+                end_price,
+                increment \\ 1,
+                include_halves \\ false,
+                include_quarters \\ false
+              ),
+              to: Central.Backtest.Indicators.Levels.PsychLevels,
+              as: :identify_levels
 
   @doc """
   Finds the nearest psychological levels to the current price.
   """
   defdelegate nearest_psych_levels(levels, current_price, limit \\ 3),
-    to: Central.Backtest.Indicators.Levels.PsychLevels, as: :nearest_levels
+    to: Central.Backtest.Indicators.Levels.PsychLevels,
+    as: :nearest_levels
 
   @doc """
   Analyzes the strength of psychological levels based on historical data.
   """
   defdelegate analyze_psych_levels(levels, candles, lookback \\ 100),
-    to: Central.Backtest.Indicators.Levels.PsychLevels, as: :analyze_strength
+    to: Central.Backtest.Indicators.Levels.PsychLevels,
+    as: :analyze_strength
 
   @doc """
   Calculates Linear Regression Channel.
@@ -729,13 +857,15 @@ defmodule Central.Backtest.Indicators do
   Generates trading signals based on channel breakouts.
   """
   defdelegate channel_signals(candles, channel_result, price_key \\ :close),
-    to: Central.Backtest.Indicators.Levels.Channels, as: :generate_signals
+    to: Central.Backtest.Indicators.Levels.Channels,
+    as: :generate_signals
 
   @doc """
   Identifies channel contraction and expansion patterns.
   """
   defdelegate identify_channel_patterns(channel_result, threshold \\ 0.1),
-    to: Central.Backtest.Indicators.Levels.Channels, as: :identify_channel_patterns
+    to: Central.Backtest.Indicators.Levels.Channels,
+    as: :identify_channel_patterns
 
   # ------------------------------------------------------------------------------
   # Indicator Metadata

@@ -41,35 +41,49 @@ defmodule CentralWeb.Live.Components.Chart.ChartDataManager do
     List of formatted candles for chart display
   """
   def load_chart_data(symbol, timeframe, opts \\ []) do
-    Logger.debug("[ChartDataManager] load_chart_data called with: symbol=#{inspect symbol}, timeframe=#{inspect timeframe}, opts=#{inspect opts}")
+    Logger.debug(
+      "[ChartDataManager] load_chart_data called with: symbol=#{inspect(symbol)}, timeframe=#{inspect(timeframe)}, opts=#{inspect(opts)}"
+    )
 
     limit = Keyword.get(opts, :limit, 500)
     # Default end_time to now, truncated to the second
     end_time = Keyword.get(opts, :end_time, DateTime.utc_now()) |> DateTime.truncate(:second)
 
     # Use explicit start_time if provided, otherwise calculate based on limit and timeframe
-    start_time = case Keyword.get(opts, :start_time) do
-      nil ->
-        case TimeframeHelper.timeframe_to_seconds(timeframe) do
-          seconds when seconds > 0 -> DateTime.add(end_time, -seconds * limit, :second)
-          _ ->
-            Logger.warning("Invalid timeframe '#{timeframe}' used in load_chart_data. Defaulting start_time to end_time - 30 days.")
-            DateTime.add(end_time, -30 * 24 * 60 * 60, :second) # Default to 30 days
-        end
-      explicit_start_time -> explicit_start_time
-    end
+    start_time =
+      case Keyword.get(opts, :start_time) do
+        nil ->
+          case TimeframeHelper.timeframe_to_seconds(timeframe) do
+            seconds when seconds > 0 ->
+              DateTime.add(end_time, -seconds * limit, :second)
 
-    Logger.debug("[ChartDataManager] Query Range: start=#{inspect start_time}, end=#{inspect end_time}, limit=#{limit}")
+            _ ->
+              Logger.warning(
+                "Invalid timeframe '#{timeframe}' used in load_chart_data. Defaulting start_time to end_time - 30 days."
+              )
+
+              # Default to 30 days
+              DateTime.add(end_time, -30 * 24 * 60 * 60, :second)
+          end
+
+        explicit_start_time ->
+          explicit_start_time
+      end
+
+    Logger.debug(
+      "[ChartDataManager] Query Range: start=#{inspect(start_time)}, end=#{inspect(end_time)}, limit=#{limit}"
+    )
 
     # Get candles from database
-    candles = MarketDataContext.get_candles_with_limit(
-      symbol,
-      timeframe,
-      start_time,
-      end_time,
-      limit: limit,
-      order_by: :asc
-    )
+    candles =
+      MarketDataContext.get_candles_with_limit(
+        symbol,
+        timeframe,
+        start_time,
+        end_time,
+        limit: limit,
+        order_by: :asc
+      )
 
     Logger.debug("[ChartDataManager] Fetched #{length(candles)} candles from DB.")
 
@@ -98,21 +112,32 @@ defmodule CentralWeb.Live.Components.Chart.ChartDataManager do
     batch_size = Keyword.get(opts, :batch_size, 200)
     start_time_limit = Keyword.get(opts, :start_time_limit)
 
-    Logger.debug("[ChartDataManager] load_historical_data called: symbol=#{symbol}, timeframe=#{timeframe}, oldest_time=#{inspect oldest_time}, opts=#{inspect opts}")
+    Logger.debug(
+      "[ChartDataManager] load_historical_data called: symbol=#{symbol}, timeframe=#{timeframe}, oldest_time=#{inspect(oldest_time)}, opts=#{inspect(opts)}"
+    )
 
     # Convert DateTime to ensure it's properly typed
-    oldest_time = case oldest_time do
-      %DateTime{} -> oldest_time
-      timestamp when is_integer(timestamp) -> DateTime.from_unix!(timestamp)
-      iso8601 when is_binary(iso8601) ->
-        case DateTime.from_iso8601(iso8601) do
-          {:ok, dt, _} -> dt
-          _ ->
-            Logger.error("[ChartDataManager] Invalid oldest_time format: #{inspect iso8601}")
-            DateTime.utc_now()
-        end
-      _ -> DateTime.utc_now()
-    end
+    oldest_time =
+      case oldest_time do
+        %DateTime{} ->
+          oldest_time
+
+        timestamp when is_integer(timestamp) ->
+          DateTime.from_unix!(timestamp)
+
+        iso8601 when is_binary(iso8601) ->
+          case DateTime.from_iso8601(iso8601) do
+            {:ok, dt, _} ->
+              dt
+
+            _ ->
+              Logger.error("[ChartDataManager] Invalid oldest_time format: #{inspect(iso8601)}")
+              DateTime.utc_now()
+          end
+
+        _ ->
+          DateTime.utc_now()
+      end
 
     # Calculate time range for the query
     timeframe_seconds = TimeframeHelper.timeframe_to_seconds(timeframe)
@@ -131,18 +156,23 @@ defmodule CentralWeb.Live.Components.Chart.ChartDataManager do
 
     # Ensure valid time range
     if DateTime.compare(end_time, start_time) != :gt do
-      Logger.debug("[ChartDataManager] Historical data load - invalid time range: end_time <= start_time")
+      Logger.debug(
+        "[ChartDataManager] Historical data load - invalid time range: end_time <= start_time"
+      )
+
       %{data: [], has_more: false, recommended_batch_size: batch_size}
     else
       # Fetch candles for the range
-      candles = MarketDataContext.get_candles_with_limit(
-        symbol,
-        timeframe,
-        start_time,
-        end_time,
-        limit: batch_size,
-        order_by: :desc # Newest first for historical loading
-      )
+      candles =
+        MarketDataContext.get_candles_with_limit(
+          symbol,
+          timeframe,
+          start_time,
+          end_time,
+          limit: batch_size,
+          # Newest first for historical loading
+          order_by: :desc
+        )
 
       Logger.debug("[ChartDataManager] Fetched #{length(candles)} historical candles from DB.")
       formatted_data = ChartDataFormatter.format_chart_data(candles)
@@ -164,7 +194,10 @@ defmodule CentralWeb.Live.Components.Chart.ChartDataManager do
         recommended_batch_size: calculate_recommended_batch_size(formatted_data, batch_size)
       }
 
-      Logger.debug("[ChartDataManager] Returning #{length(formatted_data)} formatted historical candles, has_more=#{has_more}")
+      Logger.debug(
+        "[ChartDataManager] Returning #{length(formatted_data)} formatted historical candles, has_more=#{has_more}"
+      )
+
       result
     end
   end

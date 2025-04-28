@@ -6,10 +6,14 @@ defmodule Central.MarketData.Pipeline.HistoricalDataFetcher do
 
   require Logger
   alias Central.Repo
-  alias Central.Backtest.Schemas.MarketData # Assuming MarketData schema stays for now
-  alias Central.Helpers.TimeframeHelper # Added alias
-  alias Central.MarketData.DataProcessor # Updated alias from Central.Backtest.Services.Fetching.DataProcessor
-  alias Central.MarketData.Exchange.Binance.Client, as: BinanceClient # Updated path
+  # Assuming MarketData schema stays for now
+  alias Central.Backtest.Schemas.MarketData
+  # Added alias
+  alias Central.Helpers.TimeframeHelper
+  # Updated alias from Central.Backtest.Services.Fetching.DataProcessor
+  alias Central.MarketData.DataProcessor
+  # Updated path
+  alias Central.MarketData.Exchange.Binance.Client, as: BinanceClient
 
   # Maximum number of candles per API request (Binance limit)
   @max_candles_per_request 1000
@@ -29,7 +33,9 @@ defmodule Central.MarketData.Pipeline.HistoricalDataFetcher do
     - {:error, reason} on failure
   """
   def fetch_and_store_range(symbol, timeframe, start_time, end_time) do
-    Logger.info("Fetching historical data for #{symbol}/#{timeframe} from #{DateTime.to_iso8601(start_time)} to #{DateTime.to_iso8601(end_time)}")
+    Logger.info(
+      "Fetching historical data for #{symbol}/#{timeframe} from #{DateTime.to_iso8601(start_time)} to #{DateTime.to_iso8601(end_time)}"
+    )
 
     # Calculate time chunks to respect API limits
     chunks = calculate_time_chunks(timeframe, start_time, end_time)
@@ -37,53 +43,86 @@ defmodule Central.MarketData.Pipeline.HistoricalDataFetcher do
     # Fetch data for each chunk concurrently
     results =
       chunks
-      |> Task.async_stream(&fetch_chunk_with_retries(symbol, timeframe, elem(&1, 0), elem(&1, 1)), max_concurrency: 5, ordered: false, timeout: 60000)
+      |> Task.async_stream(&fetch_chunk_with_retries(symbol, timeframe, elem(&1, 0), elem(&1, 1)),
+        max_concurrency: 5,
+        ordered: false,
+        timeout: 60000
+      )
       |> Enum.to_list()
 
     # Check for errors, considering both handled errors ({:ok, {:error, _}}) and crashes ({:exit, _})
-    errors = Enum.filter(results, fn
-      {:ok, {:error, _}} -> true # Handled error within the task
-      {:exit, _} -> true        # Task crashed
-      _ -> false
-    end)
+    errors =
+      Enum.filter(results, fn
+        # Handled error within the task
+        {:ok, {:error, _}} -> true
+        # Task crashed
+        {:exit, _} -> true
+        _ -> false
+      end)
 
     if errors != [] do
       # Extract reasons more robustly
-      reasons = Enum.map(errors, fn
-        {:ok, {:error, reason}} -> to_string(reason)
-        {:exit, reason} -> "Task crashed: #{inspect(reason)}"
-        _ -> "Unknown error structure" # Should not happen with the filter
-      end)
-      Logger.error("Errors encountered during historical data fetch for #{symbol}/#{timeframe}: #{inspect(reasons)}")
+      reasons =
+        Enum.map(errors, fn
+          {:ok, {:error, reason}} -> to_string(reason)
+          {:exit, reason} -> "Task crashed: #{inspect(reason)}"
+          # Should not happen with the filter
+          _ -> "Unknown error structure"
+        end)
+
+      Logger.error(
+        "Errors encountered during historical data fetch for #{symbol}/#{timeframe}: #{inspect(reasons)}"
+      )
+
       {:error, "Failed to fetch some historical data ranges: #{Enum.join(reasons, "; ")}"}
     else
       # Combine successful data, extracting from {:ok, {:ok, data}}
       all_raw_data =
         results
-        |> Enum.filter(fn {:ok, {:ok, _}} -> true; _ -> false end) # Filter only successful results
-        |> Enum.flat_map(fn {:ok, {:ok, data}} -> data end) # Extract data
+        # Filter only successful results
+        |> Enum.filter(fn
+          {:ok, {:ok, _}} -> true
+          _ -> false
+        end)
+        # Extract data
+        |> Enum.flat_map(fn {:ok, {:ok, data}} -> data end)
 
       if Enum.empty?(all_raw_data) do
-         Logger.info("No new raw historical data found to process for #{symbol}/#{timeframe} in the specified range.")
+        Logger.info(
+          "No new raw historical data found to process for #{symbol}/#{timeframe} in the specified range."
+        )
+
         {:ok, 0}
       else
         # Prepare and store the data
         prepared_data = DataProcessor.prepare_for_storage(all_raw_data, symbol, timeframe)
 
         if Enum.empty?(prepared_data) do
-          Logger.warning("No valid candles remained after processing for #{symbol}/#{timeframe}. Raw count: #{length(all_raw_data)}")
+          Logger.warning(
+            "No valid candles remained after processing for #{symbol}/#{timeframe}. Raw count: #{length(all_raw_data)}"
+          )
+
           {:ok, 0}
         else
           # Store in database with on_conflict: nothing to avoid duplicates
           try do
-            case Repo.insert_all(MarketData, prepared_data, on_conflict: :nothing, returning: false) do
+            case Repo.insert_all(MarketData, prepared_data,
+                   on_conflict: :nothing,
+                   returning: false
+                 ) do
               {count, _} ->
-                Logger.info("Successfully stored #{count} historical candles for #{symbol}/#{timeframe}")
+                Logger.info(
+                  "Successfully stored #{count} historical candles for #{symbol}/#{timeframe}"
+                )
+
                 {:ok, count}
             end
           rescue
             e in [Ecto.QueryError, DBConnection.ConnectionError] ->
-              Logger.error("Database error storing historical data for #{symbol}/#{timeframe}: #{inspect(e)}")
+              Logger.error(
+                "Database error storing historical data for #{symbol}/#{timeframe}: #{inspect(e)}"
+              )
+
               {:error, "Database error storing historical data"}
           end
         end
@@ -96,7 +135,8 @@ defmodule Central.MarketData.Pipeline.HistoricalDataFetcher do
     max_retries = 3
     # Ensure start_time is not after end_time which can happen with chunking logic
     if DateTime.compare(start_time, end_time) == :gt do
-      {:ok, []} # Return empty list if range is invalid
+      # Return empty list if range is invalid
+      {:ok, []}
     else
       case fetch_from_binance(symbol, timeframe, start_time, end_time) do
         {:ok, data} ->
@@ -104,18 +144,24 @@ defmodule Central.MarketData.Pipeline.HistoricalDataFetcher do
 
         {:error, reason} when retry_count < max_retries ->
           # Exponential backoff: 1s, 2s, 4s
-          backoff_ms = :math.pow(2, retry_count) * 1000 |> round()
-          Logger.warning("Retrying fetch for #{symbol}/#{timeframe} [#{retry_count+1}/#{max_retries}] after #{backoff_ms}ms. Error: #{inspect(reason)}")
+          backoff_ms = (:math.pow(2, retry_count) * 1000) |> round()
+
+          Logger.warning(
+            "Retrying fetch for #{symbol}/#{timeframe} [#{retry_count + 1}/#{max_retries}] after #{backoff_ms}ms. Error: #{inspect(reason)}"
+          )
+
           :timer.sleep(backoff_ms)
           fetch_chunk_with_retries(symbol, timeframe, start_time, end_time, retry_count + 1)
 
         {:error, reason} ->
-          Logger.error("Failed to fetch data chunk for #{symbol}/#{timeframe} after #{max_retries} retries. Range: #{DateTime.to_iso8601(start_time)} to #{DateTime.to_iso8601(end_time)}. Error: #{inspect(reason)}")
+          Logger.error(
+            "Failed to fetch data chunk for #{symbol}/#{timeframe} after #{max_retries} retries. Range: #{DateTime.to_iso8601(start_time)} to #{DateTime.to_iso8601(end_time)}. Error: #{inspect(reason)}"
+          )
+
           {:error, "Failed to fetch historical data chunk: #{inspect(reason)}"}
       end
     end
   end
-
 
   # Fetches data from Binance API using the existing client
   defp fetch_from_binance(symbol, timeframe, start_time, end_time) do
@@ -128,11 +174,12 @@ defmodule Central.MarketData.Pipeline.HistoricalDataFetcher do
 
   # Calculates time chunks based on timeframe to respect API limits.
   defp calculate_time_chunks(timeframe, start_time, end_time) do
-    candle_seconds = TimeframeHelper.timeframe_to_seconds(timeframe) # Use helper
+    # Use helper
+    candle_seconds = TimeframeHelper.timeframe_to_seconds(timeframe)
 
     if candle_seconds == 0 do
       Logger.error("Invalid timeframe '#{timeframe}' provided for chunk calculation.")
-       # Return a single chunk to avoid errors, maybe fetch fails later
+      # Return a single chunk to avoid errors, maybe fetch fails later
       [{start_time, end_time}]
     else
       # Calculate maximum time range per request (in seconds)
@@ -171,8 +218,8 @@ defmodule Central.MarketData.Pipeline.HistoricalDataFetcher do
       if DateTime.compare(next_start, end_time) != :gt do
         split_into_chunks(next_start, end_time, max_range_seconds, updated_chunks)
       else
-         # We've covered the whole range
-         Enum.reverse(updated_chunks)
+        # We've covered the whole range
+        Enum.reverse(updated_chunks)
       end
     end
   end
@@ -187,7 +234,7 @@ defmodule Central.MarketData.Pipeline.HistoricalDataFetcher do
     #   "1d" -> "1D"
     #   _ -> timeframe
     # end
-    timeframe # Assuming format is currently compatible
+    # Assuming format is currently compatible
+    timeframe
   end
-
 end

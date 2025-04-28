@@ -67,13 +67,14 @@ defmodule Central.Backtest.Indicators.Volatility.Atr do
 
   defp calculate_smoothed_atr([tr | rest], prev_atr, period, results) do
     # Wilder's smoothing: ATR = ((prev_ATR * (period - 1)) + current_TR) / period
-    new_atr = Decimal.div(
-      Decimal.add(
-        Decimal.mult(prev_atr, Decimal.new(period - 1)),
-        tr
-      ),
-      Decimal.new(period)
-    )
+    new_atr =
+      Decimal.div(
+        Decimal.add(
+          Decimal.mult(prev_atr, Decimal.new(period - 1)),
+          tr
+        ),
+        Decimal.new(period)
+      )
 
     calculate_smoothed_atr(rest, new_atr, period, [new_atr | results])
   end

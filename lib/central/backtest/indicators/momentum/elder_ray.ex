@@ -45,10 +45,13 @@ defmodule Central.Backtest.Indicators.Momentum.ElderRay do
     cond do
       not is_list(high) or not is_list(low) ->
         {:error, "Inputs must be lists"}
+
       length(high) != length(low) ->
         {:error, "Input lists must have the same length"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       true ->
         :ok
     end
@@ -92,7 +95,12 @@ defmodule Central.Backtest.Indicators.Momentum.ElderRay do
   - {:bullish_divergence, index} when price makes lower low but Bull Power makes higher low
   - {:bearish_divergence, index} when price makes higher high but Bear Power makes lower high
   """
-  def find_divergences(high, low, %{bull_power: bull_power, bear_power: bear_power}, lookback \\ 5) do
+  def find_divergences(
+        high,
+        low,
+        %{bull_power: bull_power, bear_power: bear_power},
+        lookback \\ 5
+      ) do
     Enum.zip([high, low, bull_power, bear_power])
     |> Enum.chunk_every(lookback, 1, :discard)
     |> Enum.with_index()
@@ -111,20 +119,22 @@ defmodule Central.Backtest.Indicators.Momentum.ElderRay do
     all_divergences = []
 
     # Check for bullish divergence
-    all_divergences = if Enum.min(lows) == List.last(lows) and
-       Enum.min(bull_powers) != List.last(bull_powers) do
-      [{:bullish_divergence, index} | all_divergences]
-    else
-      all_divergences
-    end
+    all_divergences =
+      if Enum.min(lows) == List.last(lows) and
+           Enum.min(bull_powers) != List.last(bull_powers) do
+        [{:bullish_divergence, index} | all_divergences]
+      else
+        all_divergences
+      end
 
     # Check for bearish divergence
-    all_divergences = if Enum.max(highs) == List.last(highs) and
-       Enum.max(bear_powers) != List.last(bear_powers) do
-      [{:bearish_divergence, index} | all_divergences]
-    else
-      all_divergences
-    end
+    all_divergences =
+      if Enum.max(highs) == List.last(highs) and
+           Enum.max(bear_powers) != List.last(bear_powers) do
+        [{:bearish_divergence, index} | all_divergences]
+      else
+        all_divergences
+      end
 
     all_divergences
   end

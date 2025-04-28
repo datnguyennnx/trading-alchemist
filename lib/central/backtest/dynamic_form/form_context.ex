@@ -52,11 +52,12 @@ defmodule Central.Backtest.DynamicForm.FormContext do
     base_attrs = %{id: id}
 
     # Add stop_loss and take_profit for exit rules
-    attrs = if type == "exit" do
-      Map.merge(base_attrs, %{stop_loss: "0.02", take_profit: "0.04"})
-    else
-      base_attrs
-    end
+    attrs =
+      if type == "exit" do
+        Map.merge(base_attrs, %{stop_loss: "0.02", take_profit: "0.04"})
+      else
+        base_attrs
+      end
 
     Rule.new(attrs)
   end
@@ -71,7 +72,9 @@ defmodule Central.Backtest.DynamicForm.FormContext do
     # Update the rule with new indicator and params
     # Ensure rule is a valid struct before updating
     if is_nil(rule) do
-      new_rule("entry", 0) |> Map.put(:indicator_id, indicator_id) |> Map.put(:params, default_params)
+      new_rule("entry", 0)
+      |> Map.put(:indicator_id, indicator_id)
+      |> Map.put(:params, default_params)
     else
       %{rule | indicator_id: indicator_id, params: default_params}
     end
@@ -88,6 +91,7 @@ defmodule Central.Backtest.DynamicForm.FormContext do
   Adds a new rule to an existing list and returns updated form data
   """
   def add_rule(form_data, nil, rule_type), do: add_rule(form_data, [], rule_type)
+
   def add_rule(form_data, current_rules, rule_type) do
     # Create new rule
     index = length(current_rules)
@@ -112,11 +116,12 @@ defmodule Central.Backtest.DynamicForm.FormContext do
 
     # Build new form data
     # First, filter out fields related to this rule type
-    base_form_data = form_data
-                    |> Enum.filter(fn {k, _} ->
-                      not String.starts_with?(k, "#{rule_type}_")
-                    end)
-                    |> Map.new()
+    base_form_data =
+      form_data
+      |> Enum.filter(fn {k, _} ->
+        not String.starts_with?(k, "#{rule_type}_")
+      end)
+      |> Map.new()
 
     # Then add back all rules
     form_data_updates = FormTransformer.rules_to_form(updated_rules, rule_type)
@@ -201,6 +206,7 @@ defmodule Central.Backtest.DynamicForm.FormContext do
     else
       # Check config section
       config = json_data["config"]
+
       if not is_map(config) do
         {:error, "Config must be an object"}
       else
@@ -212,11 +218,13 @@ defmodule Central.Backtest.DynamicForm.FormContext do
         else
           # Check entry_rules
           entry_rules = json_data["entry_rules"]
+
           unless is_map(entry_rules) do
             {:error, "entry_rules must be an object"}
           else
             # Check exit_rules
             exit_rules = json_data["exit_rules"]
+
             unless is_map(exit_rules) do
               {:error, "exit_rules must be an object"}
             else
@@ -255,8 +263,10 @@ defmodule Central.Backtest.DynamicForm.FormContext do
     %{
       "name" => "",
       "description" => "",
-      "timeframe" => "1h",  # Default to 1 hour timeframe
-      "symbol" => "BTCUSDT", # Default to BTC/USDT pair
+      # Default to 1 hour timeframe
+      "timeframe" => "1h",
+      # Default to BTC/USDT pair
+      "symbol" => "BTCUSDT",
       "risk_per_trade" => "0.02",
       "max_position_size" => "5"
     }
@@ -324,7 +334,9 @@ defmodule Central.Backtest.DynamicForm.FormContext do
     - indicator_id: ID of the indicator to get parameter specifications
   """
   def transform_params(params_map, indicator_id) do
-    if is_nil(params_map) or params_map == %{}, do: %{}, else: do_transform_params(params_map, indicator_id)
+    if is_nil(params_map) or params_map == %{},
+      do: %{},
+      else: do_transform_params(params_map, indicator_id)
   end
 
   defp do_transform_params(params_map, indicator_id) do
@@ -332,19 +344,21 @@ defmodule Central.Backtest.DynamicForm.FormContext do
     params_list = ListIndicator.get_params(indicator_id) || []
 
     # Transform each parameter according to its type
-    transformed_params = Enum.reduce(params_map, %{}, fn {key, value}, acc ->
-      # Special handling for timeframe parameters to prevent the KeyError
-      if is_binary(key) && (
-        String.contains?(key, "timeframe") ||
-        String.contains?(key, "price_key") ||
-        key == "open" || key == "close" || key == "high" || key == "low") && is_binary(value) do
-        Map.put(acc, safe_key_to_atom(key), value)
-      else
-        param_spec = find_param_spec(params_list, key)
-        transformed_value = transform_value(value, param_spec)
-        Map.put(acc, safe_key_to_atom(key), transformed_value)
-      end
-    end)
+    transformed_params =
+      Enum.reduce(params_map, %{}, fn {key, value}, acc ->
+        # Special handling for timeframe parameters to prevent the KeyError
+        if is_binary(key) &&
+             (String.contains?(key, "timeframe") ||
+                String.contains?(key, "price_key") ||
+                key == "open" || key == "close" || key == "high" || key == "low") &&
+             is_binary(value) do
+          Map.put(acc, safe_key_to_atom(key), value)
+        else
+          param_spec = find_param_spec(params_list, key)
+          transformed_value = transform_value(value, param_spec)
+          Map.put(acc, safe_key_to_atom(key), transformed_value)
+        end
+      end)
 
     transformed_params
   end
@@ -354,6 +368,7 @@ defmodule Central.Backtest.DynamicForm.FormContext do
   or string otherwise. Safely handles both atom and string keys.
   """
   def safe_key_to_atom(key) when is_atom(key), do: key
+
   def safe_key_to_atom(key) when is_binary(key) do
     try do
       String.to_existing_atom(key)
@@ -361,6 +376,7 @@ defmodule Central.Backtest.DynamicForm.FormContext do
       ArgumentError -> key
     end
   end
+
   def safe_key_to_atom(key), do: key
 
   @doc """
@@ -387,10 +403,10 @@ defmodule Central.Backtest.DynamicForm.FormContext do
     atom_key = safe_key_to_atom(key)
 
     # If the key contains specific strings or is a common parameter value, return a special param spec
-    if is_binary(key) && (
-      String.contains?(key, "timeframe") ||
-      String.contains?(key, "price_key") ||
-      key == "open" || key == "close" || key == "high" || key == "low") do
+    if is_binary(key) &&
+         (String.contains?(key, "timeframe") ||
+            String.contains?(key, "price_key") ||
+            key == "open" || key == "close" || key == "high" || key == "low") do
       %{name: String.to_atom(key), type: :string_param}
     else
       Enum.find(params_list, fn param ->
@@ -403,10 +419,29 @@ defmodule Central.Backtest.DynamicForm.FormContext do
   defp transform_value(value, %{type: :string_param}) when is_binary(value), do: value
 
   # Add a list of common string values that should never be processed as maps
-  defp transform_value(value, _) when is_binary(value) and value in [
-    "daily", "weekly", "monthly", "yearly", "1h", "4h", "30m", "15m", "1d", "1w",
-    "open", "close", "high", "low", "volume", "hl2", "hlc3", "ohlc4"
-  ], do: value
+  defp transform_value(value, _)
+       when is_binary(value) and
+              value in [
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly",
+                "1h",
+                "4h",
+                "30m",
+                "15m",
+                "1d",
+                "1w",
+                "open",
+                "close",
+                "high",
+                "low",
+                "volume",
+                "hl2",
+                "hlc3",
+                "ohlc4"
+              ],
+       do: value
 
   # Transform values based on parameter type
   defp transform_value(value, nil) when is_binary(value), do: value
@@ -427,7 +462,11 @@ defmodule Central.Backtest.DynamicForm.FormContext do
 
   defp transform_value(value, %{type: :select, options: options}) do
     # First - special case for timeframe strings that are common in the system
-    if is_binary(value) && Enum.member?(["daily", "weekly", "monthly", "yearly", "1h", "4h", "30m", "15m", "1d", "1w"], value) do
+    if is_binary(value) &&
+         Enum.member?(
+           ["daily", "weekly", "monthly", "yearly", "1h", "4h", "30m", "15m", "1d", "1w"],
+           value
+         ) do
       value
     else
       # Ensure the value is one of the allowed options
@@ -450,6 +489,7 @@ defmodule Central.Backtest.DynamicForm.FormContext do
   # Handle any parameter whose name contains "timeframe"
   defp transform_value(value, param_spec) when is_binary(value) and not is_nil(param_spec) do
     param_name = param_spec[:name]
+
     if is_binary(param_name) && String.contains?(param_name, "timeframe") do
       value
     else

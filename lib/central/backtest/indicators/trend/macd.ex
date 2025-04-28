@@ -29,7 +29,9 @@ defmodule Central.Backtest.Indicators.Trend.Macd do
         slow_period \\ 26,
         signal_period \\ 9,
         price_key \\ :close
-      ) when is_list(candles) and is_integer(fast_period) and is_integer(slow_period) and is_integer(signal_period) do
+      )
+      when is_list(candles) and is_integer(fast_period) and is_integer(slow_period) and
+             is_integer(signal_period) do
     # Calculate fast and slow EMAs
     fast_ema = MovingAverage.ema(candles, fast_period, price_key)
     slow_ema = MovingAverage.ema(candles, slow_period, price_key)

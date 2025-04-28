@@ -64,10 +64,14 @@ defmodule Central.Backtest.Indicators.Volume.Cmf do
     cond do
       not is_list(high) or not is_list(low) or not is_list(close) or not is_list(volume) ->
         {:error, "Inputs must be lists"}
-      length(high) != length(low) or length(low) != length(close) or length(close) != length(volume) ->
+
+      length(high) != length(low) or length(low) != length(close) or
+          length(close) != length(volume) ->
         {:error, "Input lists must have the same length"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       true ->
         true
     end
@@ -76,7 +80,7 @@ defmodule Central.Backtest.Indicators.Volume.Cmf do
   defp calculate_money_flow_multiplier(high, low, close) do
     Enum.zip([high, low, close])
     |> Enum.map(fn {h, l, c} ->
-      if h == l, do: 0, else: ((c - l) - (h - c)) / (h - l)
+      if h == l, do: 0, else: (c - l - (h - c)) / (h - l)
     end)
   end
 
@@ -140,20 +144,22 @@ defmodule Central.Backtest.Indicators.Volume.Cmf do
     divergences = []
 
     # Check for bullish divergence (price makes lower low but CMF doesn't)
-    divergences = if Enum.min(prices) == List.last(prices) and
-       Enum.min(cmf_values) != List.last(cmf_values) do
-      [{:bullish_divergence, index} | divergences]
-    else
-      divergences
-    end
+    divergences =
+      if Enum.min(prices) == List.last(prices) and
+           Enum.min(cmf_values) != List.last(cmf_values) do
+        [{:bullish_divergence, index} | divergences]
+      else
+        divergences
+      end
 
     # Check for bearish divergence (price makes higher high but CMF doesn't)
-    divergences = if Enum.max(prices) == List.last(prices) and
-       Enum.max(cmf_values) != List.last(cmf_values) do
-      [{:bearish_divergence, index} | divergences]
-    else
-      divergences
-    end
+    divergences =
+      if Enum.max(prices) == List.last(prices) and
+           Enum.max(cmf_values) != List.last(cmf_values) do
+        [{:bearish_divergence, index} | divergences]
+      else
+        divergences
+      end
 
     divergences
   end

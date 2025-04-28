@@ -8,10 +8,15 @@ defmodule Central.Backtest.Indicators.Calculations.Math do
   Returns 0 when divisor is 0.
   """
   def safe_div(_numerator, 0), do: Decimal.new(0)
+
   def safe_div(numerator, %Decimal{} = divisor) do
-    if Decimal.equal?(divisor, Decimal.new(0)), do: Decimal.new(0), else: Decimal.div(numerator, divisor)
+    if Decimal.equal?(divisor, Decimal.new(0)),
+      do: Decimal.new(0),
+      else: Decimal.div(numerator, divisor)
   end
-  def safe_div(numerator, divisor) when is_number(numerator) and is_number(divisor), do: numerator / divisor
+
+  def safe_div(numerator, divisor) when is_number(numerator) and is_number(divisor),
+    do: numerator / divisor
 
   @doc """
   Calculates the square root of a Decimal value.
@@ -30,5 +35,6 @@ defmodule Central.Backtest.Indicators.Calculations.Math do
     sum = Enum.reduce(values, Decimal.new(0), &Decimal.add/2)
     Decimal.div(sum, Decimal.new(Enum.count(values)))
   end
+
   def average([]), do: Decimal.new(0)
 end

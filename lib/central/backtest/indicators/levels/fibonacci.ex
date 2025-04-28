@@ -24,11 +24,12 @@ defmodule Central.Backtest.Indicators.Levels.Fibonacci do
     levels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0]
 
     # Calculate range
-    range = if is_uptrend do
-      Decimal.sub(high, low)
-    else
-      Decimal.sub(low, high)
-    end
+    range =
+      if is_uptrend do
+        Decimal.sub(high, low)
+      else
+        Decimal.sub(low, high)
+      end
 
     # Calculate levels
     levels_map =
@@ -36,13 +37,14 @@ defmodule Central.Backtest.Indicators.Levels.Fibonacci do
       |> Enum.map(fn level ->
         decimal_level = Decimal.from_float(level)
 
-        price = if is_uptrend do
-          # In uptrend: High - (Range * Level)
-          Decimal.sub(high, Decimal.mult(range, decimal_level))
-        else
-          # In downtrend: Low + (Range * Level)
-          Decimal.add(high, Decimal.mult(range, decimal_level))
-        end
+        price =
+          if is_uptrend do
+            # In uptrend: High - (Range * Level)
+            Decimal.sub(high, Decimal.mult(range, decimal_level))
+          else
+            # In downtrend: Low + (Range * Level)
+            Decimal.add(high, Decimal.mult(range, decimal_level))
+          end
 
         {level, price}
       end)
@@ -77,11 +79,12 @@ defmodule Central.Backtest.Indicators.Levels.Fibonacci do
     levels = [1.0, 1.236, 1.382, 1.5, 1.618, 2.0, 2.618, 3.618]
 
     # Calculate the first leg range
-    first_leg_range = if is_uptrend do
-      Decimal.sub(middle, start)
-    else
-      Decimal.sub(start, middle)
-    end
+    first_leg_range =
+      if is_uptrend do
+        Decimal.sub(middle, start)
+      else
+        Decimal.sub(start, middle)
+      end
 
     # Calculate price projections
     levels_map =
@@ -89,13 +92,14 @@ defmodule Central.Backtest.Indicators.Levels.Fibonacci do
       |> Enum.map(fn level ->
         decimal_level = Decimal.from_float(level)
 
-        price = if is_uptrend do
-          # In uptrend: End + (First Leg Range * Level)
-          Decimal.add(end_point, Decimal.mult(first_leg_range, decimal_level))
-        else
-          # In downtrend: End - (First Leg Range * Level)
-          Decimal.sub(end_point, Decimal.mult(first_leg_range, decimal_level))
-        end
+        price =
+          if is_uptrend do
+            # In uptrend: End + (First Leg Range * Level)
+            Decimal.add(end_point, Decimal.mult(first_leg_range, decimal_level))
+          else
+            # In downtrend: End - (First Leg Range * Level)
+            Decimal.sub(end_point, Decimal.mult(first_leg_range, decimal_level))
+          end
 
         {level, price}
       end)
@@ -141,11 +145,12 @@ defmodule Central.Backtest.Indicators.Levels.Fibonacci do
         # Project D based on direction and CD length (ratio * AB)
         projected_cd = Decimal.mult(ab_range, decimal_ratio)
 
-        d_price = if is_bullish do
-          Decimal.sub(c, projected_cd)
-        else
-          Decimal.add(c, projected_cd)
-        end
+        d_price =
+          if is_bullish do
+            Decimal.sub(c, projected_cd)
+          else
+            Decimal.add(c, projected_cd)
+          end
 
         {ratio, d_price}
       end)

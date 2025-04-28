@@ -132,7 +132,10 @@ defmodule Central.Backtest.Indicators.IndicatorUtils do
         data
         |> Enum.drop(start_pos + 1)
         |> Enum.reduce({[initial_sma], initial_sma}, fn
-          nil, acc -> acc  # Skip nil values
+          # Skip nil values
+          nil, acc ->
+            acc
+
           value, {values, last_ema} ->
             new_ema = (value - last_ema) * multiplier + last_ema
             {[new_ema | values], new_ema}

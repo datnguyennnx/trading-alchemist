@@ -5,7 +5,8 @@ defmodule Central.Application do
 
   use Application
 
-  alias Central.MarketData.CacheManager # Add alias
+  # Add alias
+  alias Central.MarketData.CacheManager
 
   @impl true
   def start(_type, _args) do
@@ -31,7 +32,7 @@ defmodule Central.Application do
       # Start the MarketData Sync Worker (periodic sync) - AFTER CacheManager
       Central.MarketData.MarketDataSyncWorker,
       # Start the MarketData History Fetcher (on-demand) - AFTER CacheManager
-      Central.MarketData.MarketDataHistoryFetcher,
+      Central.MarketData.MarketDataHistoryFetcher
       # Add other workers and supervisors as needed
     ]
 

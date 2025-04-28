@@ -23,10 +23,11 @@ defmodule Central.Backtest.Indicators.Levels.PivotPoints do
   """
   def standard(%{high: high, low: low, close: close}) do
     # Calculate the pivot point (P)
-    pivot = Decimal.div(
-      Decimal.add(Decimal.add(high, low), close),
-      Decimal.new(3)
-    )
+    pivot =
+      Decimal.div(
+        Decimal.add(Decimal.add(high, low), close),
+        Decimal.new(3)
+      )
 
     # Calculate resistance levels
     r1 = Decimal.mult(Decimal.new(2), pivot) |> Decimal.sub(low)
@@ -40,8 +41,12 @@ defmodule Central.Backtest.Indicators.Levels.PivotPoints do
 
     %{
       pivot: pivot,
-      r1: r1, r2: r2, r3: r3,
-      s1: s1, s2: s2, s3: s3
+      r1: r1,
+      r2: r2,
+      r3: r3,
+      s1: s1,
+      s2: s2,
+      s3: s3
     }
   end
 
@@ -62,10 +67,11 @@ defmodule Central.Backtest.Indicators.Levels.PivotPoints do
   """
   def fibonacci(%{high: high, low: low, close: close}) do
     # Calculate the pivot point (P) - same as standard
-    pivot = Decimal.div(
-      Decimal.add(Decimal.add(high, low), close),
-      Decimal.new(3)
-    )
+    pivot =
+      Decimal.div(
+        Decimal.add(Decimal.add(high, low), close),
+        Decimal.new(3)
+      )
 
     # Fibonacci ratios
     fib_0_382 = Decimal.from_float(0.382)
@@ -87,8 +93,12 @@ defmodule Central.Backtest.Indicators.Levels.PivotPoints do
 
     %{
       pivot: pivot,
-      r1: r1, r2: r2, r3: r3,
-      s1: s1, s2: s2, s3: s3
+      r1: r1,
+      r2: r2,
+      r3: r3,
+      s1: s1,
+      s2: s2,
+      s3: s3
     }
   end
 
@@ -130,15 +140,22 @@ defmodule Central.Backtest.Indicators.Levels.PivotPoints do
     s4 = Decimal.sub(close, Decimal.mult(range, mult_1_5))
 
     # Calculate pivot (average of OHLC)
-    pivot = Decimal.div(
-      Decimal.add(Decimal.add(high, low), Decimal.mult(close, Decimal.new(2))),
-      Decimal.new(4)
-    )
+    pivot =
+      Decimal.div(
+        Decimal.add(Decimal.add(high, low), Decimal.mult(close, Decimal.new(2))),
+        Decimal.new(4)
+      )
 
     %{
       pivot: pivot,
-      r1: r1, r2: r2, r3: r3, r4: r4,
-      s1: s1, s2: s2, s3: s3, s4: s4
+      r1: r1,
+      r2: r2,
+      r3: r3,
+      r4: r4,
+      s1: s1,
+      s2: s2,
+      s3: s3,
+      s4: s4
     }
   end
 
@@ -159,10 +176,11 @@ defmodule Central.Backtest.Indicators.Levels.PivotPoints do
   """
   def woodie(%{high: high, low: low, close: _close, open: open}) do
     # Calculate pivot point (P) - Weighted more toward the open and close
-    pivot = Decimal.div(
-      Decimal.add(Decimal.add(high, low), Decimal.mult(open, Decimal.new(2))),
-      Decimal.new(4)
-    )
+    pivot =
+      Decimal.div(
+        Decimal.add(Decimal.add(high, low), Decimal.mult(open, Decimal.new(2))),
+        Decimal.new(4)
+      )
 
     # Calculate range
     range = Decimal.sub(high, low)
@@ -177,8 +195,10 @@ defmodule Central.Backtest.Indicators.Levels.PivotPoints do
 
     %{
       pivot: pivot,
-      r1: r1, r2: r2,
-      s1: s1, s2: s2
+      r1: r1,
+      r2: r2,
+      s1: s1,
+      s2: s2
     }
   end
 end

@@ -78,7 +78,8 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   end
 
   def volume_roc(candles, period, volume_key)
-      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(volume_key) do
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and
+             is_atom(volume_key) do
     volume = ListOperations.extract_key(candles, volume_key)
     volume_roc_raw(volume, period)
   end
@@ -102,7 +103,8 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   end
 
   def relative_volume(candles, period, volume_key)
-      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(volume_key) do
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and
+             is_atom(volume_key) do
     volume = ListOperations.extract_key(candles, volume_key)
     relative_volume_raw(volume, period)
   end
@@ -126,7 +128,8 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   end
 
   def up_down_volume(candles, price_key, volume_key)
-      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and
+             is_atom(volume_key) do
     volume = ListOperations.extract_key(candles, volume_key)
     prices = ListOperations.extract_key(candles, price_key)
     up_down_volume_raw(volume, prices)
@@ -152,7 +155,8 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   end
 
   def volume_breakouts(candles, period, threshold, volume_key)
-      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(volume_key) do
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and
+             is_atom(volume_key) do
     volume = ListOperations.extract_key(candles, volume_key)
     volume_breakouts_raw(volume, period, threshold)
   end
@@ -171,14 +175,21 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
     - {:ok, confirmation_values} on success
     - {:error, reason} on failure
   """
-  def volume_price_confirmation(candles, period \\ 20, rel_vol_threshold \\ 1.5, price_key \\ :close, volume_key \\ :volume)
+  def volume_price_confirmation(
+        candles,
+        period \\ 20,
+        rel_vol_threshold \\ 1.5,
+        price_key \\ :close,
+        volume_key \\ :volume
+      )
 
   def volume_price_confirmation([], _period, _rel_vol_threshold, _price_key, _volume_key) do
     {:error, "Empty candle list"}
   end
 
   def volume_price_confirmation(candles, period, rel_vol_threshold, price_key, volume_key)
-      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and
+             is_atom(volume_key) do
     volume = ListOperations.extract_key(candles, volume_key)
     prices = ListOperations.extract_key(candles, price_key)
     volume_price_confirmation_raw(volume, prices, period, rel_vol_threshold)
@@ -199,14 +210,22 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
     - {:ok, climax_signals} on success
     - {:error, reason} on failure
   """
-  def volume_climax(candles, period \\ 20, volume_threshold \\ 3.0, trend_lookback \\ 5, price_key \\ :close, volume_key \\ :volume)
+  def volume_climax(
+        candles,
+        period \\ 20,
+        volume_threshold \\ 3.0,
+        trend_lookback \\ 5,
+        price_key \\ :close,
+        volume_key \\ :volume
+      )
 
   def volume_climax([], _period, _volume_threshold, _trend_lookback, _price_key, _volume_key) do
     {:error, "Empty candle list"}
   end
 
   def volume_climax(candles, period, volume_threshold, trend_lookback, price_key, volume_key)
-      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and
+             is_atom(volume_key) do
     volume = ListOperations.extract_key(candles, volume_key)
     prices = ListOperations.extract_key(candles, price_key)
     volume_climax_raw(volume, prices, period, volume_threshold, trend_lookback)
@@ -231,7 +250,8 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   end
 
   def volume_force(candles, price_key, volume_key)
-      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and is_atom(volume_key) do
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(price_key) and
+             is_atom(volume_key) do
     volume = ListOperations.extract_key(candles, volume_key)
     prices = ListOperations.extract_key(candles, price_key)
     volume_force_raw(volume, prices)
@@ -257,7 +277,8 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   end
 
   def volume_ma_candles(candles, period, ma_type, volume_key)
-      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and is_atom(volume_key) do
+      when is_list(candles) and length(candles) > 0 and is_map(hd(candles)) and
+             is_atom(volume_key) do
     volume = ListOperations.extract_key(candles, volume_key)
     volume_ma(volume, period, ma_type)
   end
@@ -284,7 +305,8 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   def volume_roc_raw(volume, period)
       when is_list(volume) and length(volume) > 0 and is_number(hd(volume)) do
     with :ok <- validate_inputs(volume, period) do
-      roc = volume
+      roc =
+        volume
         |> Enum.chunk_every(period + 1, 1, :discard)
         |> Enum.map(fn chunk ->
           current = List.last(chunk)
@@ -318,10 +340,10 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   def relative_volume_raw(volume, period)
       when is_list(volume) and length(volume) > 0 and is_number(hd(volume)) do
     with :ok <- validate_inputs(volume, period),
-        {:ok, volume_avg} <- volume_ma(volume, period, :sma, :volume) do
-
+         {:ok, volume_avg} <- volume_ma(volume, period, :sma, :volume) do
       # Using Math.safe_div to handle division
-      rel_volume = Enum.zip(volume, volume_avg)
+      rel_volume =
+        Enum.zip(volume, volume_avg)
         |> Enum.map(fn {vol, avg} ->
           Math.safe_div(vol, avg)
         end)
@@ -354,14 +376,18 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   def up_down_volume_raw(volume, prices)
       when is_list(volume) and is_list(prices) and length(volume) > 0 and length(prices) > 0 do
     with :ok <- validate_volume_prices(volume, prices) do
-      {up_vol, down_vol} = prices
+      {up_vol, down_vol} =
+        prices
         |> Enum.chunk_every(2, 1, :discard)
         |> Enum.zip(Enum.drop(volume, 1))
         |> Enum.map(fn {[prev_price, curr_price], vol} ->
           cond do
-            curr_price > prev_price -> {vol, 0}  # Up day
-            curr_price < prev_price -> {0, vol}  # Down day
-            true -> {0, 0}  # Unchanged
+            # Up day
+            curr_price > prev_price -> {vol, 0}
+            # Down day
+            curr_price < prev_price -> {0, vol}
+            # Unchanged
+            true -> {0, 0}
           end
         end)
         |> Enum.unzip()
@@ -395,10 +421,10 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   def volume_breakouts_raw(volume, period, threshold)
       when is_list(volume) and length(volume) > 0 and is_number(hd(volume)) do
     with :ok <- validate_inputs(volume, period),
-        {:ok, volume_avg} <- volume_ma(volume, period, :sma, :volume) do
-
+         {:ok, volume_avg} <- volume_ma(volume, period, :sma, :volume) do
       # Using Math.safe_div to handle division
-      breakouts = Enum.zip(volume, volume_avg)
+      breakouts =
+        Enum.zip(volume, volume_avg)
         |> Enum.map(fn {vol, avg} ->
           ratio = Math.safe_div(vol, avg)
           if avg > 0 and ratio >= threshold, do: 1, else: 0
@@ -434,26 +460,31 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   def volume_price_confirmation_raw(volume, prices, period, rel_vol_threshold)
       when is_list(volume) and is_list(prices) and length(volume) > 0 and length(prices) > 0 do
     with :ok <- validate_volume_prices(volume, prices),
-        {:ok, rel_volume} <- relative_volume_raw(volume, period) do
-
+         {:ok, rel_volume} <- relative_volume_raw(volume, period) do
       # Get price changes
-      price_changes = prices
+      price_changes =
+        prices
         |> Enum.chunk_every(2, 1, :discard)
         |> Enum.map(fn [prev, curr] -> curr - prev end)
         |> pad_with_zeros(length(prices), 1)
 
       # Combine price direction with relative volume
       Enum.zip([price_changes, rel_volume])
-        |> Enum.map(fn {price_change, rel_vol} ->
-          cond do
-            price_change > 0 and rel_vol >= rel_vol_threshold -> 1      # Strong bullish
-            price_change < 0 and rel_vol >= rel_vol_threshold -> -1     # Strong bearish
-            price_change > 0 and rel_vol < rel_vol_threshold -> 0.5     # Weak bullish
-            price_change < 0 and rel_vol < rel_vol_threshold -> -0.5    # Weak bearish
-            true -> 0  # No confirmation
-          end
-        end)
-        |> then(fn result -> {:ok, result} end)
+      |> Enum.map(fn {price_change, rel_vol} ->
+        cond do
+          # Strong bullish
+          price_change > 0 and rel_vol >= rel_vol_threshold -> 1
+          # Strong bearish
+          price_change < 0 and rel_vol >= rel_vol_threshold -> -1
+          # Weak bullish
+          price_change > 0 and rel_vol < rel_vol_threshold -> 0.5
+          # Weak bearish
+          price_change < 0 and rel_vol < rel_vol_threshold -> -0.5
+          # No confirmation
+          true -> 0
+        end
+      end)
+      |> then(fn result -> {:ok, result} end)
     else
       {:error, reason} -> {:error, reason}
     end
@@ -484,10 +515,10 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   def volume_climax_raw(volume, prices, period, volume_threshold, trend_lookback)
       when is_list(volume) and is_list(prices) and length(volume) > 0 and length(prices) > 0 do
     with :ok <- validate_volume_prices(volume, prices),
-        {:ok, rel_volume} <- relative_volume_raw(volume, period) do
-
+         {:ok, rel_volume} <- relative_volume_raw(volume, period) do
       # Determine price trends
-      price_trends = prices
+      price_trends =
+        prices
         |> Enum.chunk_every(trend_lookback, 1, :discard)
         |> Enum.map(fn chunk ->
           first = List.first(chunk)
@@ -497,7 +528,8 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
         |> pad_with_first_value(length(prices), trend_lookback - 1)
 
       # Get price changes
-      price_changes = prices
+      price_changes =
+        prices
         |> Enum.chunk_every(2, 1, :discard)
         |> Enum.map(fn [prev, curr] ->
           # Use Math.safe_div for division
@@ -507,15 +539,22 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
 
       # Combine trend, price change and volume for climax detection
       Enum.zip([price_trends, price_changes, rel_volume])
-        |> Enum.map(fn
-          {:downtrend, price_change, rel_vol} when price_change > 1 and rel_vol >= volume_threshold ->
-            1  # Bullish climax
-          {:uptrend, price_change, rel_vol} when price_change < -1 and rel_vol >= volume_threshold ->
-            -1  # Bearish climax
-          {_trend, _price_change, _rel_vol} ->
-            0  # No climax
-        end)
-        |> then(fn result -> {:ok, result} end)
+      |> Enum.map(fn
+        {:downtrend, price_change, rel_vol}
+        when price_change > 1 and rel_vol >= volume_threshold ->
+          # Bullish climax
+          1
+
+        {:uptrend, price_change, rel_vol}
+        when price_change < -1 and rel_vol >= volume_threshold ->
+          # Bearish climax
+          -1
+
+        {_trend, _price_change, _rel_vol} ->
+          # No climax
+          0
+      end)
+      |> then(fn result -> {:ok, result} end)
     else
       {:error, reason} -> {:error, reason}
     end
@@ -541,10 +580,12 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   end
 
   def volume_force_raw(volume, prices)
-      when is_list(volume) and is_list(prices) and length(volume) > 0 and length(prices) > 0 and is_number(hd(volume)) do
+      when is_list(volume) and is_list(prices) and length(volume) > 0 and length(prices) > 0 and
+             is_number(hd(volume)) do
     with :ok <- validate_volume_prices(volume, prices) do
       # Calculate percentage price changes
-      price_changes = prices
+      price_changes =
+        prices
         |> Enum.chunk_every(2, 1, :discard)
         |> Enum.map(fn [prev, curr] ->
           # Use Math.safe_div for division
@@ -553,7 +594,8 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
         |> pad_with_zeros(length(prices), 1)
 
       # Multiply volume by price change
-      force = Enum.zip([volume, price_changes])
+      force =
+        Enum.zip([volume, price_changes])
         |> Enum.map(fn {vol, change} -> vol * change end)
 
       # If normalization is needed, we could use Normalization.normalize_to_range
@@ -577,17 +619,21 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
           {:ok, result} -> {:ok, result}
           error -> error
         end
+
       :ema ->
         case ExponentialMovingAverage.calculate(volume, period) do
           {:ok, result} -> {:ok, result}
           error -> error
         end
+
       :wma ->
         case MovingAverage.calculate(volume, period, :weighted) do
           {:ok, result} -> {:ok, result}
           error -> error
         end
-      _ -> {:error, "Unsupported moving average type"}
+
+      _ ->
+        {:error, "Unsupported moving average type"}
     end
   end
 
@@ -598,10 +644,13 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
     cond do
       not is_list(volume) ->
         {:error, "Volume must be a list"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       length(volume) < period ->
         {:error, "Not enough data points for the given period"}
+
       true ->
         :ok
     end
@@ -614,10 +663,13 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
     cond do
       not (is_list(volume) and is_list(prices)) ->
         {:error, "Volume and prices must be lists"}
+
       length(volume) != length(prices) ->
         {:error, "Volume and prices must have the same length"}
+
       length(volume) < 2 ->
         {:error, "At least 2 data points are required"}
+
       true ->
         :ok
     end
@@ -626,7 +678,8 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   @doc """
   Pads a list with zeros to the specified original length.
   """
-  def pad_with_zeros(values, original_length, padding_size) when is_list(values) and is_integer(original_length) and is_integer(padding_size) do
+  def pad_with_zeros(values, original_length, padding_size)
+      when is_list(values) and is_integer(original_length) and is_integer(padding_size) do
     padding = List.duplicate(0, padding_size)
     padding ++ values ++ List.duplicate(0, original_length - padding_size - length(values))
   end
@@ -634,11 +687,14 @@ defmodule Central.Backtest.Indicators.Volume.BasicVolume do
   @doc """
   Pads a list with the first value to the specified original length.
   """
-  def pad_with_first_value(values, original_length, padding_size) when is_list(values) and is_integer(original_length) and is_integer(padding_size) do
+  def pad_with_first_value(values, original_length, padding_size)
+      when is_list(values) and is_integer(original_length) and is_integer(padding_size) do
     # Use explicit atom rather than a boolean value that might cause pattern matching issues
     default_value = :neutral
     first_value = if length(values) > 0, do: List.first(values), else: default_value
     padding = List.duplicate(first_value, padding_size)
-    padding ++ values ++ List.duplicate(first_value, original_length - padding_size - length(values))
+
+    padding ++
+      values ++ List.duplicate(first_value, original_length - padding_size - length(values))
   end
 end

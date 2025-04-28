@@ -30,13 +30,19 @@ defmodule Central.MarketData.SyncService do
   """
   def ensure_data_range(symbol, timeframe, start_time, end_time) do
     unless DateTime.compare(start_time, end_time) != :gt do
-      Logger.warning("ensure_data_range called with start_time >= end_time. Start: #{inspect(start_time)}, End: #{inspect(end_time)}. Assuming data is available.")
+      Logger.warning(
+        "ensure_data_range called with start_time >= end_time. Start: #{inspect(start_time)}, End: #{inspect(end_time)}. Assuming data is available."
+      )
+
       {:ok, :available}
     else
       case MarketDataContext.get_date_range(symbol, timeframe) do
         {nil, nil} ->
           # No data exists, fetch the entire requested range
-          Logger.info("No existing data for #{symbol}/#{timeframe}. Fetching full range: #{inspect(start_time)} to #{inspect(end_time)}")
+          Logger.info(
+            "No existing data for #{symbol}/#{timeframe}. Fetching full range: #{inspect(start_time)} to #{inspect(end_time)}"
+          )
+
           fetch_and_report(symbol, timeframe, start_time, end_time)
 
         {db_start, db_end} ->
@@ -46,14 +52,18 @@ defmodule Central.MarketData.SyncService do
           if Enum.empty?(missing_periods) do
             {:ok, :available}
           else
-             Logger.info("Found #{length(missing_periods)} missing period(s) for #{symbol}/#{timeframe}. Fetching...")
+            Logger.info(
+              "Found #{length(missing_periods)} missing period(s) for #{symbol}/#{timeframe}. Fetching..."
+            )
+
             # Fetch each missing period
             fetch_results =
               missing_periods
               |> Task.async_stream(&fetch_and_report(symbol, timeframe, elem(&1, 0), elem(&1, 1)),
                 max_concurrency: 3,
                 ordered: false,
-                timeout: :infinity # Use HistoricalDataFetcher's internal timeouts
+                # Use HistoricalDataFetcher's internal timeouts
+                timeout: :infinity
               )
               |> Enum.to_list()
 
@@ -66,7 +76,10 @@ defmodule Central.MarketData.SyncService do
                 |> Enum.filter(fn {:ok, res} -> Keyword.get(res, :status) != :ok end)
                 |> Enum.map(fn {:ok, res} -> Keyword.get(res, :reason, "Unknown fetch error") end)
 
-              Logger.error("Failed to fetch some missing periods for #{symbol}/#{timeframe}: #{inspect(errors)}")
+              Logger.error(
+                "Failed to fetch some missing periods for #{symbol}/#{timeframe}: #{inspect(errors)}"
+              )
+
               {:error, "Failed to sync missing data periods: #{Enum.join(errors, "; ")}"}
             end
           end
@@ -81,14 +94,20 @@ defmodule Central.MarketData.SyncService do
   def fetch_and_report(symbol, timeframe, start_time, end_time) do
     case HistoricalDataFetcher.fetch_and_store_range(symbol, timeframe, start_time, end_time) do
       {:ok, count} ->
-         Logger.info("Successfully fetched #{count} candles for #{symbol}/#{timeframe} from #{inspect(start_time)} to #{inspect(end_time)}")
+        Logger.info(
+          "Successfully fetched #{count} candles for #{symbol}/#{timeframe} from #{inspect(start_time)} to #{inspect(end_time)}"
+        )
+
         %{status: :ok, count: count}
+
       {:error, reason} ->
-         Logger.error("Failed to fetch range for #{symbol}/#{timeframe} from #{inspect(start_time)} to #{inspect(end_time)}: #{inspect(reason)}")
+        Logger.error(
+          "Failed to fetch range for #{symbol}/#{timeframe} from #{inspect(start_time)} to #{inspect(end_time)}: #{inspect(reason)}"
+        )
+
         %{status: :error, reason: reason}
     end
   end
-
 
   @doc false
   # Calculates the time periods within the required range [req_start, req_end]
@@ -117,13 +136,13 @@ defmodule Central.MarketData.SyncService do
     if DateTime.compare(req_end, db_end) == :gt do
       # The missing period is [db_end + 1 second, req_end]
       missing_start = DateTime.add(db_end, 1, :second)
-       # Ensure the period is valid (start < end)
+      # Ensure the period is valid (start < end)
       if DateTime.compare(missing_start, req_end) == :lt do
         _periods = [{missing_start, req_end} | periods]
       end
     end
 
-     # Reverse because we prepended
+    # Reverse because we prepended
     Enum.reverse(periods)
   end
 end

@@ -31,7 +31,8 @@ defmodule Central.Backtest.Indicators.Volume.Obv do
       {_, obv_values} =
         candles
         |> Enum.chunk_every(2, 1, :discard)
-        |> Enum.reduce({initial_obv, [initial_obv]}, fn [prev_candle, curr_candle], {current_obv, results} ->
+        |> Enum.reduce({initial_obv, [initial_obv]}, fn [prev_candle, curr_candle],
+                                                        {current_obv, results} ->
           new_obv = calculate_new_obv(prev_candle, curr_candle, current_obv)
           {new_obv, [new_obv | results]}
         end)

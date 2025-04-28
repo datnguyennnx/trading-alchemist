@@ -46,10 +46,13 @@ defmodule Central.Backtest.Indicators.Volatility.ChaikinVolatility do
     cond do
       not is_list(high) or not is_list(low) ->
         {:error, "Inputs must be lists"}
+
       length(high) != length(low) ->
         {:error, "Input lists must have the same length"}
+
       ema_period <= 0 or roc_period <= 0 ->
         {:error, "Periods must be greater than 0"}
+
       true ->
         true
     end
@@ -73,6 +76,7 @@ defmodule Central.Backtest.Indicators.Volatility.ChaikinVolatility do
 
   defp pad_with_zeros(values, original_length) do
     padding_length = original_length - length(values)
+
     if padding_length > 0 do
       List.duplicate(0, padding_length) ++ values
     else
@@ -105,14 +109,14 @@ defmodule Central.Backtest.Indicators.Volatility.ChaikinVolatility do
     cond do
       # Peak detection (values increasing then decreasing)
       Enum.all?(left_values, fn v -> v < middle_value end) and
-      Enum.all?(right_values, fn v -> v < middle_value end) and
-      middle_value > threshold ->
+        Enum.all?(right_values, fn v -> v < middle_value end) and
+          middle_value > threshold ->
         [{:volatility_peak, index + middle_index}]
 
       # Bottom detection (values decreasing then increasing)
       Enum.all?(left_values, fn v -> v > middle_value end) and
-      Enum.all?(right_values, fn v -> v > middle_value end) and
-      abs(middle_value) < threshold ->
+        Enum.all?(right_values, fn v -> v > middle_value end) and
+          abs(middle_value) < threshold ->
         [{:volatility_bottom, index + middle_index}]
 
       true ->
@@ -128,7 +132,12 @@ defmodule Central.Backtest.Indicators.Volatility.ChaikinVolatility do
   - :normal_volatility when volatility is between thresholds
   - :low_volatility when volatility is below the lower threshold
   """
-  def classify_market_condition(chaikin_volatility, upper_threshold \\ 15, lower_threshold \\ 5, window_size \\ 10) do
+  def classify_market_condition(
+        chaikin_volatility,
+        upper_threshold \\ 15,
+        lower_threshold \\ 5,
+        window_size \\ 10
+      ) do
     recent_values = Enum.take(chaikin_volatility, -window_size)
 
     if length(recent_values) < window_size do

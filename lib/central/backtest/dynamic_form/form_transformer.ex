@@ -122,7 +122,8 @@ defmodule Central.Backtest.DynamicForm.FormTransformer do
         nil
       end
     end)
-    |> Enum.reject(&is_nil/1) # Remove nil entries (rules with missing fields)
+    # Remove nil entries (rules with missing fields)
+    |> Enum.reject(&is_nil/1)
   end
 
   @doc """
@@ -168,6 +169,7 @@ defmodule Central.Backtest.DynamicForm.FormTransformer do
     - List of Rule structs
   """
   def conditions_to_rules(nil, rule_type), do: [Rule.new(%{id: "#{rule_type}_0"})]
+
   def conditions_to_rules(conditions, rule_type) when is_list(conditions) do
     conditions
     |> Enum.with_index()
@@ -198,10 +200,12 @@ defmodule Central.Backtest.DynamicForm.FormTransformer do
 
   # Convert atom keys to string keys for form data
   defp stringified_params(nil), do: %{}
+
   defp stringified_params(params) when is_map(params) do
     Enum.reduce(params, %{}, fn
       {key, value}, acc when is_atom(key) ->
         Map.put(acc, Atom.to_string(key), value)
+
       {key, value}, acc ->
         Map.put(acc, key, value)
     end)
@@ -212,6 +216,7 @@ defmodule Central.Backtest.DynamicForm.FormTransformer do
     Enum.reduce(params, %{}, fn
       {key, value}, acc when is_binary(key) ->
         Map.put(acc, String.to_atom(key), value)
+
       {key, value}, acc ->
         Map.put(acc, key, value)
     end)

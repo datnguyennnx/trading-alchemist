@@ -13,7 +13,7 @@ defmodule CentralWeb.StrategyLive.Components.BacktestHistory do
         <.card_header class="flex flex-row items-start justify-between">
           <.card_title>Backtest History</.card_title>
           <div class="px-2 py-0.5 rounded-full bg-muted text-sm font-bold">
-            <%= length(@backtests) %> backtests runs
+            {length(@backtests)} backtests runs
           </div>
         </.card_header>
         <.card_content>
@@ -41,29 +41,39 @@ defmodule CentralWeb.StrategyLive.Components.BacktestHistory do
                   <%= for backtest <- Enum.sort_by(@backtests, & &1.inserted_at, :desc) do %>
                     <.table_row>
                       <.table_cell>
-                        <%= FormatterUtils.format_datetime(backtest.inserted_at) %>
+                        {FormatterUtils.format_datetime(backtest.inserted_at)}
                       </.table_cell>
                       <.table_cell class="text-center">
-                        <.badge variant={status_badge_variant(backtest.status)} class="whitespace-nowrap">
-                          <%= String.upcase(to_string(backtest.status)) %>
+                        <.badge
+                          variant={status_badge_variant(backtest.status)}
+                          class="whitespace-nowrap"
+                        >
+                          {String.upcase(to_string(backtest.status))}
                         </.badge>
                       </.table_cell>
-                      <.table_cell><%= backtest.symbol %></.table_cell>
-                      <.table_cell><%= backtest.timeframe %></.table_cell>
-                      <.table_cell numeric><%= FormatterUtils.format_currency(backtest.initial_balance) %></.table_cell>
-                      <.table_cell numeric><%= FormatterUtils.format_currency(backtest.final_balance) %></.table_cell>
+                      <.table_cell>{backtest.symbol}</.table_cell>
+                      <.table_cell>{backtest.timeframe}</.table_cell>
+                      <.table_cell numeric>
+                        {FormatterUtils.format_currency(backtest.initial_balance)}
+                      </.table_cell>
+                      <.table_cell numeric>
+                        {FormatterUtils.format_currency(backtest.final_balance)}
+                      </.table_cell>
                       <.table_cell numeric>
                         <p class={pnl_color(Map.get(backtest, :total_pnl))}>
-                          <%= FormatterUtils.format_currency(Map.get(backtest, :total_pnl)) %>
+                          {FormatterUtils.format_currency(Map.get(backtest, :total_pnl))}
                         </p>
                       </.table_cell>
                       <.table_cell numeric>
                         <p class={pnl_color(Map.get(backtest, :total_pnl_percentage))}>
-                          <%= FormatterUtils.format_percent(Map.get(backtest, :total_pnl_percentage)) %>
+                          {FormatterUtils.format_percent(Map.get(backtest, :total_pnl_percentage))}
                         </p>
                       </.table_cell>
                       <.table_cell class="text-right">
-                        <.link navigate={~p"/backtest/#{backtest.id}"} class=" text-primary hover:underline whitespace-nowrap">
+                        <.link
+                          navigate={~p"/backtest/#{backtest.id}"}
+                          class=" text-primary hover:underline whitespace-nowrap"
+                        >
                           View Details
                         </.link>
                       </.table_cell>

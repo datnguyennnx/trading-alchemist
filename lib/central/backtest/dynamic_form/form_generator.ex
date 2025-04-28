@@ -20,7 +20,8 @@ defmodule Central.Backtest.DynamicForm.FormGenerator do
     - Map with form configuration including id, name, description, and fields
     - nil if indicator not found
   """
-  def generate_indicator_form(indicator_id) when is_binary(indicator_id) or is_atom(indicator_id) do
+  def generate_indicator_form(indicator_id)
+      when is_binary(indicator_id) or is_atom(indicator_id) do
     # Use the optimized function from Indicators module to get pre-processed form data
     indicator = Indicators.get_indicator_for_form(indicator_id)
 

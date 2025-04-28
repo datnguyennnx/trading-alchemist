@@ -20,17 +20,17 @@ defmodule Central.Backtest.Indicators.Momentum.CCI do
     - List of CCI values aligned with input candles (first period-1 values are nil)
   """
   def cci(candles, period \\ 20, constant \\ 0.015)
-    when is_list(candles) and is_integer(period) and period > 0
-    and is_number(constant) and constant > 0 do
-
+      when is_list(candles) and is_integer(period) and period > 0 and
+             is_number(constant) and constant > 0 do
     # Calculate typical price for each candle
-    typical_prices = Enum.map(candles, fn candle ->
-      # TP = (High + Low + Close) / 3
-      Decimal.div(
-        Decimal.add(Decimal.add(candle.high, candle.low), candle.close),
-        Decimal.new(3)
-      )
-    end)
+    typical_prices =
+      Enum.map(candles, fn candle ->
+        # TP = (High + Low + Close) / 3
+        Decimal.div(
+          Decimal.add(Decimal.add(candle.high, candle.low), candle.close),
+          Decimal.new(3)
+        )
+      end)
 
     # Calculate simple moving average of typical prices
     sma_values = MovingAverage.sma(typical_prices, period)
@@ -55,10 +55,11 @@ defmodule Central.Backtest.Indicators.Momentum.CCI do
     Enum.zip(typical_prices_windows, sma_values)
     |> Enum.map(fn {tp_window, sma} ->
       # Mean Deviation = Sum(|TP - SMA|) / period
-      sum_of_deviations = Enum.reduce(tp_window, Decimal.new(0), fn tp, sum ->
-        deviation = Decimal.sub(tp, sma) |> Decimal.abs()
-        Decimal.add(sum, deviation)
-      end)
+      sum_of_deviations =
+        Enum.reduce(tp_window, Decimal.new(0), fn tp, sum ->
+          deviation = Decimal.sub(tp, sma) |> Decimal.abs()
+          Decimal.add(sum, deviation)
+        end)
 
       Decimal.div(sum_of_deviations, Decimal.new(period))
     end)
@@ -77,7 +78,8 @@ defmodule Central.Backtest.Indicators.Momentum.CCI do
     |> Enum.map(fn {tp, sma, mean_dev} ->
       # Handle division by zero (mean deviation is zero)
       if Decimal.equal?(mean_dev, Decimal.new(0)) do
-        Decimal.new(0)  # Default to 0 when mean deviation is 0
+        # Default to 0 when mean deviation is 0
+        Decimal.new(0)
       else
         # CCI = (TP - SMA) / (constant * MD)
         Decimal.div(

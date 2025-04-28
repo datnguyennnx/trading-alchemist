@@ -45,15 +45,16 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
       when is_list(prices) and is_number(period) and is_number(deviation_multiplier) do
     with :ok <- validate_inputs(prices, period),
          {:ok, {_slope, _intercept, fitted_values}} <- calculate_linear_regression(prices, period) do
-
       # Calculate standard error for the channel width
       std_error = calculate_std_error(prices, fitted_values, period)
 
       # Calculate upper and lower channels - zip the values and apply calculations point by point
-      upper_channel = Enum.zip(fitted_values, std_error)
+      upper_channel =
+        Enum.zip(fitted_values, std_error)
         |> Enum.map(fn {val, err} -> val + err * deviation_multiplier end)
 
-      lower_channel = Enum.zip(fitted_values, std_error)
+      lower_channel =
+        Enum.zip(fitted_values, std_error)
         |> Enum.map(fn {val, err} -> val - err * deviation_multiplier end)
 
       {:ok, {upper_channel, fitted_values, lower_channel}}
@@ -82,7 +83,6 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
   """
   def linear_regression_channel(candles, period, deviation_multiplier, price_type)
       when is_list(candles) and is_map(hd(candles)) and is_atom(price_type) do
-
     prices = Enum.map(candles, &Map.get(&1, price_type))
     linear_regression_channel(prices, period, deviation_multiplier)
   end
@@ -117,13 +117,14 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
       when is_list(prices) and is_number(period) do
     with :ok <- validate_inputs(prices, period),
          {:ok, {_slope, _intercept, fitted_values}} <- calculate_linear_regression(prices, period) do
-
       # Calculate max deviations above and below the regression line
-      channel_bounds = prices
+      channel_bounds =
+        prices
         |> Enum.chunk_every(period, 1, :discard)
         |> Enum.zip(Enum.chunk_every(fitted_values, period, 1, :discard))
         |> Enum.map(fn {price_chunk, fitted_chunk} ->
-          deviations = Enum.zip(price_chunk, fitted_chunk)
+          deviations =
+            Enum.zip(price_chunk, fitted_chunk)
             |> Enum.map(fn {price, fitted} -> price - fitted end)
 
           max_deviation = Enum.max(deviations)
@@ -137,10 +138,12 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
       {max_deviations, min_deviations} = Enum.unzip(channel_bounds)
 
       # Calculate upper and lower channels
-      upper_channel = Enum.zip(fitted_values, max_deviations)
+      upper_channel =
+        Enum.zip(fitted_values, max_deviations)
         |> Enum.map(fn {fitted, max_dev} -> fitted + max_dev end)
 
-      lower_channel = Enum.zip(fitted_values, min_deviations)
+      lower_channel =
+        Enum.zip(fitted_values, min_deviations)
         |> Enum.map(fn {fitted, min_dev} -> fitted + min_dev end)
 
       {:ok, {upper_channel, fitted_values, lower_channel}}
@@ -168,7 +171,6 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
   """
   def raff_regression_channel(candles, period, price_type)
       when is_list(candles) and is_map(hd(candles)) and is_atom(price_type) do
-
     prices = Enum.map(candles, &Map.get(&1, price_type))
     raff_regression_channel(prices, period)
   end
@@ -216,12 +218,14 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
       {:ok, {slope, intercept, mid_line}} = calculate_linear_regression(close, period)
 
       # Find highest highs and lowest lows for the channel boundaries
-      upper_points = high
+      upper_points =
+        high
         |> Enum.chunk_every(period, 1, :discard)
         |> Enum.map(&Enum.max/1)
         |> pad_with_first_value(length(high), period - 1)
 
-      lower_points = low
+      lower_points =
+        low
         |> Enum.chunk_every(period, 1, :discard)
         |> Enum.map(&Enum.min/1)
         |> pad_with_first_value(length(low), period - 1)
@@ -249,7 +253,6 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
   """
   def trend_channel(candles, period)
       when is_list(candles) and is_map(hd(candles)) do
-
     high = Enum.map(candles, &Map.get(&1, :high))
     low = Enum.map(candles, &Map.get(&1, :low))
     close = Enum.map(candles, &Map.get(&1, :close))
@@ -272,12 +275,20 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
       when is_list(prices) and is_number(period) do
     with :ok <- validate_inputs(prices, period) do
       # Calculate the middle line (moving average)
-      {:ok, mid_line} = case ma_type do
-        :sma -> Central.Backtest.Indicators.Trend.MovingAverage.calculate(prices, period, :simple)
-        :ema -> Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(prices, period)
-        :wma -> Central.Backtest.Indicators.Trend.MovingAverage.calculate(prices, period, :weighted)
-        _ -> {:error, "Unsupported moving average type"}
-      end
+      {:ok, mid_line} =
+        case ma_type do
+          :sma ->
+            Central.Backtest.Indicators.Trend.MovingAverage.calculate(prices, period, :simple)
+
+          :ema ->
+            Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(prices, period)
+
+          :wma ->
+            Central.Backtest.Indicators.Trend.MovingAverage.calculate(prices, period, :weighted)
+
+          _ ->
+            {:error, "Unsupported moving average type"}
+        end
 
       # Calculate upper and lower envelopes
       upper_channel = Enum.map(mid_line, fn val -> val * (1 + percentage / 100) end)
@@ -310,7 +321,6 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
   """
   def envelope_channel(candles, period, percentage, ma_type, price_type)
       when is_list(candles) and is_map(hd(candles)) and is_atom(price_type) do
-
     prices = Enum.map(candles, &Map.get(&1, price_type))
     envelope_channel(prices, period, percentage, ma_type)
   end
@@ -360,13 +370,16 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
     Enum.zip([prices, upper_channel, lower_channel])
     |> Enum.chunk_every(2, 1, :discard)
     |> Enum.map(fn [
-      {prev_price, prev_upper, prev_lower},
-      {curr_price, curr_upper, curr_lower}
-    ] ->
+                     {prev_price, prev_upper, prev_lower},
+                     {curr_price, curr_upper, curr_lower}
+                   ] ->
       cond do
-        prev_price <= prev_upper and curr_price > curr_upper -> 1  # Breakout above
-        prev_price >= prev_lower and curr_price < curr_lower -> -1 # Breakout below
-        true -> 0  # No breakout
+        # Breakout above
+        prev_price <= prev_upper and curr_price > curr_upper -> 1
+        # Breakout below
+        prev_price >= prev_lower and curr_price < curr_lower -> -1
+        # No breakout
+        true -> 0
       end
     end)
     |> pad_with_zeros(length(prices), 1)
@@ -389,8 +402,8 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
     - List of signals where 1=buy, -1=sell, 0=no signal
   """
   def generate_signals(candles, channel_result, price_type)
-      when is_list(candles) and is_map(hd(candles)) and is_atom(price_type) and is_tuple(channel_result) do
-
+      when is_list(candles) and is_map(hd(candles)) and is_atom(price_type) and
+             is_tuple(channel_result) do
     prices = Enum.map(candles, &Map.get(&1, price_type))
     generate_signals(prices, channel_result)
   end
@@ -404,8 +417,9 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
   - {:squeeze, index} when channel is extremely narrow
   """
   def identify_channel_patterns({upper_channel, _mid_line, lower_channel}, threshold \\ 0.1) do
-    channel_widths = Enum.zip(upper_channel, lower_channel)
-    |> Enum.map(fn {upper, lower} -> upper - lower end)
+    channel_widths =
+      Enum.zip(upper_channel, lower_channel)
+      |> Enum.map(fn {upper, lower} -> upper - lower end)
 
     # Calculate average channel width
     avg_width = Enum.sum(channel_widths) / length(channel_widths)
@@ -416,12 +430,14 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
     |> Enum.with_index(4)
     |> Enum.flat_map(fn {chunk, index} ->
       current_width = List.last(chunk)
-      pattern = cond do
-        current_width < avg_width * (1 - threshold) -> {:contraction, index}
-        current_width > avg_width * (1 + threshold) -> {:expansion, index}
-        current_width < avg_width * 0.5 -> {:squeeze, index}
-        true -> nil
-      end
+
+      pattern =
+        cond do
+          current_width < avg_width * (1 - threshold) -> {:contraction, index}
+          current_width > avg_width * (1 + threshold) -> {:expansion, index}
+          current_width < avg_width * 0.5 -> {:squeeze, index}
+          true -> nil
+        end
 
       if pattern, do: [pattern], else: []
     end)
@@ -433,10 +449,13 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
     cond do
       not is_list(prices) ->
         {:error, "Prices must be a list"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       length(prices) < period ->
         {:error, "Not enough data points for the given period"}
+
       true ->
         :ok
     end
@@ -446,12 +465,16 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
     cond do
       not is_list(high) or not is_list(low) ->
         {:error, "High and low must be lists"}
+
       length(high) != length(low) ->
         {:error, "High and low lists must have the same length"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       length(high) < period ->
         {:error, "Not enough data points for the given period"}
+
       true ->
         :ok
     end
@@ -461,37 +484,43 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
     cond do
       not is_list(high) or not is_list(low) or not is_list(close) ->
         {:error, "High, low, and close must be lists"}
+
       length(high) != length(low) or length(high) != length(close) ->
         {:error, "High, low, and close lists must have the same length"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       length(high) < period ->
         {:error, "Not enough data points for the given period"}
+
       true ->
         :ok
     end
   end
 
   defp calculate_linear_regression(prices, period) do
-    results = prices
-    |> Enum.chunk_every(period, 1, :discard)
-    |> Enum.map(fn chunk ->
-      x_values = Enum.to_list(0..(length(chunk) - 1))
-      {slope, intercept} = linear_regression(x_values, chunk)
+    results =
+      prices
+      |> Enum.chunk_every(period, 1, :discard)
+      |> Enum.map(fn chunk ->
+        x_values = Enum.to_list(0..(length(chunk) - 1))
+        {slope, intercept} = linear_regression(x_values, chunk)
 
-      # Calculate fitted values
-      fitted = Enum.map(x_values, fn x -> slope * x + intercept end)
+        # Calculate fitted values
+        fitted = Enum.map(x_values, fn x -> slope * x + intercept end)
 
-      {slope, intercept, fitted}
-    end)
+        {slope, intercept, fitted}
+      end)
 
     # Unzip the results
     {slopes, intercepts, fitted_chunks} = ListOperations.unzip3(results)
 
     # Extend the fitted values to full length
-    fitted_values = fitted_chunks
-    |> List.flatten()
-    |> pad_with_first_value(length(prices), period - 1)
+    fitted_values =
+      fitted_chunks
+      |> List.flatten()
+      |> pad_with_first_value(length(prices), period - 1)
 
     # Use the last slope and intercept for any remaining calculations
     last_slope = List.last(slopes) || 0
@@ -506,19 +535,23 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
     sum_x = Enum.sum(x_values)
     sum_y = Enum.sum(y_values)
 
-    sum_xy = Enum.zip(x_values, y_values)
-    |> Enum.map(fn {x, y} -> x * y end)
-    |> Enum.sum()
+    sum_xy =
+      Enum.zip(x_values, y_values)
+      |> Enum.map(fn {x, y} -> x * y end)
+      |> Enum.sum()
 
-    sum_xx = Enum.map(x_values, fn x -> x * x end)
-    |> Enum.sum()
+    sum_xx =
+      Enum.map(x_values, fn x -> x * x end)
+      |> Enum.sum()
 
     # Calculate slope
-    slope = if (n * sum_xx - sum_x * sum_x) == 0 do
-      0  # Horizontal line if division by zero
-    else
-      (n * sum_xy - sum_x * sum_y) / (n * sum_xx - sum_x * sum_x)
-    end
+    slope =
+      if n * sum_xx - sum_x * sum_x == 0 do
+        # Horizontal line if division by zero
+        0
+      else
+        (n * sum_xy - sum_x * sum_y) / (n * sum_xx - sum_x * sum_x)
+      end
 
     # Calculate intercept
     intercept = (sum_y - slope * sum_x) / n
@@ -527,19 +560,21 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
   end
 
   defp calculate_std_error(prices, fitted_values, period) do
-    squared_errors = Enum.zip(prices, fitted_values)
-    |> Enum.chunk_every(period, 1, :discard)
-    |> Enum.map(fn chunk ->
-      # Calculate sum of squared errors
-      sum_squared_error = Enum.reduce(chunk, 0, fn {actual, fitted}, acc ->
-        error = actual - fitted
-        acc + error * error
-      end)
+    squared_errors =
+      Enum.zip(prices, fitted_values)
+      |> Enum.chunk_every(period, 1, :discard)
+      |> Enum.map(fn chunk ->
+        # Calculate sum of squared errors
+        sum_squared_error =
+          Enum.reduce(chunk, 0, fn {actual, fitted}, acc ->
+            error = actual - fitted
+            acc + error * error
+          end)
 
-      # Standard error (standard deviation of errors)
-      :math.sqrt(sum_squared_error / length(chunk))
-    end)
-    |> pad_with_first_value(length(prices), period - 1)
+        # Standard error (standard deviation of errors)
+        :math.sqrt(sum_squared_error / length(chunk))
+      end)
+      |> pad_with_first_value(length(prices), period - 1)
 
     squared_errors
   end
@@ -548,23 +583,27 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
     high_data = Enum.chunk_every(high, period, 1, :discard)
     low_data = Enum.chunk_every(low, period, 1, :discard)
 
-    high_indices = high_data
-    |> Enum.map(fn chunk ->
-      {max_value, max_index} = chunk
-      |> Enum.with_index()
-      |> Enum.max_by(fn {val, _idx} -> val end)
+    high_indices =
+      high_data
+      |> Enum.map(fn chunk ->
+        {max_value, max_index} =
+          chunk
+          |> Enum.with_index()
+          |> Enum.max_by(fn {val, _idx} -> val end)
 
-      {max_value, max_index}
-    end)
+        {max_value, max_index}
+      end)
 
-    low_indices = low_data
-    |> Enum.map(fn chunk ->
-      {min_value, min_index} = chunk
-      |> Enum.with_index()
-      |> Enum.min_by(fn {val, _idx} -> val end)
+    low_indices =
+      low_data
+      |> Enum.map(fn chunk ->
+        {min_value, min_index} =
+          chunk
+          |> Enum.with_index()
+          |> Enum.min_by(fn {val, _idx} -> val end)
 
-      {min_value, min_index}
-    end)
+        {min_value, min_index}
+      end)
 
     # Combine high and low pivots
     high_indices ++ low_indices
@@ -583,11 +622,12 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
     {end_val, end_idx} = end_pivot
 
     # Calculate the slope and intercept of the median line
-    slope = if end_idx == start_idx do
-      0
-    else
-      (end_val - start_val) / (end_idx - start_idx)
-    end
+    slope =
+      if end_idx == start_idx do
+        0
+      else
+        (end_val - start_val) / (end_idx - start_idx)
+      end
 
     intercept = start_val - slope * start_idx
 
@@ -597,11 +637,12 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
 
   defp calculate_parallel_lines(pivots, median_line, _high, _low) do
     # Find maximum distance from median line to create parallel lines
-    distances = pivots
-    |> Enum.map(fn {value, idx} ->
-      median_value = Enum.at(median_line, idx)
-      value - median_value
-    end)
+    distances =
+      pivots
+      |> Enum.map(fn {value, idx} ->
+        median_value = Enum.at(median_line, idx)
+        value - median_value
+      end)
 
     max_distance = Enum.max(distances)
     min_distance = Enum.min(distances)
@@ -615,8 +656,9 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
 
   defp adjust_channel_to_slope(points, _slope, _base_intercept, reference) do
     # Calculate the vertical shift needed to align with the points
-    shifts = Enum.zip(points, reference)
-    |> Enum.map(fn {point, ref} -> point - ref end)
+    shifts =
+      Enum.zip(points, reference)
+      |> Enum.map(fn {point, ref} -> point - ref end)
 
     # Apply the slope with adjusted intercept
     reference
@@ -636,6 +678,8 @@ defmodule Central.Backtest.Indicators.Levels.Channels do
   defp pad_with_first_value(values, original_length, padding_size) do
     first_value = List.first(values) || 0
     padding = List.duplicate(first_value, padding_size)
-    padding ++ values ++ List.duplicate(first_value, original_length - padding_size - length(values))
+
+    padding ++
+      values ++ List.duplicate(first_value, original_length - padding_size - length(values))
   end
 end

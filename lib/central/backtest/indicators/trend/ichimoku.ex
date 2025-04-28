@@ -34,8 +34,8 @@ defmodule Central.Backtest.Indicators.Trend.Ichimoku do
         kijun_period \\ 26,
         senkou_span_b_period \\ 52,
         displacement \\ 26
-      ) when is_list(candles) and length(candles) > senkou_span_b_period do
-
+      )
+      when is_list(candles) and length(candles) > senkou_span_b_period do
     # Extract high and low prices
     highs = ListOperations.extract_key(candles, :high)
     lows = ListOperations.extract_key(candles, :low)
@@ -49,8 +49,12 @@ defmodule Central.Backtest.Indicators.Trend.Ichimoku do
     senkou_span_a =
       Enum.zip(tenkan_sen, kijun_sen)
       |> Enum.map(fn
-        {nil, _} -> nil
-        {_, nil} -> nil
+        {nil, _} ->
+          nil
+
+        {_, nil} ->
+          nil
+
         {tenkan, kijun} ->
           Decimal.div(Decimal.add(tenkan, kijun), Decimal.new(2))
       end)
@@ -66,6 +70,7 @@ defmodule Central.Backtest.Indicators.Trend.Ichimoku do
 
     # Zip all components and create result maps
     max_length = length(candles)
+
     components = [
       pad_to_length(tenkan_sen, max_length),
       pad_to_length(kijun_sen, max_length),
@@ -76,11 +81,21 @@ defmodule Central.Backtest.Indicators.Trend.Ichimoku do
 
     Enum.zip(components)
     |> Enum.map(fn
-      {nil, _, _, _, _} -> nil
-      {_, nil, _, _, _} -> nil
-      {_, _, nil, _, _} -> nil
-      {_, _, _, nil, _} -> nil
-      {_, _, _, _, nil} -> nil
+      {nil, _, _, _, _} ->
+        nil
+
+      {_, nil, _, _, _} ->
+        nil
+
+      {_, _, nil, _, _} ->
+        nil
+
+      {_, _, _, nil, _} ->
+        nil
+
+      {_, _, _, _, nil} ->
+        nil
+
       {tenkan, kijun, span_a, span_b, chikou} ->
         %{
           tenkan_sen: tenkan,
@@ -126,8 +141,10 @@ defmodule Central.Backtest.Indicators.Trend.Ichimoku do
   defp pad_to_length(list, length) when length(list) < length do
     list ++ List.duplicate(nil, length - length(list))
   end
+
   defp pad_to_length(list, length) when length(list) > length do
     Enum.take(list, length)
   end
+
   defp pad_to_length(list, _length), do: list
 end

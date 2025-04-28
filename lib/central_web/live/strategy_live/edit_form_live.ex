@@ -32,13 +32,14 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
     basic_form_data = Map.put(basic_form_data, "creation_method", "form")
 
     # Merge all form data
-    complete_form_data = Map.merge(
-      basic_form_data,
+    complete_form_data =
       Map.merge(
-        FormTransformer.rules_to_form(entry_rules, "entry"),
-        FormTransformer.rules_to_form(exit_rules, "exit")
+        basic_form_data,
+        Map.merge(
+          FormTransformer.rules_to_form(entry_rules, "entry"),
+          FormTransformer.rules_to_form(exit_rules, "exit")
+        )
       )
-    )
 
     # Pre-fetch indicators data once to avoid repeated calls
     grouped_indicators = Indicators.group_indicators_by_type()
@@ -55,7 +56,8 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
       |> assign(:exit_rules, exit_rules)
       |> assign(:json_config_input, json_config)
       |> assign(:json_parse_error, nil)
-      |> assign(:creation_method, "form")  # Default creation method
+      # Default creation method
+      |> assign(:creation_method, "form")
 
     {:ok, socket}
   end
@@ -90,7 +92,7 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
         <.card class="max-w-2xl mx-auto">
           <.card_header>
             <.card_title>
-              Edit Strategy: <%= @strategy.name %>
+              Edit Strategy: {@strategy.name}
             </.card_title>
             <.card_description>Update your trading strategy parameters</.card_description>
           </.card_header>
@@ -121,8 +123,8 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                       Exit Rules
                     </.tabs_trigger>
                   </.tabs_list>
-
-                  <!-- General Tab -->
+                  
+    <!-- General Tab -->
                   <.tabs_content value="general" class="space-y-4 mt-6">
                     <.live_component
                       module={GeneralForm}
@@ -131,8 +133,8 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                       parent={self()}
                     />
                   </.tabs_content>
-
-                  <!-- Trading Tab -->
+                  
+    <!-- Trading Tab -->
                   <.tabs_content value="trading" class="space-y-4 mt-6">
                     <.live_component
                       module={TradingForm}
@@ -141,8 +143,8 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                       parent={self()}
                     />
                   </.tabs_content>
-
-                  <!-- Entry Rules Tab -->
+                  
+    <!-- Entry Rules Tab -->
                   <.tabs_content value="entry_rules" class="space-y-4 mt-6">
                     <.live_component
                       module={EntryRulesForm}
@@ -153,8 +155,8 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                       parent={self()}
                     />
                   </.tabs_content>
-
-                  <!-- Exit Rules Tab -->
+                  
+    <!-- Exit Rules Tab -->
                   <.tabs_content value="exit_rules" class="space-y-4 mt-6">
                     <.live_component
                       module={ExitRulesForm}
@@ -178,8 +180,8 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
                   />
                 </div>
               <% end %>
-
-              <!-- Hidden field to track creation method -->
+              
+    <!-- Hidden field to track creation method -->
               <input type="hidden" name="creation_method" value={@creation_method} />
             </.form>
           </.card_content>
@@ -210,6 +212,7 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
 
     # Check if name is provided
     name = params["name"]
+
     if is_nil(name) || String.trim(name) == "" do
       {:noreply,
        socket
@@ -217,11 +220,12 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
        |> assign(:form, to_form(socket.assigns.form_data, errors: [name: {"can't be blank", []}]))}
     else
       # Before proceeding, make sure JSON is synchronized with form if using JSON method
-      socket = if creation_method == "json" do
-        sync_form_to_json(socket)
-      else
-        socket
-      end
+      socket =
+        if creation_method == "json" do
+          sync_form_to_json(socket)
+        else
+          socket
+        end
 
       strategy_params =
         if creation_method == "json" && socket.assigns.json_parse_error == nil do
@@ -245,17 +249,21 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
 
                 {:error, message} ->
                   # Show error for invalid JSON structure
-                  _socket = socket
+                  _socket =
+                    socket
                     |> assign(:json_parse_error, message)
                     |> put_flash(:error, "Invalid JSON structure: #{message}")
+
                   nil
               end
 
             {:error, error} ->
               # Show error for invalid JSON syntax
-              _socket = socket
+              _socket =
+                socket
                 |> assign(:json_parse_error, "JSON syntax error: #{inspect(error)}")
                 |> put_flash(:error, "Invalid JSON syntax")
+
               nil
           end
         else
@@ -269,8 +277,12 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
               "risk_per_trade" => params["risk_per_trade"] || "0.02",
               "max_position_size" => params["max_position_size"] || "5"
             },
-            entry_rules: %{"conditions" => FormTransformer.rules_to_conditions(socket.assigns.entry_rules)},
-            exit_rules: %{"conditions" => FormTransformer.rules_to_conditions(socket.assigns.exit_rules)}
+            entry_rules: %{
+              "conditions" => FormTransformer.rules_to_conditions(socket.assigns.entry_rules)
+            },
+            exit_rules: %{
+              "conditions" => FormTransformer.rules_to_conditions(socket.assigns.exit_rules)
+            }
           }
         end
 
@@ -432,10 +444,15 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
   @impl true
   def handle_event("update_trading_form", %{"value" => value}, socket) do
     # Update form_data and form assigns
-    field_key = case value do
-      timeframe when timeframe in ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"] -> "timeframe"
-      _ -> "symbol" # Default to symbol or handle other cases
-    end
+    field_key =
+      case value do
+        timeframe when timeframe in ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"] ->
+          "timeframe"
+
+        # Default to symbol or handle other cases
+        _ ->
+          "symbol"
+      end
 
     updated_form_data = Map.put(socket.assigns.form_data, field_key, value)
 
@@ -446,24 +463,30 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
   end
 
   @impl true
-  def handle_event("set_creation_mode", %{"mode" => mode}, socket) when mode in ["form", "json"] do
-    socket = case mode do
-      "json" ->
-        # Generate JSON from current form data before switching to JSON mode
-        updated_socket = sync_form_to_json(socket)
-        # Also send a notification to the JsonConfigForm component
-        send_update(JsonConfigForm, id: "json-config-form", json_config_input: updated_socket.assigns.json_config_input)
-        updated_socket
+  def handle_event("set_creation_mode", %{"mode" => mode}, socket)
+      when mode in ["form", "json"] do
+    socket =
+      case mode do
+        "json" ->
+          # Generate JSON from current form data before switching to JSON mode
+          updated_socket = sync_form_to_json(socket)
+          # Also send a notification to the JsonConfigForm component
+          send_update(JsonConfigForm,
+            id: "json-config-form",
+            json_config_input: updated_socket.assigns.json_config_input
+          )
 
-      "form" ->
-        # Update form from JSON when switching to form mode
-        if socket.assigns.json_parse_error == nil do
-          sync_json_to_form(socket)
-        else
-          # If JSON has errors, keep using current form data
-          put_flash(socket, :error, "Cannot switch to form mode: JSON contains errors")
-        end
-    end
+          updated_socket
+
+        "form" ->
+          # Update form from JSON when switching to form mode
+          if socket.assigns.json_parse_error == nil do
+            sync_json_to_form(socket)
+          else
+            # If JSON has errors, keep using current form data
+            put_flash(socket, :error, "Cannot switch to form mode: JSON contains errors")
+          end
+      end
 
     {:noreply, assign(socket, :creation_method, mode)}
   end
@@ -479,14 +502,15 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
 
   @impl true
   def handle_info({:set_creation_method, method}, socket) when method in ["form", "json"] do
-    socket = if method == "json" do
-      # Sync form data to JSON before switching to JSON mode
-      sync_form_to_json(socket)
-    else
-      # When switching to form mode, we'll keep form data as is
-      # We could implement JSON-to-form sync here if needed
-      socket
-    end
+    socket =
+      if method == "json" do
+        # Sync form data to JSON before switching to JSON mode
+        sync_form_to_json(socket)
+      else
+        # When switching to form mode, we'll keep form data as is
+        # We could implement JSON-to-form sync here if needed
+        socket
+      end
 
     {:noreply, socket |> assign(:creation_method, method)}
   end
@@ -523,6 +547,7 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
 
       {:error, changeset} ->
         error_message = format_changeset_errors(changeset)
+
         {:noreply,
          socket
          |> put_flash(:error, "Failed to update strategy: #{error_message}")
@@ -619,13 +644,14 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
         exit_rules = FormTransformer.conditions_to_rules(exit_conditions, "exit")
 
         # Merge all form data
-        complete_form_data = Map.merge(
-          basic_form_data,
+        complete_form_data =
           Map.merge(
-            FormTransformer.rules_to_form(entry_rules, "entry"),
-            FormTransformer.rules_to_form(exit_rules, "exit")
+            basic_form_data,
+            Map.merge(
+              FormTransformer.rules_to_form(entry_rules, "entry"),
+              FormTransformer.rules_to_form(exit_rules, "exit")
+            )
           )
-        )
 
         # Update socket assigns
         socket
@@ -643,36 +669,40 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
   # Ensure required fields are present in JSON data
   defp ensure_required_fields(json_data, params) do
     # Make sure name is present (copy from form if needed)
-    json_data = if json_data["name"] == "" && params["name"] && params["name"] != "" do
-      Map.put(json_data, "name", params["name"])
-    else
-      json_data
-    end
+    json_data =
+      if json_data["name"] == "" && params["name"] && params["name"] != "" do
+        Map.put(json_data, "name", params["name"])
+      else
+        json_data
+      end
 
     # Ensure config section exists
-    json_data = if !json_data["config"] do
-      Map.put(json_data, "config", %{
-        "timeframe" => params["timeframe"] || "1h",
-        "symbol" => params["symbol"] || "BTCUSDT",
-        "risk_per_trade" => params["risk_per_trade"] || "0.02",
-        "max_position_size" => params["max_position_size"] || "5"
-      })
-    else
-      json_data
-    end
+    json_data =
+      if !json_data["config"] do
+        Map.put(json_data, "config", %{
+          "timeframe" => params["timeframe"] || "1h",
+          "symbol" => params["symbol"] || "BTCUSDT",
+          "risk_per_trade" => params["risk_per_trade"] || "0.02",
+          "max_position_size" => params["max_position_size"] || "5"
+        })
+      else
+        json_data
+      end
 
     # Ensure rules sections exist
-    json_data = if !json_data["entry_rules"] do
-      Map.put(json_data, "entry_rules", %{"conditions" => []})
-    else
-      json_data
-    end
+    json_data =
+      if !json_data["entry_rules"] do
+        Map.put(json_data, "entry_rules", %{"conditions" => []})
+      else
+        json_data
+      end
 
-    json_data = if !json_data["exit_rules"] do
-      Map.put(json_data, "exit_rules", %{"conditions" => []})
-    else
-      json_data
-    end
+    json_data =
+      if !json_data["exit_rules"] do
+        Map.put(json_data, "exit_rules", %{"conditions" => []})
+      else
+        json_data
+      end
 
     json_data
   end
@@ -688,6 +718,7 @@ defmodule CentralWeb.StrategyLive.EditFormLive do
     else
       # Check config section
       config = json_data["config"]
+
       if not is_map(config) do
         {:error, "Config must be an object"}
       else

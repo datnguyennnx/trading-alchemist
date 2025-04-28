@@ -79,7 +79,8 @@ defmodule Central.Backtest.Indicators.Calculations.Normalization do
   ## Returns
     - List of scaled Decimal values between min_target and max_target
   """
-  def scale_to_range(values, min_target, max_target) when is_list(values) and length(values) > 0 do
+  def scale_to_range(values, min_target, max_target)
+      when is_list(values) and length(values) > 0 do
     normalized = normalize_to_range(values)
     range = Decimal.sub(max_target, min_target)
 

@@ -36,7 +36,12 @@ defmodule CentralWeb.Components.UI.ScrollArea do
   """
   attr :class, :string, default: nil, doc: "Additional CSS classes to apply to the component"
   attr :max_height, :string, default: "300px", doc: "Maximum height of the scroll area"
-  attr :orientation, :string, default: "vertical", values: ["vertical", "horizontal", "both"], doc: "Scroll direction: vertical, horizontal, or both"
+
+  attr :orientation, :string,
+    default: "vertical",
+    values: ["vertical", "horizontal", "both"],
+    doc: "Scroll direction: vertical, horizontal, or both"
+
   attr :viewport_class, :string, default: nil, doc: "Additional CSS classes for the viewport"
   attr :rest, :global, doc: "Additional HTML attributes to apply to the component"
   slot :inner_block, required: true, doc: "Content to be placed inside the scroll area"
@@ -44,22 +49,26 @@ defmodule CentralWeb.Components.UI.ScrollArea do
   def scroll_area(assigns) do
     ~H"""
     <div
-      class={classes([
-        "relative",
-        @class
-      ])}
+      class={
+        classes([
+          "relative",
+          @class
+        ])
+      }
       {@rest}
     >
       <div
-        class={classes([
-          "salad-scroll-viewport overflow-hidden",
-          case @orientation do
-            "vertical" -> "overflow-y-scroll"
-            "horizontal" -> "overflow-x-scroll"
-            "both" -> "overflow-scroll"
-          end,
-          @viewport_class
-        ])}
+        class={
+          classes([
+            "salad-scroll-viewport overflow-hidden",
+            case @orientation do
+              "vertical" -> "overflow-y-scroll"
+              "horizontal" -> "overflow-x-scroll"
+              "both" -> "overflow-scroll"
+            end,
+            @viewport_class
+          ])
+        }
         style={"max-height: #{@max_height}; scrollbar-width: none; -ms-overflow-style: none;"}
         phx-no-format
       >

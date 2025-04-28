@@ -20,8 +20,8 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
   # Initialize the ETS table for caching
   def init_cache do
     try do
-    :ets.new(@ets_table, [:set, :public, :named_table, read_concurrency: true])
-    :ok
+      :ets.new(@ets_table, [:set, :public, :named_table, read_concurrency: true])
+      :ok
     rescue
       # Table might already exist
       ArgumentError -> :ok
@@ -163,11 +163,13 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
     use_cache = Keyword.get(opts, :use_cache, true)
 
     # Generate a cache key if caching is enabled
-    cache_key = if use_cache do
-      {:candles, symbol, timeframe, DateTime.to_unix(start_time), DateTime.to_unix(end_time), limit, order_by}
-    else
-      nil
-    end
+    cache_key =
+      if use_cache do
+        {:candles, symbol, timeframe, DateTime.to_unix(start_time), DateTime.to_unix(end_time),
+         limit, order_by}
+      else
+        nil
+      end
 
     # Try to get from cache first if enabled
     if use_cache && cache_key do
@@ -175,13 +177,33 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
         [{^cache_key, candles, cached_at}] ->
           # Check if cache is fresh (less than 10 seconds old)
           if DateTime.diff(DateTime.utc_now(), cached_at, :second) < 10 do
-            IO.puts("[MarketDataContext] get_candles_with_limit cache hit for #{symbol}/#{timeframe}")
+            IO.puts(
+              "[MarketDataContext] get_candles_with_limit cache hit for #{symbol}/#{timeframe}"
+            )
+
             candles
           else
-            fetch_and_cache_candles(symbol, timeframe, start_time, end_time, limit, order_by, cache_key)
+            fetch_and_cache_candles(
+              symbol,
+              timeframe,
+              start_time,
+              end_time,
+              limit,
+              order_by,
+              cache_key
+            )
           end
+
         [] ->
-          fetch_and_cache_candles(symbol, timeframe, start_time, end_time, limit, order_by, cache_key)
+          fetch_and_cache_candles(
+            symbol,
+            timeframe,
+            start_time,
+            end_time,
+            limit,
+            order_by,
+            cache_key
+          )
       end
     else
       # Skip cache if disabled
@@ -190,7 +212,15 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
   end
 
   # Private helper for fetching and caching candles
-  defp fetch_and_cache_candles(symbol, timeframe, start_time, end_time, limit, order_by, cache_key) do
+  defp fetch_and_cache_candles(
+         symbol,
+         timeframe,
+         start_time,
+         end_time,
+         limit,
+         order_by,
+         cache_key
+       ) do
     candles = fetch_candles(symbol, timeframe, start_time, end_time, limit, order_by)
 
     # Cache the result if we have a cache key
@@ -203,7 +233,9 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
 
   # Actual database query for fetching candles
   defp fetch_candles(symbol, timeframe, start_time, end_time, limit, order_by) do
-    IO.puts("[MarketDataContext] fetch_candles: symbol=#{symbol}, timeframe=#{timeframe}, limit=#{limit || "none"}, order=#{order_by}")
+    IO.puts(
+      "[MarketDataContext] fetch_candles: symbol=#{symbol}, timeframe=#{timeframe}, limit=#{limit || "none"}, order=#{order_by}"
+    )
 
     # Build base query
     query =
@@ -214,10 +246,11 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
       |> where([m], m.timestamp <= ^end_time)
 
     # Add ordering
-    query = case order_by do
-      :desc -> query |> order_by([m], desc: m.timestamp)
-      _ -> query |> order_by([m], asc: m.timestamp)
-    end
+    query =
+      case order_by do
+        :desc -> query |> order_by([m], desc: m.timestamp)
+        _ -> query |> order_by([m], asc: m.timestamp)
+      end
 
     # Add limit if provided
     query = if limit, do: query |> limit(^limit), else: query
@@ -471,14 +504,34 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
   """
   def bulk_insert_candles(data_to_insert) when is_list(data_to_insert) do
     if Enum.empty?(data_to_insert) do
-      IO.puts("[MarketDataContext] bulk_insert_candles called with empty list. Nothing to insert.")
+      IO.puts(
+        "[MarketDataContext] bulk_insert_candles called with empty list. Nothing to insert."
+      )
+
       {:ok, 0}
     else
       # Validate the structure of the first map (basic check)
       first_item = List.first(data_to_insert)
-      required_keys = [:symbol, :timeframe, :timestamp, :open, :high, :low, :close, :volume, :source, :inserted_at]
+
+      required_keys = [
+        :symbol,
+        :timeframe,
+        :timestamp,
+        :open,
+        :high,
+        :low,
+        :close,
+        :volume,
+        :source,
+        :inserted_at
+      ]
+
       if is_map(first_item) and Enum.all?(required_keys, &Map.has_key?(first_item, &1)) do
-        IO.puts("[MarketDataContext] Attempting Repo.insert_all with #{length(data_to_insert)} records.") # Log attempt
+        # Log attempt
+        IO.puts(
+          "[MarketDataContext] Attempting Repo.insert_all with #{length(data_to_insert)} records."
+        )
+
         # IO.inspect(data_to_insert, label: "[MarketDataContext] Data for insert_all") # Keep inspect for now?
         # Use insert_all with on_conflict: :nothing to ignore duplicates
         # based on the unique constraint [symbol, timeframe, timestamp, source]
@@ -487,16 +540,26 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
             # Invalidate cache after successful insertion
             # Invalidate broadly for now, could be more specific if needed
             invalidate_cache()
-            IO.puts("[MarketDataContext] Repo.insert_all successful, inserted/ignored #{count} records.") # Log success
+            # Log success
+            IO.puts(
+              "[MarketDataContext] Repo.insert_all successful, inserted/ignored #{count} records."
+            )
+
             {:ok, count}
+
           {_count, error_info} ->
-             # This part might not be reached with :nothing strategy, but good to have
+            # This part might not be reached with :nothing strategy, but good to have
             Logger.error("Bulk candle insert failed: #{inspect(error_info)}")
-            IO.puts("[MarketDataContext] Repo.insert_all failed: #{inspect(error_info)}") # Log error
-            {:error, error_info} # Return error info
+            # Log error
+            IO.puts("[MarketDataContext] Repo.insert_all failed: #{inspect(error_info)}")
+            # Return error info
+            {:error, error_info}
         end
       else
-        Logger.error("[MarketDataContext] bulk_insert_candles received list with invalid map structure. First item: #{inspect first_item}")
+        Logger.error(
+          "[MarketDataContext] bulk_insert_candles received list with invalid map structure. First item: #{inspect(first_item)}"
+        )
+
         {:error, :invalid_data_structure}
       end
     end
@@ -518,19 +581,26 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
       [%MarketData{timestamp: ~U[2025-01-09 23:00:00Z]}, ..., %MarketData{timestamp: ~U[2025-01-09 19:00:00Z]}]
   """
   def get_historical_candles(symbol, timeframe, end_time_exclusive, limit) do
-    IO.puts("[MarketDataContext] get_historical_candles called: symbol=#{symbol}, timeframe=#{timeframe}, before=#{inspect end_time_exclusive}, limit=#{limit}") # Log call
+    # Log call
+    IO.puts(
+      "[MarketDataContext] get_historical_candles called: symbol=#{symbol}, timeframe=#{timeframe}, before=#{inspect(end_time_exclusive)}, limit=#{limit}"
+    )
+
     query =
       MarketData
       |> where([m], m.symbol == ^symbol)
       |> where([m], m.timeframe == ^timeframe)
-      |> where([m], m.timestamp < ^end_time_exclusive) # Use '<' for exclusive end time
-      |> order_by([m], desc: m.timestamp) # Order newest first within the chunk
+      # Use '<' for exclusive end time
+      |> where([m], m.timestamp < ^end_time_exclusive)
+      # Order newest first within the chunk
+      |> order_by([m], desc: m.timestamp)
       |> limit(^limit)
 
     # Note: The result here is newest-first. The frontend will need to reverse this
     # list before prepending it to its existing data to maintain ascending order.
     result = Repo.all(query)
-    IO.puts("[MarketDataContext] get_historical_candles found #{length(result)} records.") # Log result count
+    # Log result count
+    IO.puts("[MarketDataContext] get_historical_candles found #{length(result)} records.")
     result
   end
 
@@ -543,7 +613,10 @@ defmodule Central.Backtest.Contexts.MarketDataContext do
       [%MarketData{}, ...]
   """
   def get_candles(symbol, timeframe, start_time, end_time) do
-    IO.puts("[MarketDataContext] get_candles called: symbol=#{symbol}, timeframe=#{timeframe}, start=#{inspect start_time}, end=#{inspect end_time}")
+    IO.puts(
+      "[MarketDataContext] get_candles called: symbol=#{symbol}, timeframe=#{timeframe}, start=#{inspect(start_time)}, end=#{inspect(end_time)}"
+    )
+
     get_candles_with_limit(symbol, timeframe, start_time, end_time)
   end
 

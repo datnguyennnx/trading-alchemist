@@ -9,6 +9,7 @@ defmodule Central.MarketData.DataProcessor do
   alias Central.Backtest.Utils.DatetimeUtils
 
   require Logger
+
   @doc """
   Transforms candle structs to maps for API responses or caching.
 
@@ -122,7 +123,7 @@ defmodule Central.MarketData.DataProcessor do
     has_required = Enum.all?(required_keys, &Map.has_key?(candle, &1))
 
     if !has_required do
-       Logger.warning("Raw candle data missing required keys: #{inspect(candle)}")
+      Logger.warning("Raw candle data missing required keys: #{inspect(candle)}")
       false
     else
       # Call parse/1 directly, assuming it returns Decimal or raises
@@ -134,31 +135,35 @@ defmodule Central.MarketData.DataProcessor do
         volume = DecimalUtils.parse(candle.volume)
 
         # Proceed with validation checks
+        # Ensure high >= low
+        # Ensure OHLC are positive
+        # Ensure Volume is non-negative
         valid_values =
-          # Ensure high >= low
-          (DecimalUtils.compare(high, low) != :lt) and
-          # Ensure OHLC are positive
-          DecimalUtils.positive?(open) and
-          DecimalUtils.positive?(high) and
-          DecimalUtils.positive?(low) and
-          DecimalUtils.positive?(close) and
-          # Ensure Volume is non-negative
-          (DecimalUtils.compare(volume, Decimal.new(0)) != :lt)
+          DecimalUtils.compare(high, low) != :lt and
+            DecimalUtils.positive?(open) and
+            DecimalUtils.positive?(high) and
+            DecimalUtils.positive?(low) and
+            DecimalUtils.positive?(close) and
+            DecimalUtils.compare(volume, Decimal.new(0)) != :lt
 
         unless valid_values do
-          Logger.warning("Raw candle data has invalid values (e.g., H < L, negative price): #{inspect(candle)}")
+          Logger.warning(
+            "Raw candle data has invalid values (e.g., H < L, negative price): #{inspect(candle)}"
+          )
         end
-        valid_values
 
+        valid_values
       rescue
-         # Catch potential errors during parsing (e.g., if parse/1 raises)
+        # Catch potential errors during parsing (e.g., if parse/1 raises)
         _error ->
-           Logger.warning("Failed to parse decimal values in raw candle data: #{inspect(candle)}")
+          Logger.warning("Failed to parse decimal values in raw candle data: #{inspect(candle)}")
           false
       end
     end
   end
-  def validate_candle_data(_other), do: false # Not a map
+
+  # Not a map
+  def validate_candle_data(_other), do: false
 
   @doc """
   Validates raw candle data from an external source and prepares it for database storage.
@@ -202,12 +207,17 @@ defmodule Central.MarketData.DataProcessor do
           inserted_at: now
         }
       else
-        Logger.warning("Skipping candle during preparation due to invalid parsed values or timestamp: #{inspect(candle)}")
+        Logger.warning(
+          "Skipping candle during preparation due to invalid parsed values or timestamp: #{inspect(candle)}"
+        )
+
         nil
       end
     end)
     |> Enum.reject(&is_nil/1)
-    |> Enum.uniq_by(fn prepared_candle -> {prepared_candle.symbol, prepared_candle.timeframe, prepared_candle.timestamp} end)
+    |> Enum.uniq_by(fn prepared_candle ->
+      {prepared_candle.symbol, prepared_candle.timeframe, prepared_candle.timestamp}
+    end)
   end
 
   # Simple Moving Average calculation

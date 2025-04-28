@@ -46,10 +46,13 @@ defmodule Central.Backtest.Indicators.Volume.Eom do
     cond do
       not is_list(high) or not is_list(low) or not is_list(volume) ->
         {:error, "Inputs must be lists"}
+
       length(high) != length(low) or length(low) != length(volume) ->
         {:error, "Input lists must have the same length"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       true ->
         true
     end
@@ -81,7 +84,7 @@ defmodule Central.Backtest.Indicators.Volume.Eom do
     |> Enum.map(fn {h, l, v} ->
       case h - l do
         0 -> 0
-        range -> (v / divisor) / range
+        range -> v / divisor / range
       end
     end)
   end
@@ -123,20 +126,22 @@ defmodule Central.Backtest.Indicators.Volume.Eom do
 
     box_ratios = calculate_box_ratios(high, low, volume, divisor)
 
-    raw_eom = Enum.zip(midpoint_moves, box_ratios)
-    |> Enum.map(fn {midpoint_move, box_ratio} ->
-      if box_ratio == 0, do: 0, else: midpoint_move / box_ratio
-    end)
+    raw_eom =
+      Enum.zip(midpoint_moves, box_ratios)
+      |> Enum.map(fn {midpoint_move, box_ratio} ->
+        if box_ratio == 0, do: 0, else: midpoint_move / box_ratio
+      end)
 
     smoothed_eom = MovingAverage.sma(raw_eom, period)
     smoothed_distance = MovingAverage.sma(midpoint_moves, period)
     smoothed_volume_factor = MovingAverage.sma(box_ratios, period)
 
-    {:ok, %{
-      eom: smoothed_eom,
-      distance: smoothed_distance,
-      volume_factor: smoothed_volume_factor
-    }}
+    {:ok,
+     %{
+       eom: smoothed_eom,
+       distance: smoothed_distance,
+       volume_factor: smoothed_volume_factor
+     }}
   end
 
   @doc """
@@ -150,9 +155,10 @@ defmodule Central.Backtest.Indicators.Volume.Eom do
     |> Enum.with_index()
     |> Enum.filter(fn {window, _} ->
       avg = Enum.sum(window) / length(window)
+
       if abs(avg) > threshold do
-        avg > 0 and Enum.all?(window, fn x -> x > 0 end) or
-        avg < 0 and Enum.all?(window, fn x -> x < 0 end)
+        (avg > 0 and Enum.all?(window, fn x -> x > 0 end)) or
+          (avg < 0 and Enum.all?(window, fn x -> x < 0 end))
       else
         false
       end

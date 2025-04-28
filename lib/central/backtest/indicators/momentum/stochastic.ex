@@ -24,10 +24,9 @@ defmodule Central.Backtest.Indicators.Momentum.Stochastic do
       %{k: value, d: value}
   """
   def stochastic(candles, k_period \\ 14, d_period \\ 3, smooth_k \\ 1, price_key \\ :close)
-    when is_list(candles) and is_integer(k_period) and k_period > 0
-    and is_integer(d_period) and d_period > 0
-    and is_integer(smooth_k) and smooth_k > 0 do
-
+      when is_list(candles) and is_integer(k_period) and k_period > 0 and
+             is_integer(d_period) and d_period > 0 and
+             is_integer(smooth_k) and smooth_k > 0 do
     # Extract price data
     close_prices = ListOperations.extract_key(candles, price_key)
     high_prices = ListOperations.extract_key(candles, :high)
@@ -98,5 +97,6 @@ defmodule Central.Backtest.Indicators.Momentum.Stochastic do
       Math.average(chunk)
     end)
   end
+
   defp calculate_sma_for_k(_k_values, _period), do: []
 end

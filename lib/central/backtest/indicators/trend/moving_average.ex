@@ -16,7 +16,8 @@ defmodule Central.Backtest.Indicators.Trend.MovingAverage do
   ## Returns
     - List of SMA values aligned with the input candles (first period-1 values are nil)
   """
-  def sma(candles, period, price_key \\ :close) when is_list(candles) and is_integer(period) and period > 0 do
+  def sma(candles, period, price_key \\ :close)
+      when is_list(candles) and is_integer(period) and period > 0 do
     candles
     |> ListOperations.extract_key(price_key)
     |> calculate_sma(period, [])
@@ -48,7 +49,8 @@ defmodule Central.Backtest.Indicators.Trend.MovingAverage do
   ## Returns
     - List of EMA values aligned with the input candles (first period-1 values are nil)
   """
-  def ema(candles, period, price_key \\ :close) when is_list(candles) and is_integer(period) and period > 0 do
+  def ema(candles, period, price_key \\ :close)
+      when is_list(candles) and is_integer(period) and period > 0 do
     prices = ListOperations.extract_key(candles, price_key)
 
     # Calculate multiplier: 2 / (period + 1)
@@ -94,7 +96,8 @@ defmodule Central.Backtest.Indicators.Trend.MovingAverage do
   ## Returns
     - List of EMA values
   """
-  def calculate_ema_from_values(values, period) when is_list(values) and is_integer(period) and period > 0 do
+  def calculate_ema_from_values(values, period)
+      when is_list(values) and is_integer(period) and period > 0 do
     # Use SMA as first value
     first_sma = Enum.take(values, period) |> Math.average()
 
@@ -120,19 +123,21 @@ defmodule Central.Backtest.Indicators.Trend.MovingAverage do
     - {:ok, result} with the list of moving average values
     - {:error, reason} if calculation fails
   """
-  def calculate(prices, period, type) when is_list(prices) and is_integer(period) and period > 0 do
-    result = case type do
-      :simple ->
-        # Calculate simple moving average
-        calculate_sma(prices, period, [])
+  def calculate(prices, period, type)
+      when is_list(prices) and is_integer(period) and period > 0 do
+    result =
+      case type do
+        :simple ->
+          # Calculate simple moving average
+          calculate_sma(prices, period, [])
 
-      :weighted ->
-        # Calculate weighted moving average
-        calculate_wma(prices, period)
+        :weighted ->
+          # Calculate weighted moving average
+          calculate_wma(prices, period)
 
-      _ ->
-        {:error, "Unsupported moving average type: #{type}"}
-    end
+        _ ->
+          {:error, "Unsupported moving average type: #{type}"}
+      end
 
     case result do
       {:error, _} = error -> error

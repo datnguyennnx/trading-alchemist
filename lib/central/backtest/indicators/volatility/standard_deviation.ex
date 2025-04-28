@@ -36,9 +36,10 @@ defmodule Central.Backtest.Indicators.Volatility.StandardDeviation do
         mean = Enum.sum(window) / period
 
         # Calculate variance
-        variance = Enum.reduce(window, 0, fn price, acc ->
-          acc + :math.pow(price - mean, 2)
-        end) / period
+        variance =
+          Enum.reduce(window, 0, fn price, acc ->
+            acc + :math.pow(price - mean, 2)
+          end) / period
 
         # Calculate standard deviation
         :math.sqrt(variance)
@@ -66,22 +67,28 @@ defmodule Central.Backtest.Indicators.Volatility.StandardDeviation do
 
     # Calculate average std dev for volatility classification
     valid_std_devs = Enum.filter(std_dev_values, &(not is_nil(&1)))
-    avg_std_dev = if length(valid_std_devs) > 0, do: Enum.sum(valid_std_devs) / length(valid_std_devs), else: 0
+
+    avg_std_dev =
+      if length(valid_std_devs) > 0,
+        do: Enum.sum(valid_std_devs) / length(valid_std_devs),
+        else: 0
 
     Enum.zip(candles, std_dev_values)
     |> Enum.map(fn {candle, std_dev} ->
       price = Map.get(candle, price_key)
 
       # Determine volatility level
-      volatility = cond do
-        is_nil(std_dev) -> :unknown
-        std_dev > avg_std_dev * 1.5 -> :high
-        std_dev < avg_std_dev * 0.5 -> :low
-        true -> :medium
-      end
+      volatility =
+        cond do
+          is_nil(std_dev) -> :unknown
+          std_dev > avg_std_dev * 1.5 -> :high
+          std_dev < avg_std_dev * 0.5 -> :low
+          true -> :medium
+        end
 
       # Calculate percent volatility (std dev as percentage of price)
-      percent_volatility = if not is_nil(std_dev) and price > 0, do: (std_dev / price) * 100, else: nil
+      percent_volatility =
+        if not is_nil(std_dev) and price > 0, do: std_dev / price * 100, else: nil
 
       %{
         timestamp: candle.timestamp,
@@ -115,7 +122,7 @@ defmodule Central.Backtest.Indicators.Volatility.StandardDeviation do
         nil
       else
         # Express standard deviation as a percentage of price
-        (std_dev / price) * 100
+        std_dev / price * 100
       end
     end)
   end
@@ -137,7 +144,7 @@ defmodule Central.Backtest.Indicators.Volatility.StandardDeviation do
       # Need at least trend_periods points for trend analysis
       volatility_trend =
         if index >= trend_periods do
-          previous_points = Enum.slice(std_dev_data, (index - trend_periods)..index-1)
+          previous_points = Enum.slice(std_dev_data, (index - trend_periods)..(index - 1))
           valid_points = Enum.filter(previous_points, &(not is_nil(&1.std_dev)))
 
           if length(valid_points) >= 3 and not is_nil(point.std_dev) do
@@ -153,10 +160,13 @@ defmodule Central.Backtest.Indicators.Volatility.StandardDeviation do
             cond do
               avg_change > 0 and point.std_dev > List.last(previous_std_devs) ->
                 :increasing
+
               avg_change < 0 and point.std_dev < List.last(previous_std_devs) ->
                 :decreasing
+
               abs(avg_change) < 0.0001 ->
                 :stable
+
               true ->
                 :mixed
             end

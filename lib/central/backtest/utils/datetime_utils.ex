@@ -219,10 +219,18 @@ defmodule Central.Backtest.Utils.DatetimeUtils do
     datetime = to_utc(datetime)
 
     case unit do
-      :second -> DateTime.add(datetime, value, :second)
-      :minute -> DateTime.add(datetime, value * 60, :second)
-      :hour -> DateTime.add(datetime, value * 3600, :second)
-      :day -> DateTime.add(datetime, value * 86400, :second)
+      :second ->
+        DateTime.add(datetime, value, :second)
+
+      :minute ->
+        DateTime.add(datetime, value * 60, :second)
+
+      :hour ->
+        DateTime.add(datetime, value * 3600, :second)
+
+      :day ->
+        DateTime.add(datetime, value * 86400, :second)
+
       _ ->
         Logger.warning("Unsupported time unit: #{inspect(unit)}. Using :second")
         DateTime.add(datetime, value, :second)
@@ -260,13 +268,18 @@ defmodule Central.Backtest.Utils.DatetimeUtils do
     datetime = normalize_datetime(datetime)
 
     case precision do
-      :second -> DateTime.truncate(datetime, :second)
+      :second ->
+        DateTime.truncate(datetime, :second)
+
       :minute ->
         %{datetime | second: 0, microsecond: {0, 0}}
+
       :hour ->
         %{datetime | minute: 0, second: 0, microsecond: {0, 0}}
+
       :day ->
         %{datetime | hour: 0, minute: 0, second: 0, microsecond: {0, 0}}
+
       _ ->
         Logger.warning("Unsupported precision: #{inspect(precision)}. Using :second")
         DateTime.truncate(datetime, :second)

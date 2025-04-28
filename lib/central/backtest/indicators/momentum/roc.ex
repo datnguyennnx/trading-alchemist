@@ -42,7 +42,8 @@ defmodule Central.Backtest.Indicators.Momentum.Roc do
   Formula: ROC = ((Current Price - Price n periods ago) / Price n periods ago) * 100
   """
   @spec calculate_prices(list(), integer()) :: list()
-  def calculate_prices(prices, period) when is_list(prices) and is_integer(period) and period > 0 do
+  def calculate_prices(prices, period)
+      when is_list(prices) and is_integer(period) and period > 0 do
     prices
     |> Enum.with_index()
     |> Enum.map(fn {_price, idx} ->
@@ -84,7 +85,7 @@ defmodule Central.Backtest.Indicators.Momentum.Roc do
     - List of maps containing :timestamp and :roc values
   """
   def roc_with_timestamp(candles, period \\ 14, price_key \\ :close) do
-    roc_values = calculate(candles, [period: period, price_type: price_key])
+    roc_values = calculate(candles, period: period, price_type: price_key)
     IndicatorUtils.with_timestamp(candles, roc_values, :roc)
   end
 
@@ -101,7 +102,7 @@ defmodule Central.Backtest.Indicators.Momentum.Roc do
     - {:ok, roc_values} where roc_values is a list of ROC values
   """
   def roc_indicator(candles, period \\ 14, price_key \\ :close) do
-    result = calculate(candles, [period: period, price_type: price_key])
+    result = calculate(candles, period: period, price_type: price_key)
     {:ok, result}
   end
 
@@ -116,11 +117,12 @@ defmodule Central.Backtest.Indicators.Momentum.Roc do
   """
   def analyze(roc_data) do
     # Preprocess input to handle both raw ROC values and maps with ROC values
-    processed_data = Enum.map(roc_data, fn
-      %{roc: value} = entry -> {entry, value}
-      value when is_number(value) or is_struct(value, Decimal) -> {%{roc: value}, value}
-      value -> {%{roc: value}, value}
-    end)
+    processed_data =
+      Enum.map(roc_data, fn
+        %{roc: value} = entry -> {entry, value}
+        value when is_number(value) or is_struct(value, Decimal) -> {%{roc: value}, value}
+        value -> {%{roc: value}, value}
+      end)
 
     # Set thresholds for overbought/oversold conditions
     overbought_threshold = Decimal.new(10)
@@ -135,37 +137,57 @@ defmodule Central.Backtest.Indicators.Momentum.Roc do
         Map.put(curr_entry, :signal, :insufficient_data)
       else
         # Determine trend direction
-        trend = cond do
-          Decimal.gt?(curr_roc, Decimal.new(0)) and Decimal.gt?(curr_roc, prev_roc) -> :bullish
-          Decimal.gt?(curr_roc, Decimal.new(0)) and Decimal.lt?(curr_roc, prev_roc) -> :weakening_bullish
-          Decimal.lt?(curr_roc, Decimal.new(0)) and Decimal.lt?(curr_roc, prev_roc) -> :bearish
-          Decimal.lt?(curr_roc, Decimal.new(0)) and Decimal.gt?(curr_roc, prev_roc) -> :weakening_bearish
-          Decimal.equal?(curr_roc, prev_roc) -> :neutral
-          true -> :neutral
-        end
+        trend =
+          cond do
+            Decimal.gt?(curr_roc, Decimal.new(0)) and Decimal.gt?(curr_roc, prev_roc) ->
+              :bullish
+
+            Decimal.gt?(curr_roc, Decimal.new(0)) and Decimal.lt?(curr_roc, prev_roc) ->
+              :weakening_bullish
+
+            Decimal.lt?(curr_roc, Decimal.new(0)) and Decimal.lt?(curr_roc, prev_roc) ->
+              :bearish
+
+            Decimal.lt?(curr_roc, Decimal.new(0)) and Decimal.gt?(curr_roc, prev_roc) ->
+              :weakening_bearish
+
+            Decimal.equal?(curr_roc, prev_roc) ->
+              :neutral
+
+            true ->
+              :neutral
+          end
 
         # Determine if price crossed zero line
-        zero_cross = cond do
-          Decimal.lt?(prev_roc, Decimal.new(0)) and Decimal.gt?(curr_roc, Decimal.new(0)) -> :bullish_cross
-          Decimal.gt?(prev_roc, Decimal.new(0)) and Decimal.lt?(curr_roc, Decimal.new(0)) -> :bearish_cross
-          true -> :none
-        end
+        zero_cross =
+          cond do
+            Decimal.lt?(prev_roc, Decimal.new(0)) and Decimal.gt?(curr_roc, Decimal.new(0)) ->
+              :bullish_cross
+
+            Decimal.gt?(prev_roc, Decimal.new(0)) and Decimal.lt?(curr_roc, Decimal.new(0)) ->
+              :bearish_cross
+
+            true ->
+              :none
+          end
 
         # Determine extreme conditions
-        condition = cond do
-          Decimal.gte?(curr_roc, overbought_threshold) -> :overbought
-          Decimal.lte?(curr_roc, oversold_threshold) -> :oversold
-          true -> :normal
-        end
+        condition =
+          cond do
+            Decimal.gte?(curr_roc, overbought_threshold) -> :overbought
+            Decimal.lte?(curr_roc, oversold_threshold) -> :oversold
+            true -> :normal
+          end
 
         # Generate trading signal
-        signal = cond do
-          zero_cross == :bullish_cross -> :buy
-          zero_cross == :bearish_cross -> :sell
-          condition == :oversold and trend == :weakening_bearish -> :consider_buy
-          condition == :overbought and trend == :weakening_bullish -> :consider_sell
-          true -> :hold
-        end
+        signal =
+          cond do
+            zero_cross == :bullish_cross -> :buy
+            zero_cross == :bearish_cross -> :sell
+            condition == :oversold and trend == :weakening_bearish -> :consider_buy
+            condition == :overbought and trend == :weakening_bullish -> :consider_sell
+            true -> :hold
+          end
 
         curr_entry
         |> Map.put(:trend, trend)

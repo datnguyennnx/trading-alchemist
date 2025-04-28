@@ -17,7 +17,10 @@ defmodule CentralWeb.BacktestLive.ShowLive do
   def mount(%{"id" => backtest_id_str}, session, socket) do
     try do
       backtest = BacktestContext.get_backtest!(backtest_id_str)
-      trades_page = TradeContext.list_trades_for_backtest_paginated(backtest.id, 1, @trades_page_size)
+
+      trades_page =
+        TradeContext.list_trades_for_backtest_paginated(backtest.id, 1, @trades_page_size)
+
       all_trades_for_chart = TradeContext.list_trades_for_backtest(backtest.id)
 
       # Get the total number of trades
@@ -27,7 +30,9 @@ defmodule CentralWeb.BacktestLive.ShowLive do
 
       # Calculate total PnL and PnL percentage
       total_pnl = calculate_total_pnl(backtest)
-      total_pnl_percentage = calculate_pnl_percentage(backtest.initial_balance, backtest.final_balance)
+
+      total_pnl_percentage =
+        calculate_pnl_percentage(backtest.initial_balance, backtest.final_balance)
 
       # Get strategy config with safety check
       strategy_config =
@@ -38,7 +43,10 @@ defmodule CentralWeb.BacktestLive.ShowLive do
 
       socket =
         socket
-        |> assign(:page_title, "Backtest: #{FormatterUtils.format_datetime(backtest.inserted_at)}")
+        |> assign(
+          :page_title,
+          "Backtest: #{FormatterUtils.format_datetime(backtest.inserted_at)}"
+        )
         |> assign(:strategy, backtest.strategy)
         |> assign(:backtest, backtest_with_trades_page)
         |> assign(:all_trades_for_chart, all_trades_for_chart)
@@ -71,18 +79,24 @@ defmodule CentralWeb.BacktestLive.ShowLive do
           <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
             <div>
               <p class="text-sm text-muted-foreground">
-                Strategy: <.link navigate={~p"/strategies/#{@strategy.id}"} class="hover:underline"><%= @strategy.name %></.link>
+                Strategy:
+                <.link navigate={~p"/strategies/#{@strategy.id}"} class="hover:underline">
+                  {@strategy.name}
+                </.link>
               </p>
               <h1 class="text-2xl font-bold">
-                Backtest: <%= FormatterUtils.format_datetime(@backtest.inserted_at) %>
+                Backtest: {FormatterUtils.format_datetime(@backtest.inserted_at)}
               </h1>
               <p class="text-sm text-muted-foreground">
-                <%= @backtest.symbol %> / <%= @backtest.timeframe %> | <%= format_time_range(@backtest.start_time, @backtest.end_time) %>
+                {@backtest.symbol} / {@backtest.timeframe} | {format_time_range(
+                  @backtest.start_time,
+                  @backtest.end_time
+                )}
               </p>
             </div>
             <div class="mt-3 md:mt-0">
               <.link navigate={~p"/strategies/#{@strategy.id}"}>
-                 <.button variant="outline">Back to Strategy</.button>
+                <.button variant="outline">Back to Strategy</.button>
               </.link>
             </div>
           </div>
@@ -91,23 +105,23 @@ defmodule CentralWeb.BacktestLive.ShowLive do
           <div class="flex flex-wrap gap-4 text-sm mt-3">
             <div class="flex items-center space-x-2">
               <p class="text-muted-foreground">Final Balance:</p>
-              <p class="font-semibold"><%= FormatterUtils.format_currency(@backtest.final_balance) %></p>
+              <p class="font-semibold">{FormatterUtils.format_currency(@backtest.final_balance)}</p>
             </div>
             <div class="flex items-center space-x-2">
               <p class="text-muted-foreground">Total PnL:</p>
               <p class={Enum.join(["font-semibold", pnl_color(@total_pnl)], " ")}>
-                <%= FormatterUtils.format_currency(@total_pnl) %>
+                {FormatterUtils.format_currency(@total_pnl)}
               </p>
             </div>
             <div class="flex items-center space-x-2">
               <p class="text-muted-foreground">PnL %:</p>
               <p class={Enum.join(["font-semibold", pnl_color(@total_pnl_percentage)], " ")}>
-                 <%= FormatterUtils.format_percent(@total_pnl_percentage) %>
-               </p>
+                {FormatterUtils.format_percent(@total_pnl_percentage)}
+              </p>
             </div>
             <div class="flex items-center space-x-2">
               <p class="text-muted-foreground">Total Trades:</p>
-              <p class="font-semibold"><%= @total_trades || "N/A" %></p>
+              <p class="font-semibold">{@total_trades || "N/A"}</p>
             </div>
           </div>
         </div>
@@ -136,11 +150,13 @@ defmodule CentralWeb.BacktestLive.ShowLive do
 
             <%!-- Trades Table --%>
             <.card>
-               <.card_header>
-                 <.card_title>Trades</.card_title>
-                 <.card_description>Detailed list of trades executed during the backtest.</.card_description>
-               </.card_header>
-               <.card_content>
+              <.card_header>
+                <.card_title>Trades</.card_title>
+                <.card_description>
+                  Detailed list of trades executed during the backtest.
+                </.card_description>
+              </.card_header>
+              <.card_content>
                 <.data_table
                   id={"trades-table-#{@backtest.id}"}
                   rows={@backtest.trades}
@@ -154,23 +170,23 @@ defmodule CentralWeb.BacktestLive.ShowLive do
                   compact={true}
                 >
                   <:col :let={trade} field={:entry_time} label="Entry Time">
-                    <%= FormatterUtils.format_datetime(trade.entry_time) %>
+                    {FormatterUtils.format_datetime(trade.entry_time)}
                   </:col>
                   <:col :let={trade} field={:side} label="Side">
-                    <p class={side_color(trade.side)}><%= String.upcase(to_string(trade.side)) %></p>
+                    <p class={side_color(trade.side)}>{String.upcase(to_string(trade.side))}</p>
                   </:col>
                   <:col :let={trade} field={:entry_price} label="Entry Price" numeric>
-                    <%= trade.entry_price %>
+                    {trade.entry_price}
                   </:col>
                   <:col :let={trade} field={:exit_price} label="Exit Price" numeric>
-                    <%= trade.exit_price %>
+                    {trade.exit_price}
                   </:col>
                   <:col :let={trade} field={:pnl} label="PnL" numeric pnl>
-                    <p class={pnl_color(trade.pnl)}><%= FormatterUtils.format_currency(trade.pnl) %></p>
+                    <p class={pnl_color(trade.pnl)}>{FormatterUtils.format_currency(trade.pnl)}</p>
                   </:col>
                   <:col :let={trade} field={:pnl_percentage} label="PnL %" numeric pnl>
                     <p class={pnl_color(trade.pnl_percentage)}>
-                      <%= FormatterUtils.format_percent(trade.pnl_percentage) %>
+                      {FormatterUtils.format_percent(trade.pnl_percentage)}
                     </p>
                   </:col>
                 </.data_table>
@@ -191,29 +207,35 @@ defmodule CentralWeb.BacktestLive.ShowLive do
                     <p class="text-muted-foreground">Status</p>
                     <p class="font-medium mt-1">
                       <p class={status_color(@backtest.status)}>
-                        <%= String.upcase(to_string(@backtest.status)) %>
+                        {String.upcase(to_string(@backtest.status))}
                       </p>
                     </p>
                   </div>
                   <div>
                     <p class="text-muted-foreground">Symbol</p>
-                    <p class="font-medium mt-1"><%= @backtest.symbol %></p>
+                    <p class="font-medium mt-1">{@backtest.symbol}</p>
                   </div>
                   <div>
                     <p class="text-muted-foreground">Timeframe</p>
-                    <p class="font-medium mt-1"><%= @backtest.timeframe %></p>
+                    <p class="font-medium mt-1">{@backtest.timeframe}</p>
                   </div>
                   <div>
                     <p class="text-muted-foreground">Date Range</p>
-                    <p class="font-medium mt-1"><%= format_time_range(@backtest.start_time, @backtest.end_time) %></p>
+                    <p class="font-medium mt-1">
+                      {format_time_range(@backtest.start_time, @backtest.end_time)}
+                    </p>
                   </div>
                   <div>
                     <p class="text-muted-foreground">Initial Balance</p>
-                    <p class="font-medium mt-1"><%= FormatterUtils.format_currency(@backtest.initial_balance) %></p>
+                    <p class="font-medium mt-1">
+                      {FormatterUtils.format_currency(@backtest.initial_balance)}
+                    </p>
                   </div>
                   <div>
                     <p class="text-muted-foreground">Position Size</p>
-                    <p class="font-medium mt-1"><%= get_in(@backtest.metadata, ["position_size"]) || "N/A" %>%</p>
+                    <p class="font-medium mt-1">
+                      {get_in(@backtest.metadata, ["position_size"]) || "N/A"}%
+                    </p>
                   </div>
                 </div>
               </.card_content>
@@ -228,23 +250,23 @@ defmodule CentralWeb.BacktestLive.ShowLive do
                 <div class="space-y-4 text-sm">
                   <div>
                     <p class="text-muted-foreground">Total Trades</p>
-                    <p class="font-medium mt-1"><%= @total_trades || 0 %></p>
+                    <p class="font-medium mt-1">{@total_trades || 0}</p>
                   </div>
                   <div>
                     <p class="text-muted-foreground">Win Rate</p>
-                    <p class="font-medium mt-1"><%= calculate_win_rate(@all_trades_for_chart) %>%</p>
+                    <p class="font-medium mt-1">{calculate_win_rate(@all_trades_for_chart)}%</p>
                   </div>
                   <div>
                     <p class="text-muted-foreground">Average Profit</p>
-                    <p class="font-medium mt-1"><%= calculate_avg_profit(@all_trades_for_chart) %>%</p>
+                    <p class="font-medium mt-1">{calculate_avg_profit(@all_trades_for_chart)}%</p>
                   </div>
                   <div>
                     <p class="text-muted-foreground">Average Loss</p>
-                    <p class="font-medium mt-1"><%= calculate_avg_loss(@all_trades_for_chart) %>%</p>
+                    <p class="font-medium mt-1">{calculate_avg_loss(@all_trades_for_chart)}%</p>
                   </div>
                   <div>
                     <p class="text-muted-foreground">Profit Factor</p>
-                    <p class="font-medium mt-1"><%= calculate_profit_factor(@all_trades_for_chart) %></p>
+                    <p class="font-medium mt-1">{calculate_profit_factor(@all_trades_for_chart)}</p>
                   </div>
                 </div>
               </.card_content>
@@ -266,44 +288,71 @@ defmodule CentralWeb.BacktestLive.ShowLive do
 
   # --- Event Handlers for Trade Pagination ---
   @impl true
-  def handle_event("trade_page_changed", %{"page" => page, "backtest_id" => backtest_id_str}, socket) when is_integer(page) do
+  def handle_event(
+        "trade_page_changed",
+        %{"page" => page, "backtest_id" => backtest_id_str},
+        socket
+      )
+      when is_integer(page) do
     # Handle the case when page is already an integer
     if backtest_id_str == to_string(socket.assigns.backtest.id) do
-      trades = TradeContext.list_trades_for_backtest_paginated(socket.assigns.backtest.id, page, @trades_page_size)
+      trades =
+        TradeContext.list_trades_for_backtest_paginated(
+          socket.assigns.backtest.id,
+          page,
+          @trades_page_size
+        )
+
       updated_backtest = Map.put(socket.assigns.backtest, :trades, trades)
 
       {:noreply,
-        socket
-        |> assign(:backtest, updated_backtest)
-        |> assign(:trade_page, page)
-      }
+       socket
+       |> assign(:backtest, updated_backtest)
+       |> assign(:trade_page, page)}
     else
-      Logger.warning("Mismatched backtest_id in trade_page_changed event. Expected #{socket.assigns.backtest.id}, got #{backtest_id_str}")
+      Logger.warning(
+        "Mismatched backtest_id in trade_page_changed event. Expected #{socket.assigns.backtest.id}, got #{backtest_id_str}"
+      )
+
       {:noreply, socket}
     end
   end
 
   @impl true
-  def handle_event("trade_page_changed", %{"page" => page_str, "backtest_id" => backtest_id_str}, socket) when is_binary(page_str) do
+  def handle_event(
+        "trade_page_changed",
+        %{"page" => page_str, "backtest_id" => backtest_id_str},
+        socket
+      )
+      when is_binary(page_str) do
     # Ensure backtest_id from event matches the one in the socket
     # to prevent potential issues if the component ID is reused incorrectly.
     if backtest_id_str == to_string(socket.assigns.backtest.id) do
       case Integer.parse(page_str) do
         {page, ""} when page > 0 ->
-          trades = TradeContext.list_trades_for_backtest_paginated(socket.assigns.backtest.id, page, @trades_page_size)
+          trades =
+            TradeContext.list_trades_for_backtest_paginated(
+              socket.assigns.backtest.id,
+              page,
+              @trades_page_size
+            )
+
           updated_backtest = Map.put(socket.assigns.backtest, :trades, trades)
 
           {:noreply,
-            socket
-            |> assign(:backtest, updated_backtest)
-            |> assign(:trade_page, page)
-          }
+           socket
+           |> assign(:backtest, updated_backtest)
+           |> assign(:trade_page, page)}
+
         _ ->
           Logger.warning("Invalid page number received: #{page_str}")
           {:noreply, socket}
       end
     else
-      Logger.warning("Mismatched backtest_id in trade_page_changed event. Expected #{socket.assigns.backtest.id}, got #{backtest_id_str}")
+      Logger.warning(
+        "Mismatched backtest_id in trade_page_changed event. Expected #{socket.assigns.backtest.id}, got #{backtest_id_str}"
+      )
+
       {:noreply, socket}
     end
   end
@@ -344,7 +393,8 @@ defmodule CentralWeb.BacktestLive.ShowLive do
 
   # Calculate PnL percentage
   defp calculate_pnl_percentage(initial_balance, final_balance) do
-    if is_nil(initial_balance) || is_nil(final_balance) || Decimal.compare(initial_balance, Decimal.new(0)) == :eq do
+    if is_nil(initial_balance) || is_nil(final_balance) ||
+         Decimal.compare(initial_balance, Decimal.new(0)) == :eq do
       Decimal.new(0)
     else
       pnl = Decimal.sub(final_balance, initial_balance)
@@ -357,7 +407,9 @@ defmodule CentralWeb.BacktestLive.ShowLive do
     if !trades || Enum.empty?(trades) do
       "0.00"
     else
-      profitable_trades = Enum.count(trades, fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :gt end)
+      profitable_trades =
+        Enum.count(trades, fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :gt end)
+
       win_rate = profitable_trades / length(trades) * 100
       :erlang.float_to_binary(win_rate, decimals: 2)
     end
@@ -368,7 +420,8 @@ defmodule CentralWeb.BacktestLive.ShowLive do
     if !trades || Enum.empty?(trades) do
       "0.00"
     else
-      profitable_trades = Enum.filter(trades, fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :gt end)
+      profitable_trades =
+        Enum.filter(trades, fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :gt end)
 
       if length(profitable_trades) > 0 do
         avg_profit_pct =
@@ -389,12 +442,14 @@ defmodule CentralWeb.BacktestLive.ShowLive do
     if !trades || Enum.empty?(trades) do
       "0.00"
     else
-      losing_trades = Enum.filter(trades, fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :lt end)
+      losing_trades =
+        Enum.filter(trades, fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :lt end)
 
       if length(losing_trades) > 0 do
         avg_loss_pct =
           losing_trades
-          |> Enum.map(fn trade -> Decimal.to_float(trade.pnl_percentage) * 100 * -1 end) # Make positive for display
+          # Make positive for display
+          |> Enum.map(fn trade -> Decimal.to_float(trade.pnl_percentage) * 100 * -1 end)
           |> Enum.sum()
           |> Kernel./(length(losing_trades))
 
@@ -418,13 +473,16 @@ defmodule CentralWeb.BacktestLive.ShowLive do
       total_loss =
         trades
         |> Enum.filter(fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :lt end)
-        |> Enum.reduce(Decimal.new(0), fn trade, acc -> Decimal.add(acc, Decimal.abs(trade.pnl)) end)
+        |> Enum.reduce(Decimal.new(0), fn trade, acc ->
+          Decimal.add(acc, Decimal.abs(trade.pnl))
+        end)
 
       if Decimal.compare(total_loss, Decimal.new(0)) == :gt do
         profit_factor = Decimal.div(total_profit, total_loss)
         Decimal.round(profit_factor, 2) |> Decimal.to_string()
       else
-        "∞" # Infinity symbol when no losses
+        # Infinity symbol when no losses
+        "∞"
       end
     end
   end

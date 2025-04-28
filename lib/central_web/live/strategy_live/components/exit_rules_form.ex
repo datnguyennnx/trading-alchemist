@@ -6,7 +6,8 @@ defmodule CentralWeb.StrategyLive.Components.ExitRulesForm do
   alias CentralWeb.StrategyLive.Components.RuleItem
 
   attr :exit_rules, :list, required: true, doc: "The list of exit rule data maps/structs"
-  attr :form, :any, required: true # Keep form for potential error messages
+  # Keep form for potential error messages
+  attr :form, :any, required: true
   attr :remove_handler, :string, default: "remove_exit_rule"
   attr :id, :string, default: "exit-rules-form"
   attr :target, :any, default: nil
@@ -23,8 +24,7 @@ defmodule CentralWeb.StrategyLive.Components.ExitRulesForm do
           size="sm"
           class="bg-background hover:bg-muted"
         >
-          <.icon name="hero-plus" class="h-4 w-4 mr-1" />
-          Add Exit Rule
+          <.icon name="hero-plus" class="h-4 w-4 mr-1" /> Add Exit Rule
         </.button>
       </div>
 
@@ -59,8 +59,8 @@ defmodule CentralWeb.StrategyLive.Components.ExitRulesForm do
   def update(assigns, socket) do
     # Check if anything important has changed to avoid unnecessary re-renders
     if socket.assigns != %{} &&
-       socket.assigns[:exit_rules] == assigns.exit_rules &&
-       socket.assigns[:id] == assigns.id do
+         socket.assigns[:exit_rules] == assigns.exit_rules &&
+         socket.assigns[:id] == assigns.id do
       {:ok, socket}
     else
       {:ok, assign(socket, assigns)}

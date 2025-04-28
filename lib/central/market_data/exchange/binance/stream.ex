@@ -249,7 +249,8 @@ defmodule Central.MarketData.Exchange.Binance.Stream do
     # Process raw WebSocket data into a structured format
     # This is a simplified example - actual implementation would parse JSON
     # and potentially use Binance.Client.parse_kline or similar logic
-    %{raw: data} # Placeholder
+    # Placeholder
+    %{raw: data}
   end
 
   defp broadcast_to_subscribers(subscribers, message) do

@@ -62,7 +62,11 @@ defmodule CentralWeb.Components.UI.Select do
 
   attr :class, :string, default: nil
   attr :side, :string, values: ~w(top bottom), default: "bottom"
-  attr :selected_label, :string, default: nil, doc: "Explicit label to display for the selected value."
+
+  attr :selected_label, :string,
+    default: nil,
+    doc: "Explicit label to display for the selected value."
+
   slot :inner_block, required: true
   attr :rest, :global
 
@@ -71,11 +75,12 @@ defmodule CentralWeb.Components.UI.Select do
 
     options = assigns[:options] || []
 
-    initial_label = cond do
-      assigns.selected_label -> assigns.selected_label
-      assigns.value -> find_label_for_value(options, assigns.value) || assigns.value
-      true -> nil
-    end
+    initial_label =
+      cond do
+        assigns.selected_label -> assigns.selected_label
+        assigns.value -> find_label_for_value(options, assigns.value) || assigns.value
+        true -> nil
+      end
 
     assigns =
       assign(assigns, :builder, %{
@@ -97,7 +102,7 @@ defmodule CentralWeb.Components.UI.Select do
       x-toggle-select={toggle_select(@id)}
       phx-click-away={JS.exec("x-hide-select")}
     >
-      <%= render_slot(@inner_block, @builder) %>
+      {render_slot(@inner_block, @builder)}
     </div>
     """
   end
@@ -301,7 +306,11 @@ defmodule CentralWeb.Components.UI.Select do
   attr :icon, :string, default: nil, doc: "Icon name to display (e.g., 'hero-sun')"
   attr :disabled, :boolean, default: false
   attr :class, :string, default: nil
-  attr :target_selector, :string, default: nil, doc: "Selector for the target component receiving the event."
+
+  attr :target_selector, :string,
+    default: nil,
+    doc: "Selector for the target component receiving the event."
+
   attr :event_name, :string, default: nil, doc: "The custom event name to push."
   attr :target, :any, default: nil, doc: "The target component/LiveView PID or CID for the event."
   attr :myself, :any, default: nil, doc: "The current component's assigns to direct events back."
@@ -398,10 +407,12 @@ defmodule CentralWeb.Components.UI.Select do
   """
   def select_item(assigns) do
     assigns = assign_new(assigns, :label, fn -> assigns.value end)
-    assigns = update_in(assigns, [:index], fn
-      idx when is_binary(idx) -> String.to_integer(idx)
-      idx -> idx
-    end)
+
+    assigns =
+      update_in(assigns, [:index], fn
+        idx when is_binary(idx) -> String.to_integer(idx)
+        idx -> idx
+      end)
 
     ~H"""
     <label
@@ -418,7 +429,19 @@ defmodule CentralWeb.Components.UI.Select do
         ])
       }
       {%{"data-disabled": @disabled}}
-      phx-click={select_item_js(@builder.id, @value, @label, @target_selector, @event_name, @rule_type, @index, @target, @myself)}
+      phx-click={
+        select_item_js(
+          @builder.id,
+          @value,
+          @label,
+          @target_selector,
+          @event_name,
+          @rule_type,
+          @index,
+          @target,
+          @myself
+        )
+      }
       {@rest}
     >
       <input
@@ -439,12 +462,12 @@ defmodule CentralWeb.Components.UI.Select do
         <% end %>
         <span class={@builder.value == @value && "font-medium"}>{@label}</span>
       </div>
-      <span
-        class={classes([
+      <span class={
+        classes([
           "absolute right-3 flex h-5 w-5 items-center justify-center text-primary",
           if(@builder.value != @value, do: "opacity-0", else: "opacity-100")
-        ])}
-      >
+        ])
+      }>
         <.icon name="hero-check" class="h-4 w-4" />
       </span>
     </label>
@@ -521,25 +544,45 @@ defmodule CentralWeb.Components.UI.Select do
   end
 
   # New JS helper to push event on item select
-  defp select_item_js(root_id, value, label, target_selector, event_name, rule_type, index, target, myself) do
-    js = %JS{}
-         # Set display value using the item's LABEL
-         |> JS.set_attribute({"data-content", label || value}, to: "##{root_id} .select-value")
-         |> JS.exec("x-hide-select", to: "##{root_id}")
+  defp select_item_js(
+         root_id,
+         value,
+         label,
+         target_selector,
+         event_name,
+         rule_type,
+         index,
+         target,
+         myself
+       ) do
+    js =
+      %JS{}
+      # Set display value using the item's LABEL
+      |> JS.set_attribute({"data-content", label || value}, to: "##{root_id} .select-value")
+      |> JS.exec("x-hide-select", to: "##{root_id}")
 
     # Only push the event if event_name is provided
     cond do
       event_name && target_selector ->
         # When target_selector is provided, push to that DOM element
-        JS.push(js, event_name, target: target_selector, value: %{value: value, rule_type: rule_type, index: index})
+        JS.push(js, event_name,
+          target: target_selector,
+          value: %{value: value, rule_type: rule_type, index: index}
+        )
 
       event_name && myself ->
         # When myself is provided, push to the component itself
-        JS.push(js, event_name, target: myself, value: %{value: value, rule_type: rule_type, index: index})
+        JS.push(js, event_name,
+          target: myself,
+          value: %{value: value, rule_type: rule_type, index: index}
+        )
 
       event_name && target ->
         # When target is provided, push to that component/LiveView
-        JS.push(js, event_name, target: target, value: %{value: value, rule_type: rule_type, index: index})
+        JS.push(js, event_name,
+          target: target,
+          value: %{value: value, rule_type: rule_type, index: index}
+        )
 
       event_name ->
         # When no target is provided, push to the parent LiveView
@@ -552,23 +595,24 @@ defmodule CentralWeb.Components.UI.Select do
 
   # Prepare assigns for the select component
   defp process_select_assigns(assigns) do
-    assigns = if assigns[:field] do
-      name = assigns.field.name
-      id = assigns.field.id || "#{name}_select"
+    assigns =
+      if assigns[:field] do
+        name = assigns.field.name
+        id = assigns.field.id || "#{name}_select"
 
-      %{
-        assigns
-        | id: id,
-          name: name,
-          value: Phoenix.HTML.Form.input_value(assigns.field.form, assigns.field.field)
-      }
-    else
-      # Generate an ID if not provided
-      id = assigns[:id] || "select-#{System.unique_integer([:positive])}"
-      name = assigns[:name] || id
+        %{
+          assigns
+          | id: id,
+            name: name,
+            value: Phoenix.HTML.Form.input_value(assigns.field.form, assigns.field.field)
+        }
+      else
+        # Generate an ID if not provided
+        id = assigns[:id] || "select-#{System.unique_integer([:positive])}"
+        name = assigns[:name] || id
 
-      %{assigns | id: id, name: name}
-    end
+        %{assigns | id: id, name: name}
+      end
 
     # Process options if they exist in assigns
     if assigns[:options] do

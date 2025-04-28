@@ -24,17 +24,18 @@ defmodule CentralWeb.StrategyLive.ShowLive do
     backtests_raw = BacktestContext.list_backtests_for_strategy(id)
 
     # Calculate additional fields for each backtest
-    backtests = Enum.map(backtests_raw, fn backtest ->
-      total_pnl = calculate_total_pnl(backtest)
-      total_pnl_percentage = calculate_pnl_percentage(backtest)
-      # Placeholder for trades count - requires more logic/preloading
-      total_trades = Map.get(backtest, :total_trades, "N/A")
+    backtests =
+      Enum.map(backtests_raw, fn backtest ->
+        total_pnl = calculate_total_pnl(backtest)
+        total_pnl_percentage = calculate_pnl_percentage(backtest)
+        # Placeholder for trades count - requires more logic/preloading
+        total_trades = Map.get(backtest, :total_trades, "N/A")
 
-      backtest
-      |> Map.put(:total_pnl, total_pnl)
-      |> Map.put(:total_pnl_percentage, total_pnl_percentage)
-      |> Map.put(:total_trades, total_trades)
-    end)
+        backtest
+        |> Map.put(:total_pnl, total_pnl)
+        |> Map.put(:total_pnl_percentage, total_pnl_percentage)
+        |> Map.put(:total_trades, total_trades)
+      end)
 
     # Get the most recent backtest for quick stats
     recent_backtest =
@@ -72,32 +73,32 @@ defmodule CentralWeb.StrategyLive.ShowLive do
       <!-- Strategy Header -->
       <div class="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
         <div>
-          <h1 class="text-2xl font-bold"><%= @strategy.name %></h1>
+          <h1 class="text-2xl font-bold">{@strategy.name}</h1>
           <div class="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
             <div class="flex items-center gap-1">
               <p>Symbol:</p>
-              <p class="font-medium"><%= @strategy.config["symbol"] %></p>
+              <p class="font-medium">{@strategy.config["symbol"]}</p>
             </div>
             <div class="flex items-center gap-1">
               <p>Timeframe:</p>
-              <p class="font-medium"><%= @strategy.config["timeframe"] %></p>
+              <p class="font-medium">{@strategy.config["timeframe"]}</p>
             </div>
             <div class="flex items-center gap-1">
               <p>Risk:</p>
-              <p class="font-medium"><%= @strategy.config["risk_per_trade"] %>%</p>
+              <p class="font-medium">{@strategy.config["risk_per_trade"]}%</p>
             </div>
             <div class="flex items-center gap-1">
               <p>Created:</p>
-              <p class="font-medium"><%= Calendar.strftime(@strategy.inserted_at, "%d/%m/%Y") %></p>
+              <p class="font-medium">{Calendar.strftime(@strategy.inserted_at, "%d/%m/%Y")}</p>
             </div>
             <div class="flex items-center gap-1">
               <p>Last Modified:</p>
-              <p class="font-medium"><%= Calendar.strftime(@strategy.updated_at, "%d/%m/%Y") %></p>
+              <p class="font-medium">{Calendar.strftime(@strategy.updated_at, "%d/%m/%Y")}</p>
             </div>
             <%= if @strategy.description && @strategy.description != "" && @strategy.description != "12/31/23" do %>
               <div class="flex items-center gap-1">
                 <p>Description:</p>
-                <p class="font-medium"><%= @strategy.description %></p>
+                <p class="font-medium">{@strategy.description}</p>
               </div>
             <% end %>
           </div>
@@ -111,10 +112,7 @@ defmodule CentralWeb.StrategyLive.ShowLive do
           </.link>
           <.alert_dialog id="delete-strategy-dialog">
             <.alert_dialog_trigger builder={%{id: "delete-strategy-dialog", open: false}}>
-              <.button
-                variant="outline"
-                size="sm"
-              >
+              <.button variant="outline" size="sm">
                 <.icon name="hero-trash" class="h-4 w-4 mr-2" /> Delete Strategy
               </.button>
             </.alert_dialog_trigger>
@@ -129,10 +127,7 @@ defmodule CentralWeb.StrategyLive.ShowLive do
                 <.alert_dialog_cancel builder={%{id: "delete-strategy-dialog", open: false}}>
                   Cancel
                 </.alert_dialog_cancel>
-                <.button
-                  variant="destructive"
-                  phx-click="delete_strategy"
-                >
+                <.button variant="destructive" phx-click="delete_strategy">
                   Delete
                 </.button>
               </.alert_dialog_footer>
@@ -152,8 +147,8 @@ defmodule CentralWeb.StrategyLive.ShowLive do
             end_time={@end_time}
             strategy_id={@strategy.id}
           />
-
-          <!-- Backtest History -->
+          
+    <!-- Backtest History -->
           <.live_component
             module={BacktestHistory}
             id="backtest-history"
@@ -161,11 +156,11 @@ defmodule CentralWeb.StrategyLive.ShowLive do
             max_items={5}
           />
         </div>
-
-        <!-- Right Column: Strategy Information -->
+        
+    <!-- Right Column: Strategy Information -->
         <div class="space-y-6 col-span-2">
-
-          <!-- Latest Performance -->
+          
+    <!-- Latest Performance -->
           <%= if @recent_backtest do %>
             <.live_component
               module={LatestPerformance}
@@ -173,8 +168,8 @@ defmodule CentralWeb.StrategyLive.ShowLive do
               backtest={@recent_backtest}
             />
           <% end %>
-
-          <!-- Trading Rules -->
+          
+    <!-- Trading Rules -->
           <.live_component
             module={TradingRules}
             id="trading-rules"
@@ -225,7 +220,11 @@ defmodule CentralWeb.StrategyLive.ShowLive do
     }
 
     # Create a changeset to validate params
-    changeset = Central.Backtest.Schemas.Backtest.changeset(%Central.Backtest.Schemas.Backtest{}, backtest_params)
+    changeset =
+      Central.Backtest.Schemas.Backtest.changeset(
+        %Central.Backtest.Schemas.Backtest{},
+        backtest_params
+      )
 
     if changeset.valid? do
       # Directly create and run the backtest without confirmation
@@ -252,18 +251,23 @@ defmodule CentralWeb.StrategyLive.ShowLive do
           {:noreply,
            socket
            |> put_flash(:error, "Failed to start backtest: #{error_messages(changeset)}")
-           |> assign(:form, to_form(Map.merge(socket.assigns.form.data, %{errors: changeset.errors})))}
+           |> assign(
+             :form,
+             to_form(Map.merge(socket.assigns.form.data, %{errors: changeset.errors}))
+           )}
       end
     else
-      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-        Enum.reduce(opts, msg, fn {key, value}, acc ->
-          String.replace(acc, "%{#{key}}", to_string(value))
+      errors =
+        Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+          Enum.reduce(opts, msg, fn {key, value}, acc ->
+            String.replace(acc, "%{#{key}}", to_string(value))
+          end)
         end)
-      end)
 
-      error_message = errors
-                     |> Enum.map(fn {k, v} -> "#{k}: #{Enum.join(v, ", ")}" end)
-                     |> Enum.join("; ")
+      error_message =
+        errors
+        |> Enum.map(fn {k, v} -> "#{k}: #{Enum.join(v, ", ")}" end)
+        |> Enum.join("; ")
 
       {:noreply,
        socket
@@ -281,10 +285,15 @@ defmodule CentralWeb.StrategyLive.ShowLive do
   end
 
   # DateTimePicker events
-  def handle_event("datetime-update", %{"name" => "start_time", "datetime" => datetime_str}, socket) do
+  def handle_event(
+        "datetime-update",
+        %{"name" => "start_time", "datetime" => datetime_str},
+        socket
+      ) do
     case DateTime.from_iso8601(datetime_str) do
       {:ok, datetime, _} ->
         {:noreply, assign(socket, :start_time, datetime)}
+
       _ ->
         {:noreply, socket}
     end
@@ -294,25 +303,36 @@ defmodule CentralWeb.StrategyLive.ShowLive do
     case DateTime.from_iso8601(datetime_str) do
       {:ok, datetime, _} ->
         {:noreply, assign(socket, :end_time, datetime)}
+
       _ ->
         {:noreply, socket}
     end
   end
 
   # Handler for date_time_picker_change event
-  def handle_event("date_time_picker_change", %{"name" => "start_time", "value" => datetime_str}, socket) do
+  def handle_event(
+        "date_time_picker_change",
+        %{"name" => "start_time", "value" => datetime_str},
+        socket
+      ) do
     case DateTime.from_iso8601(datetime_str) do
       {:ok, datetime, _} ->
         {:noreply, assign(socket, :start_time, datetime)}
+
       _ ->
         {:noreply, socket}
     end
   end
 
-  def handle_event("date_time_picker_change", %{"name" => "end_time", "value" => datetime_str}, socket) do
+  def handle_event(
+        "date_time_picker_change",
+        %{"name" => "end_time", "value" => datetime_str},
+        socket
+      ) do
     case DateTime.from_iso8601(datetime_str) do
       {:ok, datetime, _} ->
         {:noreply, assign(socket, :end_time, datetime)}
+
       _ ->
         {:noreply, socket}
     end
@@ -335,12 +355,14 @@ defmodule CentralWeb.StrategyLive.ShowLive do
 
   defp parse_datetime(nil), do: nil
   defp parse_datetime(""), do: nil
+
   defp parse_datetime(datetime_string) when is_binary(datetime_string) do
     case DateTime.from_iso8601(datetime_string) do
       {:ok, datetime, _} -> datetime
       _ -> nil
     end
   end
+
   defp parse_datetime(_), do: nil
 
   # Helper functions to set reasonable default times as DateTime objects
@@ -380,12 +402,13 @@ defmodule CentralWeb.StrategyLive.ShowLive do
   defp calculate_pnl_percentage(backtest) do
     initial_balance = backtest.initial_balance
     final_balance = backtest.final_balance
-    if is_nil(initial_balance) || is_nil(final_balance) || Decimal.compare(initial_balance, Decimal.new(0)) == :eq do
+
+    if is_nil(initial_balance) || is_nil(final_balance) ||
+         Decimal.compare(initial_balance, Decimal.new(0)) == :eq do
       Decimal.new(0)
     else
       pnl = Decimal.sub(final_balance, initial_balance)
       Decimal.div(pnl, initial_balance)
     end
   end
-
 end

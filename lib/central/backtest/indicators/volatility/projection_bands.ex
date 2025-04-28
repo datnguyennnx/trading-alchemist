@@ -36,7 +36,8 @@ defmodule Central.Backtest.Indicators.Volatility.ProjectionBands do
   """
   def calculate(prices, period \\ 20, multiplier \\ 2.0, ma_type \\ :ema, adaptive \\ false)
 
-  def calculate(prices, period, multiplier, ma_type, adaptive) when is_list(prices) and not is_map(hd(prices)) do
+  def calculate(prices, period, multiplier, ma_type, adaptive)
+      when is_list(prices) and not is_map(hd(prices)) do
     with true <- validate_inputs(prices, period, multiplier) do
       # Calculate the middle band (moving average)
       {:ok, middle_band} = calculate_middle_band(prices, period, ma_type)
@@ -45,11 +46,12 @@ defmodule Central.Backtest.Indicators.Volatility.ProjectionBands do
       std_dev = calculate_std_dev(prices, middle_band, period)
 
       # Calculate projection factor (fixed or adaptive)
-      projection_factor = if adaptive do
-        calculate_adaptive_factor(prices, period, multiplier)
-      else
-        List.duplicate(multiplier, length(prices))
-      end
+      projection_factor =
+        if adaptive do
+          calculate_adaptive_factor(prices, period, multiplier)
+        else
+          List.duplicate(multiplier, length(prices))
+        end
 
       # Calculate upper and lower bands
       {upper_band, lower_band} = calculate_bands(middle_band, std_dev, projection_factor)
@@ -67,7 +69,6 @@ defmodule Central.Backtest.Indicators.Volatility.ProjectionBands do
 
   def calculate(candles, period, multiplier, ma_type, adaptive, price_type)
       when is_list(candles) and is_map(hd(candles)) and is_atom(price_type) do
-
     prices = Enum.map(candles, &Map.get(&1, price_type))
     calculate(prices, period, multiplier, ma_type, adaptive)
   end
@@ -76,12 +77,16 @@ defmodule Central.Backtest.Indicators.Volatility.ProjectionBands do
     cond do
       not is_list(prices) ->
         {:error, "Prices must be a list"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       multiplier <= 0 ->
         {:error, "Multiplier must be greater than 0"}
+
       length(prices) < period ->
         {:error, "Not enough data points for the given period"}
+
       true ->
         true
     end
@@ -101,10 +106,12 @@ defmodule Central.Backtest.Indicators.Volatility.ProjectionBands do
     |> Enum.zip(middle_band)
     |> Enum.chunk_every(period, 1, :discard)
     |> Enum.map(fn chunk ->
-      variance = Enum.reduce(chunk, 0, fn {price, ma}, acc ->
-        diff = price - ma
-        acc + (diff * diff)
-      end) / length(chunk)
+      variance =
+        Enum.reduce(chunk, 0, fn {price, ma}, acc ->
+          diff = price - ma
+          acc + diff * diff
+        end) / length(chunk)
+
       :math.sqrt(variance)
     end)
     |> pad_with_zeros(length(prices), period - 1)
@@ -126,9 +133,10 @@ defmodule Central.Backtest.Indicators.Volatility.ProjectionBands do
       max_factor = base_multiplier * 2.0
 
       # Scale trend_change to get adaptive factor
-      scaled_factor = min_factor + (trend_change * 10)
-      |> min(max_factor)
-      |> max(min_factor)
+      scaled_factor =
+        (min_factor + trend_change * 10)
+        |> min(max_factor)
+        |> max(min_factor)
 
       scaled_factor
     end)
@@ -152,7 +160,9 @@ defmodule Central.Backtest.Indicators.Volatility.ProjectionBands do
   defp pad_with_last_value(values, original_length, padding_size) do
     last_value = List.last(values) || 0
     padding = List.duplicate(0, padding_size)
-    padding ++ values ++ List.duplicate(last_value, original_length - padding_size - length(values))
+
+    padding ++
+      values ++ List.duplicate(last_value, original_length - padding_size - length(values))
   end
 
   @doc """
@@ -167,9 +177,12 @@ defmodule Central.Backtest.Indicators.Volatility.ProjectionBands do
     Enum.zip([prices, upper, lower])
     |> Enum.map(fn {price, upper_band, lower_band} ->
       cond do
-        price <= lower_band -> 1  # Buy signal
-        price >= upper_band -> -1 # Sell signal
-        true -> 0  # No signal
+        # Buy signal
+        price <= lower_band -> 1
+        # Sell signal
+        price >= upper_band -> -1
+        # No signal
+        true -> 0
       end
     end)
   end
@@ -183,8 +196,9 @@ defmodule Central.Backtest.Indicators.Volatility.ProjectionBands do
   - {:squeeze, index} when bands are extremely narrow
   """
   def identify_band_patterns({_middle, upper, lower}, threshold \\ 0.1) do
-    band_widths = Enum.zip(upper, lower)
-    |> Enum.map(fn {u, l} -> u - l end)
+    band_widths =
+      Enum.zip(upper, lower)
+      |> Enum.map(fn {u, l} -> u - l end)
 
     # Calculate average band width
     avg_width = Enum.sum(band_widths) / length(band_widths)
@@ -195,12 +209,14 @@ defmodule Central.Backtest.Indicators.Volatility.ProjectionBands do
     |> Enum.with_index(4)
     |> Enum.flat_map(fn {chunk, index} ->
       current_width = List.last(chunk)
-      pattern = cond do
-        current_width < avg_width * (1 - threshold) -> {:contraction, index}
-        current_width > avg_width * (1 + threshold) -> {:expansion, index}
-        current_width < avg_width * 0.5 -> {:squeeze, index}
-        true -> nil
-      end
+
+      pattern =
+        cond do
+          current_width < avg_width * (1 - threshold) -> {:contraction, index}
+          current_width > avg_width * (1 + threshold) -> {:expansion, index}
+          current_width < avg_width * 0.5 -> {:squeeze, index}
+          true -> nil
+        end
 
       if pattern, do: [pattern], else: []
     end)

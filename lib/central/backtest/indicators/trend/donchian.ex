@@ -23,7 +23,8 @@ defmodule Central.Backtest.Indicators.Trend.Donchian do
         lower: value   # Lowest low over period
       }
   """
-  def donchian(candles, period \\ 20) when is_list(candles) and is_integer(period) and period > 0 do
+  def donchian(candles, period \\ 20)
+      when is_list(candles) and is_integer(period) and period > 0 do
     # Get high and low values
     highs = Enum.map(candles, & &1.high)
     lows = Enum.map(candles, & &1.low)
@@ -76,22 +77,24 @@ defmodule Central.Backtest.Indicators.Trend.Donchian do
     - List of signals aligned with input candles:
       :buy, :sell, or nil (no signal)
   """
-  def donchian_breakout(candles, period \\ 20) when is_list(candles) and is_integer(period) and period > 0 do
+  def donchian_breakout(candles, period \\ 20)
+      when is_list(candles) and is_integer(period) and period > 0 do
     # Calculate Donchian Channels
     channels = donchian(candles, period)
 
     # Pair channels with corresponding candles
     Enum.zip(channels, candles)
     |> Enum.map(fn
-      {nil, _} -> nil  # No channel data for this period
+      # No channel data for this period
+      {nil, _} ->
+        nil
+
       {channel, candle} ->
         cond do
           # Buy signal: close price breaks above upper band
           Decimal.compare(candle.close, channel.upper) == :gt -> :buy
-
           # Sell signal: close price breaks below lower band
           Decimal.compare(candle.close, channel.lower) == :lt -> :sell
-
           # No signal
           true -> nil
         end

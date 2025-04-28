@@ -65,7 +65,9 @@ defmodule Central.Backtest.Indicators.Momentum.Rvi do
           else
             nil
           end
-        _ -> nil
+
+        _ ->
+          nil
       end)
 
     # Calculate signal line (4-period SMA of RVI)
@@ -99,6 +101,7 @@ defmodule Central.Backtest.Indicators.Momentum.Rvi do
                 idx < div(period, 2) -> idx + 1
                 true -> period - idx
               end
+
             {Decimal.add(sum, Decimal.mult(value, Decimal.new(weight))), weight_sum + weight}
           end)
 
@@ -128,12 +131,16 @@ defmodule Central.Backtest.Indicators.Momentum.Rvi do
       rvi_data
       |> Enum.chunk_every(2, 1, :discard)
       |> Enum.map(fn
-        [nil, _] -> 0
-        [_, nil] -> 0
+        [nil, _] ->
+          0
+
+        [_, nil] ->
+          0
+
         [prev, curr] ->
           cond do
             is_nil(prev[:rvi]) or is_nil(curr[:rvi]) or
-            is_nil(prev[:signal]) or is_nil(curr[:signal]) ->
+              is_nil(prev[:signal]) or is_nil(curr[:signal]) ->
               0
 
             use_histogram ->
@@ -142,9 +149,14 @@ defmodule Central.Backtest.Indicators.Momentum.Rvi do
               curr_hist = Decimal.sub(curr[:rvi], curr[:signal])
 
               cond do
-                Decimal.lt?(prev_hist, Decimal.new(0)) and Decimal.gt?(curr_hist, Decimal.new(0)) -> 1
-                Decimal.gt?(prev_hist, Decimal.new(0)) and Decimal.lt?(curr_hist, Decimal.new(0)) -> -1
-                true -> 0
+                Decimal.lt?(prev_hist, Decimal.new(0)) and Decimal.gt?(curr_hist, Decimal.new(0)) ->
+                  1
+
+                Decimal.gt?(prev_hist, Decimal.new(0)) and Decimal.lt?(curr_hist, Decimal.new(0)) ->
+                  -1
+
+                true ->
+                  0
               end
 
             true ->
@@ -161,7 +173,8 @@ defmodule Central.Backtest.Indicators.Momentum.Rvi do
               end
           end
       end)
-      |> List.insert_at(0, 0)  # Add placeholder for first candle
+      # Add placeholder for first candle
+      |> List.insert_at(0, 0)
 
     {:ok, signals}
   end
@@ -187,15 +200,18 @@ defmodule Central.Backtest.Indicators.Momentum.Rvi do
       highs = IndicatorUtils.extract_price(candles, :high)
       lows = IndicatorUtils.extract_price(candles, :low)
 
-      rvi_values = Enum.map(rvi_data, fn
-        nil -> nil
-        %{rvi: rvi} -> rvi
-        val -> val  # Handle raw RVI values case
-      end)
+      rvi_values =
+        Enum.map(rvi_data, fn
+          nil -> nil
+          %{rvi: rvi} -> rvi
+          # Handle raw RVI values case
+          val -> val
+        end)
 
       divergences =
         Enum.with_index(candles)
-        |> Enum.drop(lookback)  # Skip first lookback candles
+        # Skip first lookback candles
+        |> Enum.drop(lookback)
         |> Enum.flat_map(fn {_, idx} ->
           if idx + lookback < length(candles) do
             # Define the window for analysis
@@ -221,21 +237,25 @@ defmodule Central.Backtest.Indicators.Momentum.Rvi do
               price_low_comparison = Decimal.compare(current_low, Enum.at(window_price_lows, 0))
               rvi_low_comparison = Decimal.compare(current_rvi_low, Enum.at(window_rvi, 0))
 
-              all_divergences = if price_low_comparison == :lt and rvi_low_comparison == :gt do
-                [{:bullish_divergence, idx} | all_divergences]
-              else
-                all_divergences
-              end
+              all_divergences =
+                if price_low_comparison == :lt and rvi_low_comparison == :gt do
+                  [{:bullish_divergence, idx} | all_divergences]
+                else
+                  all_divergences
+                end
 
               # Bearish divergence: higher price highs but lower RVI highs
-              price_high_comparison = Decimal.compare(current_high, Enum.at(window_price_highs, 0))
+              price_high_comparison =
+                Decimal.compare(current_high, Enum.at(window_price_highs, 0))
+
               rvi_high_comparison = Decimal.compare(current_rvi_high, Enum.at(window_rvi, 0))
 
-              all_divergences = if price_high_comparison == :gt and rvi_high_comparison == :lt do
-                [{:bearish_divergence, idx} | all_divergences]
-              else
-                all_divergences
-              end
+              all_divergences =
+                if price_high_comparison == :gt and rvi_high_comparison == :lt do
+                  [{:bearish_divergence, idx} | all_divergences]
+                else
+                  all_divergences
+                end
 
               all_divergences
             end
@@ -260,7 +280,7 @@ defmodule Central.Backtest.Indicators.Momentum.Rvi do
     - {:ok, rvi_data} where rvi_data is a list of maps containing RVI values
   """
   def rvi(candles, period \\ 10, signal_period \\ 4) do
-    result = calculate(candles, [period: period, signal_period: signal_period])
+    result = calculate(candles, period: period, signal_period: signal_period)
     {:ok, result}
   end
 end

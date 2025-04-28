@@ -39,25 +39,49 @@ defmodule Central.Backtest.Indicators.Momentum.KlingerOscillator do
   @doc """
   Calculates the Klinger Volume Oscillator.
   """
-  def calculate(high, low, close, volume, fast_period \\ 34, slow_period \\ 55, signal_period \\ 13) do
-    with true <- validate_inputs(high, low, close, volume, fast_period, slow_period, signal_period) do
+  def calculate(
+        high,
+        low,
+        close,
+        volume,
+        fast_period \\ 34,
+        slow_period \\ 55,
+        signal_period \\ 13
+      ) do
+    with true <-
+           validate_inputs(high, low, close, volume, fast_period, slow_period, signal_period) do
       # Calculate the Volume Force and its cumulative sum
       volume_force = calculate_volume_force(high, low, close, volume)
 
       # Calculate EMAs of the cumulative volume force
-      {:ok, fast_ema} = Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(volume_force, fast_period)
-      {:ok, slow_ema} = Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(volume_force, slow_period)
+      {:ok, fast_ema} =
+        Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(
+          volume_force,
+          fast_period
+        )
+
+      {:ok, slow_ema} =
+        Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(
+          volume_force,
+          slow_period
+        )
 
       # Calculate the KVO as the difference between fast and slow EMAs
-      oscillator = Enum.zip(fast_ema, slow_ema)
-                  |> Enum.map(fn {fast, slow} -> fast - slow end)
+      oscillator =
+        Enum.zip(fast_ema, slow_ema)
+        |> Enum.map(fn {fast, slow} -> fast - slow end)
 
       # Calculate the signal line (EMA of the oscillator)
-      {:ok, signal} = Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(oscillator, signal_period)
+      {:ok, signal} =
+        Central.Backtest.Indicators.Trend.ExponentialMovingAverage.calculate(
+          oscillator,
+          signal_period
+        )
 
       # Calculate the histogram (oscillator - signal)
-      histogram = Enum.zip(oscillator, signal)
-                  |> Enum.map(fn {osc, sig} -> osc - sig end)
+      histogram =
+        Enum.zip(oscillator, signal)
+        |> Enum.map(fn {osc, sig} -> osc - sig end)
 
       {:ok, {oscillator, signal, histogram}}
     else
@@ -69,14 +93,20 @@ defmodule Central.Backtest.Indicators.Momentum.KlingerOscillator do
     cond do
       not (is_list(high) and is_list(low) and is_list(close) and is_list(volume)) ->
         {:error, "All price and volume inputs must be lists"}
-      length(high) != length(low) or length(high) != length(close) or length(high) != length(volume) ->
+
+      length(high) != length(low) or length(high) != length(close) or
+          length(high) != length(volume) ->
         {:error, "All input lists must have the same length"}
+
       fast_period <= 0 or slow_period <= 0 or signal_period <= 0 ->
         {:error, "All periods must be greater than 0"}
+
       slow_period <= fast_period ->
         {:error, "Slow period must be greater than fast period"}
+
       length(high) < slow_period ->
         {:error, "Not enough data points for the given periods"}
+
       true ->
         true
     end
@@ -98,8 +128,10 @@ defmodule Central.Backtest.Indicators.Momentum.KlingerOscillator do
         trend_volume = v2 * trend
 
         # Calculate volume force
-        dm = h2 - l2  # Daily high - low range
-        cm = if c2 > c1, do: c2 - c1, else: c1 - c2  # Price change magnitude
+        # Daily high - low range
+        dm = h2 - l2
+        # Price change magnitude
+        cm = if c2 > c1, do: c2 - c1, else: c1 - c2
 
         # Avoid division by zero
         vf = if dm != 0, do: trend_volume * cm / dm, else: 0
@@ -126,9 +158,12 @@ defmodule Central.Backtest.Indicators.Momentum.KlingerOscillator do
     |> Enum.chunk_every(2, 1, :discard)
     |> Enum.map(fn [{osc1, sig1}, {osc2, sig2}] ->
       cond do
-        osc1 < sig1 and osc2 > sig2 -> 1  # Bullish crossover
-        osc1 > sig1 and osc2 < sig2 -> -1 # Bearish crossover
-        true -> 0  # No signal
+        # Bullish crossover
+        osc1 < sig1 and osc2 > sig2 -> 1
+        # Bearish crossover
+        osc1 > sig1 and osc2 < sig2 -> -1
+        # No signal
+        true -> 0
       end
     end)
     |> List.insert_at(0, 0)
@@ -156,24 +191,30 @@ defmodule Central.Backtest.Indicators.Momentum.KlingerOscillator do
     # Find local extremes
     price_min_index = Enum.find_index(prices, fn p -> p == Enum.min(prices) end)
     price_max_index = Enum.find_index(prices, fn p -> p == Enum.max(prices) end)
-    osc_min_index = Enum.find_index(oscillator_values, fn o -> o == Enum.min(oscillator_values) end)
-    osc_max_index = Enum.find_index(oscillator_values, fn o -> o == Enum.max(oscillator_values) end)
+
+    osc_min_index =
+      Enum.find_index(oscillator_values, fn o -> o == Enum.min(oscillator_values) end)
+
+    osc_max_index =
+      Enum.find_index(oscillator_values, fn o -> o == Enum.max(oscillator_values) end)
 
     all_divergences = []
 
     # Check for bullish divergence (price makes new low but oscillator doesn't)
-    all_divergences = if price_min_index == length(prices) - 1 and osc_min_index != price_min_index do
-      [{:bullish_divergence, index} | all_divergences]
-    else
-      all_divergences
-    end
+    all_divergences =
+      if price_min_index == length(prices) - 1 and osc_min_index != price_min_index do
+        [{:bullish_divergence, index} | all_divergences]
+      else
+        all_divergences
+      end
 
     # Check for bearish divergence (price makes new high but oscillator doesn't)
-    all_divergences = if price_max_index == length(prices) - 1 and osc_max_index != price_max_index do
-      [{:bearish_divergence, index} | all_divergences]
-    else
-      all_divergences
-    end
+    all_divergences =
+      if price_max_index == length(prices) - 1 and osc_max_index != price_max_index do
+        [{:bearish_divergence, index} | all_divergences]
+      else
+        all_divergences
+      end
 
     all_divergences
   end
@@ -190,9 +231,12 @@ defmodule Central.Backtest.Indicators.Momentum.KlingerOscillator do
 
     # Calculate standard deviation of volume force
     mean_vf = Enum.sum(volume_force) / length(volume_force)
-    variance = Enum.reduce(volume_force, 0, fn vf, acc ->
-      acc + :math.pow(vf - mean_vf, 2)
-    end) / length(volume_force)
+
+    variance =
+      Enum.reduce(volume_force, 0, fn vf, acc ->
+        acc + :math.pow(vf - mean_vf, 2)
+      end) / length(volume_force)
+
     std_dev = :math.sqrt(variance)
 
     # Detect anomalies based on standard deviation

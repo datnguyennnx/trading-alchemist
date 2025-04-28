@@ -35,7 +35,9 @@ defmodule Central.MarketData.ChartDataFetcher do
     - `{:error, reason}`: If fetching failed.
   """
   def get_chart_data(symbol, timeframe, start_time, end_time) do
-    Logger.debug("Fetching chart data for #{symbol}/#{timeframe} from #{start_time} to #{end_time}")
+    Logger.debug(
+      "Fetching chart data for #{symbol}/#{timeframe} from #{start_time} to #{end_time}"
+    )
 
     # 1. TODO: Check cache first
     # case Cache.get(@cache_name, {symbol, timeframe, start_time, end_time}) do
@@ -48,11 +50,9 @@ defmodule Central.MarketData.ChartDataFetcher do
 
     # For now, directly fetch
     fetch_from_db_or_exchange(symbol, timeframe, start_time, end_time)
-
   end
 
-
-   @doc """
+  @doc """
   Fetches a chunk of historical data ending *before* a given timestamp, for infinite scroll.
 
   Attempts to load from DB first, then fetches from Binance if needed.
@@ -69,7 +69,10 @@ defmodule Central.MarketData.ChartDataFetcher do
     - `{:error, reason}`: If fetching failed.
   """
   def get_historical_chunk(symbol, timeframe, before_timestamp, limit \\ 100) do
-     Logger.debug("Fetching historical chunk for #{symbol}/#{timeframe} before #{before_timestamp}, limit #{limit}")
+    Logger.debug(
+      "Fetching historical chunk for #{symbol}/#{timeframe} before #{before_timestamp}, limit #{limit}"
+    )
+
     # This requires careful calculation of start/end times based on 'before_timestamp' and 'limit'
 
     # Fetch data strictly *before* the specified timestamp
@@ -79,7 +82,7 @@ defmodule Central.MarketData.ChartDataFetcher do
     timeframe_seconds = TimeframeHelper.timeframe_to_seconds(timeframe)
 
     if timeframe_seconds == 0 do
-       Logger.error("Invalid timeframe '#{timeframe}' provided to get_historical_chunk.")
+      Logger.error("Invalid timeframe '#{timeframe}' provided to get_historical_chunk.")
       {:error, :invalid_timeframe}
     else
       # Calculate the approximate start time to fetch 'limit' candles ending at 'end_time'.
@@ -91,33 +94,41 @@ defmodule Central.MarketData.ChartDataFetcher do
       # Subtract the total seconds needed from the end_time to get the start_time.
       start_time = DateTime.add(end_time, -total_seconds_needed, :second)
 
-       # Fetch the calculated range using the existing helper
-       # The helper handles DB check first, then exchange fallback.
+      # Fetch the calculated range using the existing helper
+      # The helper handles DB check first, then exchange fallback.
       case fetch_from_db_or_exchange(symbol, timeframe, start_time, end_time) do
-         {:ok, candles} ->
-           # Sort descending by timestamp and take the requested limit
-           # to get the candles immediately preceding the 'before_timestamp'.
-           sorted_candles = Enum.sort_by(candles, & &1.timestamp, {:desc, DateTime})
-           chunk = Enum.take(sorted_candles, limit)
-           # Return the chunk sorted ascending for the chart
-           {:ok, Enum.reverse(chunk)}
-         {:error, reason} ->
-            # Log the specific error from the fetcher
-           Logger.error("Failed to fetch historical chunk for #{symbol}/#{timeframe}: #{inspect(reason)}")
-           {:error, reason} # Propagate the error
+        {:ok, candles} ->
+          # Sort descending by timestamp and take the requested limit
+          # to get the candles immediately preceding the 'before_timestamp'.
+          sorted_candles = Enum.sort_by(candles, & &1.timestamp, {:desc, DateTime})
+          chunk = Enum.take(sorted_candles, limit)
+          # Return the chunk sorted ascending for the chart
+          {:ok, Enum.reverse(chunk)}
+
+        {:error, reason} ->
+          # Log the specific error from the fetcher
+          Logger.error(
+            "Failed to fetch historical chunk for #{symbol}/#{timeframe}: #{inspect(reason)}"
+          )
+
+          # Propagate the error
+          {:error, reason}
       end
     end
-     # Logger.warning("get_historical_chunk logic is not fully implemented yet.")
-     # {:ok, []} # Removed stub implementation
-  end
 
+    # Logger.warning("get_historical_chunk logic is not fully implemented yet.")
+    # {:ok, []} # Removed stub implementation
+  end
 
   # --- Private Helpers ---
 
   defp fetch_from_db_or_exchange(symbol, timeframe, start_time, end_time) do
     case MarketDataContext.get_candles(symbol, timeframe, start_time, end_time) do
       [] ->
-        Logger.info("No data found in DB for #{symbol}/#{timeframe} in range. Fetching from exchange...")
+        Logger.info(
+          "No data found in DB for #{symbol}/#{timeframe} in range. Fetching from exchange..."
+        )
+
         fetch_directly_from_binance(symbol, timeframe, start_time, end_time)
 
       db_candles ->
@@ -126,12 +137,16 @@ defmodule Central.MarketData.ChartDataFetcher do
         # A more robust check would compare first/last candle timestamps precisely
         # For now, assume if we get *any* data, it's good enough for this simple version
         if length(db_candles) > 0 do
-           {:ok, format_db_candles(db_candles)}
+          {:ok, format_db_candles(db_candles)}
         else
-           # This case implies get_candles returned non-[] but it was empty after checks? Unlikely.
-           Logger.info("DB returned data, but it seems empty for #{symbol}/#{timeframe}. Fetching from exchange.")
-           fetch_directly_from_binance(symbol, timeframe, start_time, end_time)
+          # This case implies get_candles returned non-[] but it was empty after checks? Unlikely.
+          Logger.info(
+            "DB returned data, but it seems empty for #{symbol}/#{timeframe}. Fetching from exchange."
+          )
+
+          fetch_directly_from_binance(symbol, timeframe, start_time, end_time)
         end
+
         # TODO: Add logic to check if db_candles fully cover the required range [start_time, end_time]
         # If not, fetch the missing parts from Binance and merge.
         # For now, return DB data if any found.
@@ -139,16 +154,24 @@ defmodule Central.MarketData.ChartDataFetcher do
     end
   end
 
-
   defp fetch_directly_from_binance(symbol, timeframe, start_time, end_time) do
-     # Note: Binance API has a limit (e.g., 1000 candles). Need chunking for large ranges.
-     # HistoricalDataFetcher already implements chunking. We might reuse that logic
-     # or implement a simpler version here if chart requests are typically smaller.
-     # For now, assume the range is small enough for one request or use a default limit.
-    limit = 1000 # Use Binance max limit
-    case BinanceClient.get_klines(symbol, timeframe, start_time: start_time, end_time: end_time, limit: limit) do
+    # Note: Binance API has a limit (e.g., 1000 candles). Need chunking for large ranges.
+    # HistoricalDataFetcher already implements chunking. We might reuse that logic
+    # or implement a simpler version here if chart requests are typically smaller.
+    # For now, assume the range is small enough for one request or use a default limit.
+    # Use Binance max limit
+    limit = 1000
+
+    case BinanceClient.get_klines(symbol, timeframe,
+           start_time: start_time,
+           end_time: end_time,
+           limit: limit
+         ) do
       {:ok, raw_candles} ->
-        Logger.debug("Fetched #{length(raw_candles)} raw candles from Binance for #{symbol}/#{timeframe}")
+        Logger.debug(
+          "Fetched #{length(raw_candles)} raw candles from Binance for #{symbol}/#{timeframe}"
+        )
+
         processed_candles = format_exchange_candles(raw_candles)
 
         # TODO: Add data to cache
@@ -157,7 +180,10 @@ defmodule Central.MarketData.ChartDataFetcher do
         {:ok, processed_candles}
 
       {:error, reason} ->
-         Logger.error("Failed to fetch chart data from Binance for #{symbol}/#{timeframe}: #{inspect(reason)}")
+        Logger.error(
+          "Failed to fetch chart data from Binance for #{symbol}/#{timeframe}: #{inspect(reason)}"
+        )
+
         {:error, "Failed to fetch data from exchange: #{reason}"}
     end
   end
@@ -183,24 +209,24 @@ defmodule Central.MarketData.ChartDataFetcher do
     Enum.map(raw_candles, fn candle ->
       # Basic validation and conversion
       try do
-         %{
-           timestamp: candle.timestamp, # Assumes BinanceClient already converts to DateTime
-           open: String.to_float(candle.open),
-           high: String.to_float(candle.high),
-           low: String.to_float(candle.low),
-           close: String.to_float(candle.close),
-           volume: String.to_float(candle.volume)
-         }
+        %{
+          # Assumes BinanceClient already converts to DateTime
+          timestamp: candle.timestamp,
+          open: String.to_float(candle.open),
+          high: String.to_float(candle.high),
+          low: String.to_float(candle.low),
+          close: String.to_float(candle.close),
+          volume: String.to_float(candle.volume)
+        }
       rescue
-         # Log and skip invalid data points
+        # Log and skip invalid data points
         _ ->
-           Logger.warning("Skipping invalid raw candle data from exchange: #{inspect(candle)}")
-           nil
+          Logger.warning("Skipping invalid raw candle data from exchange: #{inspect(candle)}")
+          nil
       end
     end)
     |> Enum.reject(&is_nil/1)
     # Ensure candles are sorted by timestamp ascending
     |> Enum.sort_by(& &1.timestamp)
   end
-
 end

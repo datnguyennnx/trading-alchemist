@@ -25,10 +25,11 @@ defmodule Mix.Tasks.Compile.Warnings do
     verbose? = Enum.member?(args, "--verbose") || Enum.member?(args, "-v")
 
     # Redirect stderr to capture compiler warnings
-    {output, exit_code} = System.cmd("mix", ["compile", "--warnings-as-errors"],
-      stderr_to_stdout: true,
-      into: ""
-    )
+    {output, exit_code} =
+      System.cmd("mix", ["compile", "--warnings-as-errors"],
+        stderr_to_stdout: true,
+        into: ""
+      )
 
     # Extract warnings including file paths, line numbers, and messages
     warnings = extract_warnings(output)
@@ -61,7 +62,7 @@ defmodule Mix.Tasks.Compile.Warnings do
 
     # Get all lines containing warnings
     String.split(output, "\n")
-    |> Enum.filter(&(Regex.match?(warning_regex, &1)))
+    |> Enum.filter(&Regex.match?(warning_regex, &1))
     |> Enum.chunk_while(
       [],
       fn line, acc ->

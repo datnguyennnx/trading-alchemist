@@ -78,6 +78,7 @@ defmodule CentralWeb.Live.Components.Chart.ChartDataFormatter do
     Formatted price string with $ symbol
   """
   def format_price(nil), do: "-"
+
   def format_price(price, precision \\ nil) do
     precision = precision || auto_precision(price)
     "$#{DecimalUtils.format(price, precision)}"

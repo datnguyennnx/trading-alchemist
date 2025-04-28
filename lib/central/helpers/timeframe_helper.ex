@@ -32,7 +32,9 @@ defmodule Central.Helpers.TimeframeHelper do
     case Map.get(@timeframe_seconds, timeframe) do
       nil ->
         Logger.error("Unknown timeframe received: #{inspect(timeframe)}")
-        0 # Return 0 for unknown timeframes
+        # Return 0 for unknown timeframes
+        0
+
       seconds ->
         seconds
     end

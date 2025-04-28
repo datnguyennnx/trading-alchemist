@@ -65,6 +65,7 @@ config :logger, :console,
   date_format: "%d/%m/%Y"
 
 timestamp = DateTime.utc_now() |> Calendar.strftime("%Y%m%d_%H%M%S")
+
 config :logger, :warning_log,
   path: "log/elixir_warnings_#{timestamp}.log",
   level: :warning,

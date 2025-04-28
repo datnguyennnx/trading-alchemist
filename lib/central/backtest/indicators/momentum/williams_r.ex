@@ -18,34 +18,37 @@ defmodule Central.Backtest.Indicators.Momentum.WilliamsR do
   ## Returns
     - List of Williams %R values aligned with input candles (first period-1 values are nil)
   """
-  def williams_r(candles, period \\ 14) when is_list(candles) and is_integer(period) and period > 0 do
+  def williams_r(candles, period \\ 14)
+      when is_list(candles) and is_integer(period) and period > 0 do
     # Group data into sliding windows
     candle_windows = Enum.chunk_every(candles, period, 1, :discard)
 
     # Calculate Williams %R for each window
-    williams_values = Enum.map(candle_windows, fn window ->
-      # Get highest high and lowest low in the period
-      highest_high = Enum.map(window, & &1.high) |> Enum.max_by(&Decimal.to_float/1)
-      lowest_low = Enum.map(window, & &1.low) |> Enum.min_by(&Decimal.to_float/1)
+    williams_values =
+      Enum.map(candle_windows, fn window ->
+        # Get highest high and lowest low in the period
+        highest_high = Enum.map(window, & &1.high) |> Enum.max_by(&Decimal.to_float/1)
+        lowest_low = Enum.map(window, & &1.low) |> Enum.min_by(&Decimal.to_float/1)
 
-      # Get current close (last close in the window)
-      current_close = List.last(window).close
+        # Get current close (last close in the window)
+        current_close = List.last(window).close
 
-      # Calculate high-low range
-      high_low_range = Decimal.sub(highest_high, lowest_low)
+        # Calculate high-low range
+        high_low_range = Decimal.sub(highest_high, lowest_low)
 
-      # Handle case where high equals low
-      if Decimal.equal?(high_low_range, Decimal.new(0)) do
-        Decimal.new(-50)  # Default to middle of range when there's no range
-      else
-        # Williams %R = ((Highest High - Close) / (Highest High - Lowest Low)) * -100
-        Decimal.div(
-          Decimal.sub(highest_high, current_close),
-          high_low_range
-        )
-        |> Decimal.mult(Decimal.new(-100))
-      end
-    end)
+        # Handle case where high equals low
+        if Decimal.equal?(high_low_range, Decimal.new(0)) do
+          # Default to middle of range when there's no range
+          Decimal.new(-50)
+        else
+          # Williams %R = ((Highest High - Close) / (Highest High - Lowest Low)) * -100
+          Decimal.div(
+            Decimal.sub(highest_high, current_close),
+            high_low_range
+          )
+          |> Decimal.mult(Decimal.new(-100))
+        end
+      end)
 
     # Align results with input data (pad with nils)
     padding_length = length(candles) - length(williams_values)

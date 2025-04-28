@@ -33,11 +33,12 @@ defmodule Central.Backtest.Indicators.Volume.Mfi do
       List.duplicate(nil, length(candles))
     else
       # Calculate typical price and raw money flow for each candle
-      typical_prices_and_flows = Enum.map(candles, fn candle ->
-        typical_price = (candle.high + candle.low + candle.close) / 3
-        raw_money_flow = typical_price * candle.volume
-        {typical_price, raw_money_flow}
-      end)
+      typical_prices_and_flows =
+        Enum.map(candles, fn candle ->
+          typical_price = (candle.high + candle.low + candle.close) / 3
+          raw_money_flow = typical_price * candle.volume
+          {typical_price, raw_money_flow}
+        end)
 
       # Calculate MFI for each period
       Enum.with_index(typical_prices_and_flows)
@@ -51,20 +52,23 @@ defmodule Central.Backtest.Indicators.Volume.Mfi do
           # Calculate positive and negative money flows
           {positive_flow, negative_flow} =
             Enum.zip(Enum.slice(period_slice, 0, period), Enum.slice(period_slice, 1, period))
-            |> Enum.reduce({0, 0}, fn {{prev_price, _prev_flow}, {curr_price, curr_flow}}, {pos, neg} ->
+            |> Enum.reduce({0, 0}, fn {{prev_price, _prev_flow}, {curr_price, curr_flow}},
+                                      {pos, neg} ->
               cond do
                 curr_price > prev_price -> {pos + curr_flow, neg}
                 curr_price < prev_price -> {pos, neg + curr_flow}
-                true -> {pos, neg} # Equal prices - no change
+                # Equal prices - no change
+                true -> {pos, neg}
               end
             end)
 
           # Calculate money ratio and MFI
           if negative_flow == 0 do
-            100.0 # Avoid division by zero
+            # Avoid division by zero
+            100.0
           else
             money_ratio = positive_flow / negative_flow
-            100.0 - (100.0 / (1.0 + money_ratio))
+            100.0 - 100.0 / (1.0 + money_ratio)
           end
         end
       end)
@@ -94,12 +98,13 @@ defmodule Central.Backtest.Indicators.Volume.Mfi do
     |> Enum.map(fn {candle, mfi_value} ->
       typical_price = (candle.high + candle.low + candle.close) / 3
 
-      signal = cond do
-        is_nil(mfi_value) -> :insufficient_data
-        mfi_value >= overbought_threshold -> :overbought
-        mfi_value <= oversold_threshold -> :oversold
-        true -> :neutral
-      end
+      signal =
+        cond do
+          is_nil(mfi_value) -> :insufficient_data
+          mfi_value >= overbought_threshold -> :overbought
+          mfi_value <= oversold_threshold -> :oversold
+          true -> :neutral
+        end
 
       %{
         timestamp: candle.timestamp,
@@ -124,85 +129,96 @@ defmodule Central.Backtest.Indicators.Volume.Mfi do
     |> Enum.with_index()
     |> Enum.map(fn {point, index} ->
       if index >= 5 do
-        prev_points = Enum.slice(mfi_data, (index - 5)..index-1)
+        prev_points = Enum.slice(mfi_data, (index - 5)..(index - 1))
         valid_points = Enum.filter(prev_points, &(not is_nil(&1.mfi)))
 
         # Check for MFI trend
-        mfi_trend = if length(valid_points) >= 3 and not is_nil(point.mfi) do
-          prev_mfi = Enum.map(valid_points, & &1.mfi)
-          mfi_increasing = List.last(prev_mfi) < point.mfi
+        mfi_trend =
+          if length(valid_points) >= 3 and not is_nil(point.mfi) do
+            prev_mfi = Enum.map(valid_points, & &1.mfi)
+            mfi_increasing = List.last(prev_mfi) < point.mfi
 
-          cond do
-            # MFI moving above 50 = bullish
-            point.mfi > 50 and mfi_increasing -> :bullish
-            # MFI above 50 but decreasing = weakening bullish
-            point.mfi > 50 and not mfi_increasing -> :weakening_bullish
-            # MFI below 50 but increasing = weakening bearish
-            point.mfi < 50 and mfi_increasing -> :weakening_bearish
-            # MFI below 50 and decreasing = bearish
-            point.mfi < 50 and not mfi_increasing -> :bearish
-            true -> :neutral
+            cond do
+              # MFI moving above 50 = bullish
+              point.mfi > 50 and mfi_increasing -> :bullish
+              # MFI above 50 but decreasing = weakening bullish
+              point.mfi > 50 and not mfi_increasing -> :weakening_bullish
+              # MFI below 50 but increasing = weakening bearish
+              point.mfi < 50 and mfi_increasing -> :weakening_bearish
+              # MFI below 50 and decreasing = bearish
+              point.mfi < 50 and not mfi_increasing -> :bearish
+              true -> :neutral
+            end
+          else
+            :insufficient_data
           end
-        else
-          :insufficient_data
-        end
 
         # Check for overbought/oversold conditions
-        extreme_condition = if not is_nil(point.mfi) do
-          cond do
-            point.mfi >= 80 -> :extremely_overbought
-            point.mfi >= 70 -> :overbought
-            point.mfi <= 20 -> :extremely_oversold
-            point.mfi <= 30 -> :oversold
-            true -> :normal_range
+        extreme_condition =
+          if not is_nil(point.mfi) do
+            cond do
+              point.mfi >= 80 -> :extremely_overbought
+              point.mfi >= 70 -> :overbought
+              point.mfi <= 20 -> :extremely_oversold
+              point.mfi <= 30 -> :oversold
+              true -> :normal_range
+            end
+          else
+            :insufficient_data
           end
-        else
-          :insufficient_data
-        end
 
         # Check for failure swings
-        failure_swing = if length(valid_points) >= 4 and not is_nil(point.mfi) do
-          mfi_values = Enum.map(valid_points, & &1.mfi) ++ [point.mfi]
+        failure_swing =
+          if length(valid_points) >= 4 and not is_nil(point.mfi) do
+            mfi_values = Enum.map(valid_points, & &1.mfi) ++ [point.mfi]
 
-          cond do
-            # Bullish failure swing: MFI falls below 20, rallies, pulls back but stays above 20, then rises
-            Enum.any?(Enum.take(mfi_values, 2), &(&1 <= 20)) and
-            Enum.all?(Enum.drop(mfi_values, 2), &(&1 > 20)) and
-            List.last(mfi_values) > Enum.at(mfi_values, -2) ->
-              :bullish_failure_swing
+            cond do
+              # Bullish failure swing: MFI falls below 20, rallies, pulls back but stays above 20, then rises
+              Enum.any?(Enum.take(mfi_values, 2), &(&1 <= 20)) and
+                Enum.all?(Enum.drop(mfi_values, 2), &(&1 > 20)) and
+                  List.last(mfi_values) > Enum.at(mfi_values, -2) ->
+                :bullish_failure_swing
 
-            # Bearish failure swing: MFI rises above 80, drops, bounces but stays below 80, then falls
-            Enum.any?(Enum.take(mfi_values, 2), &(&1 >= 80)) and
-            Enum.all?(Enum.drop(mfi_values, 2), &(&1 < 80)) and
-            List.last(mfi_values) < Enum.at(mfi_values, -2) ->
-              :bearish_failure_swing
+              # Bearish failure swing: MFI rises above 80, drops, bounces but stays below 80, then falls
+              Enum.any?(Enum.take(mfi_values, 2), &(&1 >= 80)) and
+                Enum.all?(Enum.drop(mfi_values, 2), &(&1 < 80)) and
+                  List.last(mfi_values) < Enum.at(mfi_values, -2) ->
+                :bearish_failure_swing
 
-            true -> :none
+              true ->
+                :none
+            end
+          else
+            :none
           end
-        else
-          :none
-        end
 
         # Check for divergences
-        divergence = if length(valid_points) >= 4 and not is_nil(point.mfi) do
-          prices = Enum.map(valid_points, & &1.typical_price) ++ [point.typical_price]
-          mfi_values = Enum.map(valid_points, & &1.mfi) ++ [point.mfi]
+        divergence =
+          if length(valid_points) >= 4 and not is_nil(point.mfi) do
+            prices = Enum.map(valid_points, & &1.typical_price) ++ [point.typical_price]
+            mfi_values = Enum.map(valid_points, & &1.mfi) ++ [point.mfi]
 
-          price_higher_high = List.last(prices) > Enum.max(Enum.take(prices, length(prices) - 1))
-          price_lower_low = List.last(prices) < Enum.min(Enum.take(prices, length(prices) - 1))
-          mfi_higher_high = List.last(mfi_values) > Enum.max(Enum.take(mfi_values, length(mfi_values) - 1))
-          mfi_lower_low = List.last(mfi_values) < Enum.min(Enum.take(mfi_values, length(mfi_values) - 1))
+            price_higher_high =
+              List.last(prices) > Enum.max(Enum.take(prices, length(prices) - 1))
 
-          cond do
-            # Bearish divergence: Price makes higher high but MFI makes lower high
-            price_higher_high and not mfi_higher_high -> :bearish_divergence
-            # Bullish divergence: Price makes lower low but MFI makes higher low
-            price_lower_low and not mfi_lower_low -> :bullish_divergence
-            true -> :none
+            price_lower_low = List.last(prices) < Enum.min(Enum.take(prices, length(prices) - 1))
+
+            mfi_higher_high =
+              List.last(mfi_values) > Enum.max(Enum.take(mfi_values, length(mfi_values) - 1))
+
+            mfi_lower_low =
+              List.last(mfi_values) < Enum.min(Enum.take(mfi_values, length(mfi_values) - 1))
+
+            cond do
+              # Bearish divergence: Price makes higher high but MFI makes lower high
+              price_higher_high and not mfi_higher_high -> :bearish_divergence
+              # Bullish divergence: Price makes lower low but MFI makes higher low
+              price_lower_low and not mfi_lower_low -> :bullish_divergence
+              true -> :none
+            end
+          else
+            :none
           end
-        else
-          :none
-        end
 
         # Generate trading advice
         trading_advice =
@@ -249,14 +265,17 @@ defmodule Central.Backtest.Indicators.Volume.Mfi do
   def detect_divergences(candles, mfi_data, lookback \\ 5) do
     result =
       Enum.with_index(candles)
-      |> Enum.drop(lookback) # Skip first lookback periods
+      # Skip first lookback periods
+      |> Enum.drop(lookback)
       |> Enum.flat_map(fn {_, index} ->
         if index >= lookback and index < length(mfi_data) do
           # Get data for the current window
           window_candles = Enum.slice(candles, (index - lookback)..index)
-          window_mfi = Enum.slice(mfi_data, (index - lookback)..index)
-          |> Enum.map(& &1.mfi)
-          |> Enum.filter(& !is_nil(&1))
+
+          window_mfi =
+            Enum.slice(mfi_data, (index - lookback)..index)
+            |> Enum.map(& &1.mfi)
+            |> Enum.filter(&(!is_nil(&1)))
 
           # Only proceed if we have enough MFI values
           if length(window_mfi) > 3 do
@@ -271,23 +290,25 @@ defmodule Central.Backtest.Indicators.Volume.Mfi do
             current_low = List.last(window_lows)
             min_low = Enum.min(Enum.take(window_lows, length(window_lows) - 1))
 
-            detected_divergences = if current_low < min_low and
-                                     List.last(window_mfi) > Enum.min(Enum.take(window_mfi, length(window_mfi) - 1)) do
-              [{:bullish_divergence, index} | detected_divergences]
-            else
-              detected_divergences
-            end
+            detected_divergences =
+              if current_low < min_low and
+                   List.last(window_mfi) > Enum.min(Enum.take(window_mfi, length(window_mfi) - 1)) do
+                [{:bullish_divergence, index} | detected_divergences]
+              else
+                detected_divergences
+              end
 
             # Check for bearish divergence (price higher high, MFI lower high)
             current_high = List.last(window_highs)
             max_high = Enum.max(Enum.take(window_highs, length(window_highs) - 1))
 
-            detected_divergences = if current_high > max_high and
-                                     List.last(window_mfi) < Enum.max(Enum.take(window_mfi, length(window_mfi) - 1)) do
-              [{:bearish_divergence, index} | detected_divergences]
-            else
-              detected_divergences
-            end
+            detected_divergences =
+              if current_high > max_high and
+                   List.last(window_mfi) < Enum.max(Enum.take(window_mfi, length(window_mfi) - 1)) do
+                [{:bearish_divergence, index} | detected_divergences]
+              else
+                detected_divergences
+              end
 
             detected_divergences
           else
@@ -323,12 +344,12 @@ defmodule Central.Backtest.Indicators.Volume.Mfi do
         cond do
           # Check if prev MFI was below oversold and current is above (buy signal)
           !is_nil(prev.mfi) and !is_nil(curr.mfi) and
-          prev.mfi < oversold_threshold and curr.mfi >= oversold_threshold ->
+            prev.mfi < oversold_threshold and curr.mfi >= oversold_threshold ->
             1
 
           # Check if prev MFI was above overbought and current is below (sell signal)
           !is_nil(prev.mfi) and !is_nil(curr.mfi) and
-          prev.mfi > overbought_threshold and curr.mfi <= overbought_threshold ->
+            prev.mfi > overbought_threshold and curr.mfi <= overbought_threshold ->
             -1
 
           # No signal

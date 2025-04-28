@@ -43,10 +43,13 @@ defmodule Central.Backtest.Indicators.Volume.ForceIndex do
     cond do
       not is_list(close) or not is_list(volume) ->
         {:error, "Inputs must be lists"}
+
       length(close) != length(volume) ->
         {:error, "Input lists must have the same length"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       true ->
         true
     end
@@ -75,11 +78,12 @@ defmodule Central.Backtest.Indicators.Volume.ForceIndex do
          short_term <- MovingAverage.ema(raw_force_index, 2),
          medium_term <- MovingAverage.ema(raw_force_index, 13),
          long_term <- MovingAverage.ema(raw_force_index, long_period) do
-      {:ok, %{
-        short_term: short_term,
-        medium_term: medium_term,
-        long_term: long_term
-      }}
+      {:ok,
+       %{
+         short_term: short_term,
+         medium_term: medium_term,
+         long_term: long_term
+       }}
     else
       {:error, reason} -> {:error, reason}
     end
@@ -129,20 +133,22 @@ defmodule Central.Backtest.Indicators.Volume.ForceIndex do
     divergences = []
 
     # Check for bullish divergence (price makes lower low but force index doesn't)
-    divergences = if Enum.min(prices) == List.last(prices) and
-       Enum.min(force_index_values) != List.last(force_index_values) do
-      [{:bullish_divergence, index} | divergences]
-    else
-      divergences
-    end
+    divergences =
+      if Enum.min(prices) == List.last(prices) and
+           Enum.min(force_index_values) != List.last(force_index_values) do
+        [{:bullish_divergence, index} | divergences]
+      else
+        divergences
+      end
 
     # Check for bearish divergence (price makes higher high but force index doesn't)
-    divergences = if Enum.max(prices) == List.last(prices) and
-       Enum.max(force_index_values) != List.last(force_index_values) do
-      [{:bearish_divergence, index} | divergences]
-    else
-      divergences
-    end
+    divergences =
+      if Enum.max(prices) == List.last(prices) and
+           Enum.max(force_index_values) != List.last(force_index_values) do
+        [{:bearish_divergence, index} | divergences]
+      else
+        divergences
+      end
 
     divergences
   end

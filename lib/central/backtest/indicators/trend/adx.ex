@@ -67,28 +67,32 @@ defmodule Central.Backtest.Indicators.Trend.Adx do
     cond do
       not is_list(high) or not is_list(low) or not is_list(close) ->
         {:error, "Inputs must be lists"}
+
       length(high) != length(low) or length(low) != length(close) ->
         {:error, "Input lists must have the same length"}
+
       period <= 0 ->
         {:error, "Period must be greater than 0"}
+
       true ->
         true
     end
   end
 
   defp calculate_directional_movement(high, low) do
-    {plus_dm, minus_dm} = Enum.zip(high, low)
-    |> Enum.zip(Enum.drop(Enum.zip(high, low), 1))
-    |> Enum.map(fn {{prev_high, prev_low}, {curr_high, curr_low}} ->
-      up_move = curr_high - prev_high
-      down_move = prev_low - curr_low
+    {plus_dm, minus_dm} =
+      Enum.zip(high, low)
+      |> Enum.zip(Enum.drop(Enum.zip(high, low), 1))
+      |> Enum.map(fn {{prev_high, prev_low}, {curr_high, curr_low}} ->
+        up_move = curr_high - prev_high
+        down_move = prev_low - curr_low
 
-      plus_dm = if up_move > down_move and up_move > 0, do: up_move, else: 0
-      minus_dm = if down_move > up_move and down_move > 0, do: down_move, else: 0
+        plus_dm = if up_move > down_move and up_move > 0, do: up_move, else: 0
+        minus_dm = if down_move > up_move and down_move > 0, do: down_move, else: 0
 
-      {plus_dm, minus_dm}
-    end)
-    |> Enum.unzip()
+        {plus_dm, minus_dm}
+      end)
+      |> Enum.unzip()
 
     {[0 | plus_dm], [0 | minus_dm]}
   end
@@ -108,15 +112,17 @@ defmodule Central.Backtest.Indicators.Trend.Adx do
   end
 
   defp calculate_directional_indicators(plus_dm, minus_dm, tr, period) do
-    plus_di = smooth_series(plus_dm, tr, period)
-    |> Enum.map(fn {dm, tr} ->
-      if tr == 0, do: 0, else: 100 * dm / tr
-    end)
+    plus_di =
+      smooth_series(plus_dm, tr, period)
+      |> Enum.map(fn {dm, tr} ->
+        if tr == 0, do: 0, else: 100 * dm / tr
+      end)
 
-    minus_di = smooth_series(minus_dm, tr, period)
-    |> Enum.map(fn {dm, tr} ->
-      if tr == 0, do: 0, else: 100 * dm / tr
-    end)
+    minus_di =
+      smooth_series(minus_dm, tr, period)
+      |> Enum.map(fn {dm, tr} ->
+        if tr == 0, do: 0, else: 100 * dm / tr
+      end)
 
     {plus_di, minus_di}
   end
@@ -137,9 +143,11 @@ defmodule Central.Backtest.Indicators.Trend.Adx do
     Enum.zip(values1, values2)
     |> Enum.chunk_every(period, 1, :discard)
     |> Enum.map(fn chunk ->
-      {sum1, sum2} = Enum.reduce(chunk, {0, 0}, fn {v1, v2}, {acc1, acc2} ->
-        {acc1 + v1, acc2 + v2}
-      end)
+      {sum1, sum2} =
+        Enum.reduce(chunk, {0, 0}, fn {v1, v2}, {acc1, acc2} ->
+          {acc1 + v1, acc2 + v2}
+        end)
+
       {sum1 / period, sum2 / period}
     end)
   end

@@ -62,35 +62,37 @@ defmodule CentralWeb.StrategyLive.Components.RuleItem do
               <div class="md:col-span-1">
                 <.form_item>
                   <.form_label>Indicator</.form_label>
-                    <.select
-                      :let={select}
-                      id={"indicator-select-#{@rule_type}-#{@index}"}
-                      name={@indicator_name}
-                      value={@indicator_id_str}
-                      selected_label={@indicator_label}
-                      placeholder={"Choose a #{@rule_type} indicator"}
+                  <.select
+                    :let={select}
+                    id={"indicator-select-#{@rule_type}-#{@index}"}
+                    name={@indicator_name}
+                    value={@indicator_id_str}
+                    selected_label={@indicator_label}
+                    placeholder={"Choose a #{@rule_type} indicator"}
                   >
                     <.select_trigger builder={select} class="w-full" />
                     <.select_content builder={select} class="w-full">
                       <.scroll_area>
                         <%= for {type, indicators} <- @grouped_indicators do %>
-                            <.select_group>
-                              <.select_label><%= Map.get(@type_labels, type, to_string(type)) %></.select_label>
-                              <%= for indicator <- indicators do %>
-                                <.select_item
-                                  builder={select}
-                                  value={to_string(indicator.id)}
-                                  label={indicator.name}
-                                  event_name="indicator_changed"
-                                  rule_type={@rule_type}
-                                  index={@index}
-                                />
-                              <% end %>
-                            </.select_group>
+                          <.select_group>
+                            <.select_label>
+                              {Map.get(@type_labels, type, to_string(type))}
+                            </.select_label>
+                            <%= for indicator <- indicators do %>
+                              <.select_item
+                                builder={select}
+                                value={to_string(indicator.id)}
+                                label={indicator.name}
+                                event_name="indicator_changed"
+                                rule_type={@rule_type}
+                                index={@index}
+                              />
                             <% end %>
-                        </.scroll_area>
+                          </.select_group>
+                        <% end %>
+                      </.scroll_area>
                     </.select_content>
-                    </.select>
+                  </.select>
                 </.form_item>
               </div>
 
@@ -107,21 +109,21 @@ defmodule CentralWeb.StrategyLive.Components.RuleItem do
                   >
                     <.select_trigger builder={select} class="w-full" />
                     <.select_content builder={select} class="w-full">
-                    <.scroll_area>
-                      <.select_group>
-                        <.select_label>Conditions</.select_label>
-                        <%= for {condition_id, condition_name} <- @condition_labels do %>
-                          <.select_item
-                            builder={select}
-                            value={condition_id}
-                            label={condition_name}
-                            event_name="condition_changed"
-                            rule_type={@rule_type}
-                            index={@index}
-                          />
-                        <% end %>
-                      </.select_group>
-                    </.scroll_area>
+                      <.scroll_area>
+                        <.select_group>
+                          <.select_label>Conditions</.select_label>
+                          <%= for {condition_id, condition_name} <- @condition_labels do %>
+                            <.select_item
+                              builder={select}
+                              value={condition_id}
+                              label={condition_name}
+                              event_name="condition_changed"
+                              rule_type={@rule_type}
+                              index={@index}
+                            />
+                          <% end %>
+                        </.select_group>
+                      </.scroll_area>
                     </.select_content>
                   </.select>
                 </.form_item>
@@ -198,8 +200,8 @@ defmodule CentralWeb.StrategyLive.Components.RuleItem do
   def update(assigns, socket) do
     # Skip update if rule hasn't changed (prevents expensive re-processing)
     if socket.assigns[:rule] == assigns.rule &&
-       socket.assigns[:index] == assigns.index &&
-       socket.assigns[:rule_type] == assigns.rule_type do
+         socket.assigns[:index] == assigns.index &&
+         socket.assigns[:rule_type] == assigns.rule_type do
       {:ok, socket}
     else
       # Process rule data once (cached in assigns for render)
@@ -272,6 +274,7 @@ defmodule CentralWeb.StrategyLive.Components.RuleItem do
           id when is_binary(id) -> id
           id -> to_string(id)
         end
+
       _ ->
         case rule[:indicator_id] do
           nil -> ""
@@ -320,6 +323,7 @@ defmodule CentralWeb.StrategyLive.Components.RuleItem do
   # Fetch indicator data (cached when possible)
   defp fetch_selected_indicator(indicator_id_str) when indicator_id_str == "", do: nil
   defp fetch_selected_indicator(indicator_id_str) when indicator_id_str == "nil", do: nil
+
   defp fetch_selected_indicator(indicator_id_str) do
     FormGenerator.generate_indicator_form(indicator_id_str)
   end

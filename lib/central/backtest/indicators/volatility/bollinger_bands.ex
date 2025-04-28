@@ -21,7 +21,7 @@ defmodule Central.Backtest.Indicators.Volatility.BollingerBands do
       (first period-1 values are nil)
   """
   def bollinger_bands(candles, period \\ 20, deviations \\ 2, price_key \\ :close)
-    when is_list(candles) and is_integer(period) and period > 0 do
+      when is_list(candles) and is_integer(period) and period > 0 do
     prices = ListOperations.extract_key(candles, price_key)
 
     # Middle band is SMA

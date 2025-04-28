@@ -47,12 +47,16 @@ defmodule Central.Backtest.Indicators.Trend.Fractals do
     cond do
       not is_list(high) or not is_list(low) ->
         {:error, "Inputs must be lists"}
+
       length(high) != length(low) ->
         {:error, "Input lists must have the same length"}
+
       window_size <= 2 or rem(window_size, 2) == 0 ->
         {:error, "Window size must be an odd number greater than 2"}
+
       length(high) < window_size ->
         {:error, "Not enough data points for the given window size"}
+
       true ->
         true
     end
@@ -65,18 +69,19 @@ defmodule Central.Backtest.Indicators.Trend.Fractals do
     initial_padding = List.duplicate(false, radius)
 
     # Process all possible windows
-    mid_results = high
-    |> Enum.chunk_every(window_size, 1, :discard)
-    |> Enum.map(fn window ->
-      mid_index = div(window_size, 2)
-      mid_value = Enum.at(window, mid_index)
+    mid_results =
+      high
+      |> Enum.chunk_every(window_size, 1, :discard)
+      |> Enum.map(fn window ->
+        mid_index = div(window_size, 2)
+        mid_value = Enum.at(window, mid_index)
 
-      # Check if middle value is higher than all others in the window
-      Enum.with_index(window)
-      |> Enum.all?(fn {value, index} ->
-        index == mid_index or value < mid_value
+        # Check if middle value is higher than all others in the window
+        Enum.with_index(window)
+        |> Enum.all?(fn {value, index} ->
+          index == mid_index or value < mid_value
+        end)
       end)
-    end)
 
     # Add padding to the end to match original length
     end_padding = List.duplicate(false, radius)
@@ -91,18 +96,19 @@ defmodule Central.Backtest.Indicators.Trend.Fractals do
     initial_padding = List.duplicate(false, radius)
 
     # Process all possible windows
-    mid_results = low
-    |> Enum.chunk_every(window_size, 1, :discard)
-    |> Enum.map(fn window ->
-      mid_index = div(window_size, 2)
-      mid_value = Enum.at(window, mid_index)
+    mid_results =
+      low
+      |> Enum.chunk_every(window_size, 1, :discard)
+      |> Enum.map(fn window ->
+        mid_index = div(window_size, 2)
+        mid_value = Enum.at(window, mid_index)
 
-      # Check if middle value is lower than all others in the window
-      Enum.with_index(window)
-      |> Enum.all?(fn {value, index} ->
-        index == mid_index or value > mid_value
+        # Check if middle value is lower than all others in the window
+        Enum.with_index(window)
+        |> Enum.all?(fn {value, index} ->
+          index == mid_index or value > mid_value
+        end)
       end)
-    end)
 
     # Add padding to the end to match original length
     end_padding = List.duplicate(false, radius)
@@ -118,15 +124,17 @@ defmodule Central.Backtest.Indicators.Trend.Fractals do
   - :bearish - List of {index, price} tuples for bearish fractals
   """
   def extract_fractal_values(%{bullish: bullish, bearish: bearish}, high, low) do
-    bullish_values = bullish
-    |> Enum.with_index()
-    |> Enum.filter(fn {is_fractal, _} -> is_fractal end)
-    |> Enum.map(fn {_, index} -> {index, Enum.at(high, index)} end)
+    bullish_values =
+      bullish
+      |> Enum.with_index()
+      |> Enum.filter(fn {is_fractal, _} -> is_fractal end)
+      |> Enum.map(fn {_, index} -> {index, Enum.at(high, index)} end)
 
-    bearish_values = bearish
-    |> Enum.with_index()
-    |> Enum.filter(fn {is_fractal, _} -> is_fractal end)
-    |> Enum.map(fn {_, index} -> {index, Enum.at(low, index)} end)
+    bearish_values =
+      bearish
+      |> Enum.with_index()
+      |> Enum.filter(fn {is_fractal, _} -> is_fractal end)
+      |> Enum.map(fn {_, index} -> {index, Enum.at(low, index)} end)
 
     %{bullish: bullish_values, bearish: bearish_values}
   end
@@ -141,25 +149,31 @@ defmodule Central.Backtest.Indicators.Trend.Fractals do
   """
   def identify_trend(%{bullish: bullish, bearish: bearish}, lookback \\ 3) do
     # Extract the most recent fractal values
-    recent_bullish = Enum.take(bullish, -lookback * 2)
-                    |> Enum.filter(fn x -> x end)
-                    |> Enum.take(-lookback)
+    recent_bullish =
+      Enum.take(bullish, -lookback * 2)
+      |> Enum.filter(fn x -> x end)
+      |> Enum.take(-lookback)
 
-    recent_bearish = Enum.take(bearish, -lookback * 2)
-                    |> Enum.filter(fn x -> x end)
-                    |> Enum.take(-lookback)
+    recent_bearish =
+      Enum.take(bearish, -lookback * 2)
+      |> Enum.filter(fn x -> x end)
+      |> Enum.take(-lookback)
 
-    bullish_increasing = length(recent_bullish) >= 2 and
-                        is_list_increasing(recent_bullish)
+    bullish_increasing =
+      length(recent_bullish) >= 2 and
+        is_list_increasing(recent_bullish)
 
-    bearish_increasing = length(recent_bearish) >= 2 and
-                        is_list_increasing(recent_bearish)
+    bearish_increasing =
+      length(recent_bearish) >= 2 and
+        is_list_increasing(recent_bearish)
 
     cond do
       bullish_increasing and bearish_increasing ->
         :uptrend
+
       not bullish_increasing and not bearish_increasing ->
         :downtrend
+
       true ->
         :sideways
     end
@@ -181,15 +195,17 @@ defmodule Central.Backtest.Indicators.Trend.Fractals do
   def find_support_resistance(%{bullish: bullish, bearish: bearish}, high, low, count \\ 3) do
     fractal_values = extract_fractal_values(%{bullish: bullish, bearish: bearish}, high, low)
 
-    support_levels = fractal_values.bearish
-                    |> Enum.map(fn {_, price} -> price end)
-                    |> Enum.sort(&(&1 > &2))
-                    |> Enum.take(count)
+    support_levels =
+      fractal_values.bearish
+      |> Enum.map(fn {_, price} -> price end)
+      |> Enum.sort(&(&1 > &2))
+      |> Enum.take(count)
 
-    resistance_levels = fractal_values.bullish
-                        |> Enum.map(fn {_, price} -> price end)
-                        |> Enum.sort(&(&1 < &2))
-                        |> Enum.take(count)
+    resistance_levels =
+      fractal_values.bullish
+      |> Enum.map(fn {_, price} -> price end)
+      |> Enum.sort(&(&1 < &2))
+      |> Enum.take(count)
 
     %{support: support_levels, resistance: resistance_levels}
   end
