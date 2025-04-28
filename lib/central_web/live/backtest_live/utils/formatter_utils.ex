@@ -1,213 +1,83 @@
 defmodule CentralWeb.BacktestLive.Utils.FormatterUtils do
   @moduledoc """
-  Utility functions for formatting values for display in the backtest LiveView UI.
+  Utility functions for formatting data in the backtest components.
   """
-
-  alias Central.Backtest.Utils.{DecimalUtils, DatetimeUtils}
 
   @doc """
-  Format a datetime for display in the UI.
-
-  ## Parameters
-    - datetime: The datetime to format
-    - format: Format string (optional)
-
-  ## Returns
-    - Formatted datetime string
-    - "N/A" if datetime is nil
+  Formats a datetime for display in the UI.
+  Supports both DateTime and NaiveDateTime.
   """
-  def format_datetime(datetime, format \\ "%Y-%m-%d %H:%M:%S")
-  def format_datetime(nil, _format), do: "N/A"
-  def format_datetime(%NaiveDateTime{} = naive_datetime, format) do
-    naive_datetime
-    |> NaiveDateTime.truncate(:second)
-    |> Calendar.strftime(format)
-  end
-  def format_datetime(%DateTime{} = datetime, format) do
+  def format_datetime(nil), do: "N/A"
+  def format_datetime(%DateTime{} = datetime) do
     datetime
     |> DateTime.truncate(:second)
-    |> Calendar.strftime(format)
+    |> Calendar.strftime("%b %d, %Y %H:%M")
   end
-  def format_datetime(datetime, format) when is_binary(datetime) do
-    case DatetimeUtils.to_utc(datetime) do
-      %DateTime{} = dt -> format_datetime(dt, format)
-      _ -> datetime
+  def format_datetime(%NaiveDateTime{} = datetime) do
+    datetime
+    |> NaiveDateTime.truncate(:second)
+    |> Calendar.strftime("%b %d, %Y %H:%M")
+  end
+  def format_datetime(_), do: "Invalid Date"
+
+  @doc """
+  Formats a percentage value for display.
+  """
+  def format_percent(nil), do: "N/A"
+  def format_percent(decimal) when is_number(decimal) do
+    "#{:erlang.float_to_binary(decimal * 100, decimals: 2)}%"
+  end
+  def format_percent(decimal) do
+    case Decimal.to_float(decimal) do
+      value when is_number(value) ->
+        "#{:erlang.float_to_binary(value * 100, decimals: 2)}%"
+      # The _ case is unreachable as Decimal.to_float returns a float or raises.
+    end
+  rescue
+    _ -> "N/A"
+  end
+
+  @doc """
+  Returns a CSS class based on whether a value is positive, negative, or zero.
+  """
+  def color_class(nil), do: "text-muted-foreground"
+  def color_class(%Decimal{} = value) do
+    case Decimal.compare(value, Decimal.new(0)) do
+      :gt -> "text-green-600 dark:text-green-400"
+      :lt -> "text-red-600 dark:text-red-400"
+      :eq -> "text-muted-foreground"
     end
   end
-  def format_datetime(_, _), do: "N/A"
-
-  @doc """
-  Format a date for display in the UI.
-
-  ## Parameters
-    - datetime: The datetime to format
-
-  ## Returns
-    - Formatted date string (YYYY-MM-DD)
-    - "N/A" if datetime is nil
-  """
-  def format_date(datetime) do
-    format_datetime(datetime, "%Y-%m-%d")
-  end
-
-  @doc """
-  Format a time for display in the UI.
-
-  ## Parameters
-    - datetime: The datetime to format
-
-  ## Returns
-    - Formatted time string (HH:MM:SS)
-    - "N/A" if datetime is nil
-  """
-  def format_time(datetime) do
-    format_datetime(datetime, "%H:%M:%S")
-  end
-
-  @doc """
-  Format a numeric value with specified precision.
-
-  ## Parameters
-    - value: The value to format
-    - precision: Number of decimal places
-
-  ## Returns
-    - Formatted string with the specified precision
-    - "N/A" if value is nil
-  """
-  def format_number(value, precision \\ 2)
-  def format_number(nil, _precision), do: "N/A"
-  def format_number(value, precision) do
-    DecimalUtils.format(value, precision)
-  end
-
-  @doc """
-  Format a value as a percentage with specified precision.
-
-  ## Parameters
-    - value: The value to format (0.1 = 10%)
-    - precision: Number of decimal places
-
-  ## Returns
-    - Formatted percentage string
-    - "N/A" if value is nil
-  """
-  def format_percent(value, precision \\ 2)
-  def format_percent(nil, _precision), do: "N/A"
-  def format_percent(value, precision) do
-    DecimalUtils.format_percent(value, precision)
-  end
-
-  @doc """
-  Format a price value with appropriate decimal places.
-
-  ## Parameters
-    - price: The price to format
-    - precision: Number of decimal places (default: auto)
-
-  ## Returns
-    - Formatted price string with appropriate precision
-    - "N/A" if price is nil
-  """
-  def format_price(price, precision \\ nil)
-  def format_price(nil, _precision), do: "N/A"
-  def format_price(price, precision) do
-    precision = precision || auto_precision(price)
-    DecimalUtils.format(price, precision)
-  end
-
-  @doc """
-  Determine appropriate precision for a price based on its magnitude.
-
-  ## Parameters
-    - price: The price value
-
-  ## Returns
-    - Recommended precision (number of decimal places)
-  """
-  def auto_precision(price) do
-    price_float = DecimalUtils.to_float(price)
-
+  def color_class(value) when is_number(value) do
     cond do
-      is_nil(price_float) -> 2
-      price_float >= 10000 -> 2
-      price_float >= 1000 -> 2
-      price_float >= 100 -> 2
-      price_float >= 10 -> 3
-      price_float >= 1 -> 4
-      price_float >= 0.1 -> 5
-      price_float >= 0.01 -> 6
-      price_float >= 0.001 -> 7
-      true -> 8
+      value > 0 -> "text-green-600 dark:text-green-400"
+      value < 0 -> "text-red-600 dark:text-red-400"
+      true -> "text-muted-foreground"
     end
   end
+  def color_class(_), do: "text-muted-foreground"
 
   @doc """
-  Format a value with a CSS color class based on its sign.
-
-  ## Parameters
-    - value: The value to evaluate
-
-  ## Returns
-    - CSS class name for coloring based on sign (green for positive, red for negative)
+  Formats a balance value with a currency symbol and 2 decimal places.
   """
-  def color_class(value) do
-    cond do
-      DecimalUtils.positive?(value) -> "text-green-600"
-      DecimalUtils.negative?(value) -> "text-red-600"
-      true -> ""
-    end
+  def format_balance(balance) when is_number(balance) do
+    "$#{:erlang.float_to_binary(balance, decimals: 2)}"
   end
+  def format_balance(_), do: "$0.00"
 
   @doc """
-  Format a value with a sign prefix and CSS color.
-
-  ## Parameters
-    - value: The value to format
-    - precision: Number of decimal places
-
-  ## Returns
-    - Map with formatted value and CSS class
+  Formats a number or Decimal into a currency string (e.g., $1,234.56).
+  Handles nil by returning 'N/A'.
   """
-  def format_with_color(value, precision \\ 2) do
-    formatted = format_number(value, precision)
-
-    formatted =
-      if DecimalUtils.positive?(value) do
-        "+#{formatted}"
-      else
-        formatted
-      end
-
-    %{
-      value: formatted,
-      class: color_class(value)
-    }
+  def format_currency(nil), do: "N/A"
+  def format_currency(%Decimal{} = value) do
+    # Fix for the Decimal.to_string/2 error - use Decimal.round first
+    rounded = Decimal.round(value, 2)
+    "$#{Decimal.to_string(rounded)}"
   end
-
-  @doc """
-  Format a percentage with a sign prefix and CSS color.
-
-  ## Parameters
-    - value: The percentage value to format
-    - precision: Number of decimal places
-
-  ## Returns
-    - Map with formatted value and CSS class
-  """
-  def format_percent_with_color(value, precision \\ 2) do
-    formatted = format_percent(value, precision)
-
-    formatted =
-      if DecimalUtils.positive?(value) and not DecimalUtils.zero?(value) do
-        "+#{formatted}"
-      else
-        formatted
-      end
-
-    %{
-      value: formatted,
-      class: color_class(value)
-    }
+  def format_currency(value) when is_number(value) do
+    # Consider adding number formatting (commas) for larger values if needed
+    "$#{:erlang.float_to_binary(value, decimals: 2)}"
   end
+  def format_currency(_), do: "N/A" # Catch-all for unexpected types
 end

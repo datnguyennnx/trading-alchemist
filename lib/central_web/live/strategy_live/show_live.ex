@@ -1,183 +1,186 @@
 defmodule CentralWeb.StrategyLive.ShowLive do
   use CentralWeb, :live_view
   alias Central.Backtest.Contexts.StrategyContext
+  alias Central.Backtest.Contexts.BacktestContext
   alias Central.Backtest.Indicators
-  alias CentralWeb.Components.UI.Icon
 
-  import CentralWeb.Components.UI.Card
+  require Logger
+
+  # Import UI components
   import CentralWeb.Components.UI.Button
+  import CentralWeb.Components.UI.Icon
 
-  # Import the icon component
-  import Icon, only: [icon: 1]
+  import CentralWeb.Components.UI.AlertDialog
+
+  # Import strategy components
+  alias CentralWeb.StrategyLive.Components.BacktestHistory
+  alias CentralWeb.StrategyLive.Components.TradingRules
+  alias CentralWeb.StrategyLive.Components.LatestPerformance
+  alias CentralWeb.StrategyLive.Components.StrategyInfo
+  alias CentralWeb.StrategyLive.Components.BacktestForm
 
   def mount(%{"id" => id}, _session, socket) do
     strategy = StrategyContext.get_strategy!(id)
+    backtests_raw = BacktestContext.list_backtests_for_strategy(id)
+
+    # Calculate additional fields for each backtest
+    backtests = Enum.map(backtests_raw, fn backtest ->
+      total_pnl = calculate_total_pnl(backtest)
+      total_pnl_percentage = calculate_pnl_percentage(backtest)
+      # Placeholder for trades count - requires more logic/preloading
+      total_trades = Map.get(backtest, :total_trades, "N/A")
+
+      backtest
+      |> Map.put(:total_pnl, total_pnl)
+      |> Map.put(:total_pnl_percentage, total_pnl_percentage)
+      |> Map.put(:total_trades, total_trades)
+    end)
+
+    # Get the most recent backtest for quick stats
+    recent_backtest =
+      backtests
+      |> Enum.filter(fn b -> b.status == :completed end)
+      |> Enum.sort_by(fn b -> b.inserted_at end, :desc)
+      |> List.first()
+
+    # Initialize backtest form with default values
+    default_values = %{
+      "initial_balance" => "10000.0",
+      "position_size" => "2.0"
+    }
+
+    # Default dates for backtest form
+    start_time = default_start_time_datetime()
+    end_time = default_end_time_datetime()
 
     {:ok,
      socket
      |> assign(:strategy, strategy)
+     |> assign(:backtests, backtests)
+     |> assign(:recent_backtest, recent_backtest)
      |> assign(:indicators, Indicators.list_indicators())
+     |> assign(:show_backtest_form, true)
+     |> assign(:form, to_form(default_values))
+     |> assign(:start_time, start_time)
+     |> assign(:end_time, end_time)
      |> assign(:page_title, strategy.name)}
   end
 
   def render(assigns) do
     ~H"""
-    <div class="container mx-auto px-4 py-8">
-      <div class="flex items-center justify-between mb-6">
+    <div class="container mx-auto px-4 py-6">
+      <!-- Strategy Header -->
+      <div class="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
         <div>
-          <h1 class="text-2xl font-bold">{@strategy.name}</h1>
-          <p class="text-muted-foreground mt-1">{@strategy.description}</p>
+          <h1 class="text-2xl font-bold"><%= @strategy.name %></h1>
+          <div class="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
+            <div class="flex items-center gap-1">
+              <p>Symbol:</p>
+              <p class="font-medium"><%= @strategy.config["symbol"] %></p>
+            </div>
+            <div class="flex items-center gap-1">
+              <p>Timeframe:</p>
+              <p class="font-medium"><%= @strategy.config["timeframe"] %></p>
+            </div>
+            <div class="flex items-center gap-1">
+              <p>Risk:</p>
+              <p class="font-medium"><%= @strategy.config["risk_per_trade"] %>%</p>
+            </div>
+            <div class="flex items-center gap-1">
+              <p>Created:</p>
+              <p class="font-medium"><%= Calendar.strftime(@strategy.inserted_at, "%d/%m/%Y") %></p>
+            </div>
+            <div class="flex items-center gap-1">
+              <p>Last Modified:</p>
+              <p class="font-medium"><%= Calendar.strftime(@strategy.updated_at, "%d/%m/%Y") %></p>
+            </div>
+            <%= if @strategy.description && @strategy.description != "" && @strategy.description != "12/31/23" do %>
+              <div class="flex items-center gap-1">
+                <p>Description:</p>
+                <p class="font-medium"><%= @strategy.description %></p>
+              </div>
+            <% end %>
+          </div>
         </div>
-        <div class="flex space-x-3">
+
+        <div class="flex items-center space-x-2">
           <.link navigate={~p"/strategies/#{@strategy.id}/edit"}>
-            <.button variant="outline">Edit Strategy</.button>
+            <.button variant="outline" size="sm">
+              <.icon name="hero-pencil-square" class="h-4 w-4 mr-2" /> Edit Strategy
+            </.button>
           </.link>
-          <.link navigate={~p"/backtest/#{@strategy.id}"}>
-            <.button>Run Backtest</.button>
-          </.link>
+          <.alert_dialog id="delete-strategy-dialog">
+            <.alert_dialog_trigger builder={%{id: "delete-strategy-dialog", open: false}}>
+              <.button
+                variant="outline"
+                size="sm"
+              >
+                <.icon name="hero-trash" class="h-4 w-4 mr-2" /> Delete Strategy
+              </.button>
+            </.alert_dialog_trigger>
+            <.alert_dialog_content builder={%{id: "delete-strategy-dialog", open: false}}>
+              <.alert_dialog_header>
+                <.alert_dialog_title>Delete Strategy</.alert_dialog_title>
+                <.alert_dialog_description>
+                  Are you sure you want to delete this strategy? This action cannot be undone.
+                </.alert_dialog_description>
+              </.alert_dialog_header>
+              <.alert_dialog_footer>
+                <.alert_dialog_cancel builder={%{id: "delete-strategy-dialog", open: false}}>
+                  Cancel
+                </.alert_dialog_cancel>
+                <.button
+                  variant="destructive"
+                  phx-click="delete_strategy"
+                >
+                  Delete
+                </.button>
+              </.alert_dialog_footer>
+            </.alert_dialog_content>
+          </.alert_dialog>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <.card class="lg:col-span-2">
-          <.card_header>
-            <.card_title>Strategy Configuration</.card_title>
-            <.card_description>Parameters and settings for the trading strategy</.card_description>
-          </.card_header>
-          <.card_content>
-            <div class="space-y-6">
-              <div>
-                <h3 class="text-lg font-medium mb-2">Trading Parameters</h3>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div class="border rounded-lg p-3">
-                    <p class="text-muted-foreground text-sm">Symbol</p>
-                    <p class="font-semibold text-lg">{@strategy.config["symbol"]}</p>
-                  </div>
-                  <div class="border rounded-lg p-3">
-                    <p class="text-muted-foreground text-sm">Timeframe</p>
-                    <p class="font-semibold text-lg">{@strategy.config["timeframe"]}</p>
-                  </div>
-                  <div class="border rounded-lg p-3">
-                    <p class="text-muted-foreground text-sm">Risk per Trade</p>
-                    <p class="font-semibold text-lg">{@strategy.config["risk_per_trade"]}%</p>
-                  </div>
-                </div>
-              </div>
+      <div class="grid grid-cols-1 lg:grid-cols-6 gap-6">
+        <!-- Left Column: Backtest Controls -->
+        <div class="space-y-6 col-span-4">
+          <.live_component
+            module={BacktestForm}
+            id="backtest-form-component"
+            form={@form}
+            start_time={@start_time}
+            end_time={@end_time}
+            strategy_id={@strategy.id}
+          />
 
-              <div>
-                <h3 class="text-lg font-medium mb-2">Entry Rules</h3>
-                <div class="space-y-3">
-                  <%= if Enum.empty?(get_entry_rules(@strategy)) do %>
-                    <p class="text-muted-foreground italic">No entry rules defined</p>
-                  <% else %>
-                    <%= for rule <- get_entry_rules(@strategy) do %>
-                      <div class="border rounded-lg p-3">
-                        <div class="flex justify-between items-center">
-                          <p class="font-medium text-md">
-                            <%= get_indicator_display_name(rule["indicator"], @indicators) %>
-                            <%= format_condition(rule["comparison"]) %>
-                            <%= format_value(rule["value"]) %>
-                          </p>
-                          <div class="flex space-x-2">
-                            <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md px-2 py-1 text-xs">
-                              <%= get_indicator_type(rule["indicator"], @indicators) %>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    <% end %>
-                  <% end %>
-                </div>
-              </div>
+          <!-- Backtest History -->
+          <.live_component
+            module={BacktestHistory}
+            id="backtest-history"
+            backtests={@backtests}
+            max_items={5}
+          />
+        </div>
 
-              <div>
-                <h3 class="text-lg font-medium mb-2">Exit Rules</h3>
-                <div class="space-y-3">
-                  <%= if Enum.empty?(get_exit_rules(@strategy)) do %>
-                    <p class="text-muted-foreground italic">No exit rules defined</p>
-                  <% else %>
-                    <%= for rule <- get_exit_rules(@strategy) do %>
-                      <div class="border rounded-lg p-3">
-                        <div class="flex justify-between items-center">
-                          <p class="font-medium text-md">
-                            <%= get_indicator_display_name(rule["indicator"], @indicators) %>
-                            <%= format_condition(rule["comparison"]) %>
-                            <%= format_value(rule["value"]) %>
-                          </p>
-                          <div class="flex space-x-2 flex-wrap">
-                            <span class="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md px-2 py-1 text-xs whitespace-nowrap">
-                              SL: {rule["stop_loss"]}%
-                            </span>
-                            <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md px-2 py-1 text-xs whitespace-nowrap">
-                              TP: {rule["take_profit"]}%
-                            </span>
-                            <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md px-2 py-1 text-xs">
-                              <%= get_indicator_type(rule["indicator"], @indicators) %>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    <% end %>
-                  <% end %>
-                </div>
-              </div>
-            </div>
-          </.card_content>
-        </.card>
+        <!-- Right Column: Strategy Information -->
+        <div class="space-y-6 col-span-2">
 
-        <div class="space-y-6">
-          <.card>
-            <.card_header>
-              <.card_title>Strategy Statistics</.card_title>
-              <.card_description>Performance metrics from previous backtests</.card_description>
-            </.card_header>
-            <.card_content>
-              <div class="space-y-4">
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Total Backtests:</span>
-                  <span class="font-medium">0</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Best Performance:</span>
-                  <span class="font-medium">-</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Average Profit:</span>
-                  <span class="font-medium">-</span>
-                </div>
-              </div>
-            </.card_content>
-            <.card_footer>
-              <.link navigate={~p"/backtest/#{@strategy.id}"} class="w-full">
-                <.button class="w-full">Run New Backtest</.button>
-              </.link>
-            </.card_footer>
-          </.card>
+          <!-- Latest Performance -->
+          <%= if @recent_backtest do %>
+            <.live_component
+              module={LatestPerformance}
+              id="latest-performance"
+              backtest={@recent_backtest}
+            />
+          <% end %>
 
-          <.card>
-            <.card_header>
-              <.card_title>Quick Actions</.card_title>
-            </.card_header>
-            <.card_content>
-              <div class="space-y-3">
-                <.link navigate={~p"/strategies/#{@strategy.id}/edit"} class="w-full block">
-                  <.button variant="outline" class="w-full justify-start">
-                    <.icon name="hero-pencil-solid" class="h-4 w-4 mr-2" /> Edit Strategy
-                  </.button>
-                </.link>
-                <.link navigate={~p"/backtest/#{@strategy.id}"} class="w-full block">
-                  <.button variant="outline" class="w-full justify-start">
-                    <.icon name="hero-play-circle-solid" class="h-4 w-4 mr-2" /> Run Backtest
-                  </.button>
-                </.link>
-                <button type="button" phx-click="delete_strategy" class="w-full">
-                  <.button variant="outline" class="w-full justify-start">
-                    <.icon name="hero-trash-solid" class="h-4 w-4 mr-2" /> Delete Strategy
-                  </.button>
-                </button>
-              </div>
-            </.card_content>
-          </.card>
+          <!-- Trading Rules -->
+          <.live_component
+            module={TradingRules}
+            id="trading-rules"
+            strategy={@strategy}
+            indicators={@indicators}
+          />
         </div>
       </div>
     </div>
@@ -193,53 +196,196 @@ defmodule CentralWeb.StrategyLive.ShowLive do
      |> redirect(to: ~p"/strategies")}
   end
 
-  # Helper functions for strategy rules display
+  def handle_event("run_backtest", params, socket) do
+    strategy = socket.assigns.strategy
 
-  defp get_entry_rules(strategy) do
-    case strategy.entry_rules do
-      %{"conditions" => conditions} when is_list(conditions) -> conditions
-      _ -> []
+    # Extract and parse form values
+    initial_balance = parse_decimal(params["initial_balance"], "10000.0")
+    position_size = parse_decimal(params["position_size"], "2.0")
+
+    # Parse dates or set defaults
+    start_time = parse_datetime(params["start_time"]) || socket.assigns.start_time
+    end_time = parse_datetime(params["end_time"]) || socket.assigns.end_time
+
+    # Create backtest parameters
+    backtest_params = %{
+      strategy_id: strategy.id,
+      symbol: strategy.config["symbol"],
+      timeframe: strategy.config["timeframe"],
+      start_time: start_time,
+      end_time: end_time,
+      initial_balance: initial_balance,
+      position_size: position_size,
+      status: :pending,
+      user_id: strategy.user_id,
+      metadata: %{
+        "position_size" => Decimal.to_string(position_size),
+        "progress" => 0
+      }
+    }
+
+    # Create a changeset to validate params
+    changeset = Central.Backtest.Schemas.Backtest.changeset(%Central.Backtest.Schemas.Backtest{}, backtest_params)
+
+    if changeset.valid? do
+      # Directly create and run the backtest without confirmation
+      case BacktestContext.create_backtest(backtest_params) do
+        {:ok, backtest} ->
+          # Start the backtest in the background
+          Central.Backtest.Workers.BacktestRunnerWorker.perform_async(%{
+            "backtest_id" => backtest.id
+          })
+
+          # Subscribe to backtest updates
+          Phoenix.PubSub.subscribe(Central.PubSub, "backtest:#{backtest.id}")
+
+          # Update backtests list with the new backtest
+          updated_backtests = [backtest | socket.assigns.backtests]
+
+          {:noreply,
+           socket
+           |> assign(:backtests, updated_backtests)
+           |> put_flash(:info, "Backtest started successfully!")
+           |> redirect(to: ~p"/backtest/#{backtest.id}")}
+
+        {:error, changeset} ->
+          {:noreply,
+           socket
+           |> put_flash(:error, "Failed to start backtest: #{error_messages(changeset)}")
+           |> assign(:form, to_form(Map.merge(socket.assigns.form.data, %{errors: changeset.errors})))}
+      end
+    else
+      errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+        Enum.reduce(opts, msg, fn {key, value}, acc ->
+          String.replace(acc, "%{#{key}}", to_string(value))
+        end)
+      end)
+
+      error_message = errors
+                     |> Enum.map(fn {k, v} -> "#{k}: #{Enum.join(v, ", ")}" end)
+                     |> Enum.join("; ")
+
+      {:noreply,
+       socket
+       |> put_flash(:error, "Invalid backtest parameters: #{error_message}")
+       |> assign(:form, to_form(Map.merge(socket.assigns.form.data, %{errors: errors})))}
     end
   end
 
-  defp get_exit_rules(strategy) do
-    case strategy.exit_rules do
-      %{"conditions" => conditions} when is_list(conditions) -> conditions
-      _ -> []
+  def handle_event("cancel_backtest", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_backtest_confirm, false)
+     |> assign(:backtest_params, nil)
+     |> push_event("phx-hide-alert-dialog", %{id: "confirm-backtest-dialog"})}
+  end
+
+  # DateTimePicker events
+  def handle_event("datetime-update", %{"name" => "start_time", "datetime" => datetime_str}, socket) do
+    case DateTime.from_iso8601(datetime_str) do
+      {:ok, datetime, _} ->
+        {:noreply, assign(socket, :start_time, datetime)}
+      _ ->
+        {:noreply, socket}
     end
   end
 
-  defp get_indicator_display_name(indicator_id, indicators) do
-    case Enum.find(indicators, fn i -> i.id == indicator_id end) do
-      %{name: name} -> name
-      _ -> format_rule_name(indicator_id)
+  def handle_event("datetime-update", %{"name" => "end_time", "datetime" => datetime_str}, socket) do
+    case DateTime.from_iso8601(datetime_str) do
+      {:ok, datetime, _} ->
+        {:noreply, assign(socket, :end_time, datetime)}
+      _ ->
+        {:noreply, socket}
     end
   end
 
-  defp get_indicator_type(indicator_id, indicators) do
-    case Enum.find(indicators, fn i -> i.id == indicator_id end) do
-      %{type: type} when is_atom(type) -> String.capitalize(Atom.to_string(type))
-      %{type: type} when is_binary(type) -> String.capitalize(type)
-      _ -> "Unknown"
+  # Handler for date_time_picker_change event
+  def handle_event("date_time_picker_change", %{"name" => "start_time", "value" => datetime_str}, socket) do
+    case DateTime.from_iso8601(datetime_str) do
+      {:ok, datetime, _} ->
+        {:noreply, assign(socket, :start_time, datetime)}
+      _ ->
+        {:noreply, socket}
     end
   end
 
-  defp format_condition("above"), do: ">"
-  defp format_condition("below"), do: "<"
-  defp format_condition("crosses_above"), do: "crosses above"
-  defp format_condition("crosses_below"), do: "crosses below"
-  defp format_condition(condition) when is_binary(condition), do: condition
-  defp format_condition(_), do: ""
+  def handle_event("date_time_picker_change", %{"name" => "end_time", "value" => datetime_str}, socket) do
+    case DateTime.from_iso8601(datetime_str) do
+      {:ok, datetime, _} ->
+        {:noreply, assign(socket, :end_time, datetime)}
+      _ ->
+        {:noreply, socket}
+    end
+  end
 
-  defp format_value(value) when is_binary(value), do: value
-  defp format_value(value) when is_number(value), do: to_string(value)
-  defp format_value(_), do: ""
+  # Catch-all handler for date_time_picker_change
+  def handle_event("date_time_picker_change", _params, socket) do
+    {:noreply, socket}
+  end
 
-  # Legacy format function, keep for backward compatibility
-  defp format_rule_name("above_sma"), do: "Price Above SMA"
-  defp format_rule_name("below_sma"), do: "Price Below SMA"
-  defp format_rule_name("rsi_oversold"), do: "RSI Oversold"
-  defp format_rule_name("rsi_overbought"), do: "RSI Overbought"
-  defp format_rule_name(name) when is_binary(name), do: name
-  defp format_rule_name(_), do: "Unknown Rule"
+  # Helper functions for parsing form values
+  defp parse_decimal(value, default) when is_binary(value) do
+    case Decimal.parse(value) do
+      {decimal, ""} -> decimal
+      _ -> Decimal.new(default)
+    end
+  end
+
+  defp parse_decimal(_, default), do: Decimal.new(default)
+
+  defp parse_datetime(nil), do: nil
+  defp parse_datetime(""), do: nil
+  defp parse_datetime(datetime_string) when is_binary(datetime_string) do
+    case DateTime.from_iso8601(datetime_string) do
+      {:ok, datetime, _} -> datetime
+      _ -> nil
+    end
+  end
+  defp parse_datetime(_), do: nil
+
+  # Helper functions to set reasonable default times as DateTime objects
+  defp default_start_time_datetime do
+    # Default to 30 days ago
+    DateTime.utc_now()
+    |> DateTime.add(-30, :day)
+    |> DateTime.truncate(:second)
+  end
+
+  defp default_end_time_datetime do
+    # Default to now
+    DateTime.utc_now()
+    |> DateTime.truncate(:second)
+  end
+
+  # Format changeset errors for display
+  defp error_messages(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
+    |> Enum.map(fn {k, v} -> "#{k}: #{Enum.join(v, ", ")}" end)
+    |> Enum.join("; ")
+  end
+
+  # Helper functions to calculate PnL
+  defp calculate_total_pnl(backtest) do
+    if is_nil(backtest.final_balance) || is_nil(backtest.initial_balance) do
+      Decimal.new(0)
+    else
+      Decimal.sub(backtest.final_balance, backtest.initial_balance)
+    end
+  end
+
+  defp calculate_pnl_percentage(backtest) do
+    initial_balance = backtest.initial_balance
+    final_balance = backtest.final_balance
+    if is_nil(initial_balance) || is_nil(final_balance) || Decimal.compare(initial_balance, Decimal.new(0)) == :eq do
+      Decimal.new(0)
+    else
+      pnl = Decimal.sub(final_balance, initial_balance)
+      Decimal.div(pnl, initial_balance)
+    end
+  end
+
 end

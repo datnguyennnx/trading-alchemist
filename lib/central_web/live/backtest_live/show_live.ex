@@ -1,580 +1,431 @@
 defmodule CentralWeb.BacktestLive.ShowLive do
   use CentralWeb, :live_view
-  alias Central.Backtest.Contexts.StrategyContext
   alias Central.Backtest.Contexts.BacktestContext
   alias Central.Backtest.Contexts.TradeContext
   require Logger
 
-  # Add necessary imports
   import CentralWeb.Components.UI.Button
-  import CentralWeb.Components.UI.Accordion
-  import CentralWeb.Components.UI.DataTable, except: [status_color: 1]
+  import CentralWeb.Components.UI.Card
+  import CentralWeb.Components.UI.DataTable
 
-  # Add necessary aliases for the chart
-  alias CentralWeb.BacktestLive.Utils.MarketDataLoader
-  alias CentralWeb.BacktestLive.Components.ChartStats
   alias CentralWeb.BacktestLive.Utils.FormatterUtils
+  alias CentralWeb.Live.Components.Chart.BacktestChartComponent
+
+  @trades_page_size 50
 
   @impl true
-  def mount(%{"strategy_id" => strategy_id}, session, socket) do
-    strategy = StrategyContext.get_strategy!(strategy_id)
+  def mount(%{"id" => backtest_id_str}, session, socket) do
+    try do
+      backtest = BacktestContext.get_backtest!(backtest_id_str)
+      trades_page = TradeContext.list_trades_for_backtest_paginated(backtest.id, 1, @trades_page_size)
+      all_trades_for_chart = TradeContext.list_trades_for_backtest(backtest.id)
 
-    # Get all backtests for the strategy
-    backtests =
-      BacktestContext.list_backtests_for_strategy(strategy_id)
-      |> Enum.map(fn backtest ->
-        # Get total count for pagination
-        total_trades = TradeContext.count_trades_for_backtest(backtest.id)
+      # Get the total number of trades
+      total_trades = length(all_trades_for_chart)
 
-        # Get trades for just the first page
-        trades = TradeContext.list_trades_for_backtest_paginated(backtest.id, 1, 50)
+      backtest_with_trades_page = Map.put(backtest, :trades, trades_page)
 
-        # Store trades and total count in the backtest map
-        backtest
-        |> Map.put(:trades, trades)
-        |> Map.put(:total_trades, total_trades)
-      end)
+      # Calculate total PnL and PnL percentage
+      total_pnl = calculate_total_pnl(backtest)
+      total_pnl_percentage = calculate_pnl_percentage(backtest.initial_balance, backtest.final_balance)
 
-    # Get initial backtest (most recent one or nil)
-    backtest = List.first(backtests)
+      # Get strategy config with safety check
+      strategy_config =
+        case backtest.strategy do
+          %{config: config} when is_map(config) -> config
+          _ -> %{}
+        end
 
-    # Get symbol and timeframe from strategy
-    symbol = strategy.config["symbol"] || "BTCUSDT"
-    timeframe = strategy.config["timeframe"] || "1h"
+      socket =
+        socket
+        |> assign(:page_title, "Backtest: #{FormatterUtils.format_datetime(backtest.inserted_at)}")
+        |> assign(:strategy, backtest.strategy)
+        |> assign(:backtest, backtest_with_trades_page)
+        |> assign(:all_trades_for_chart, all_trades_for_chart)
+        |> assign(:backtest_config, strategy_config)
+        |> assign(:total_pnl, total_pnl)
+        |> assign(:total_pnl_percentage, total_pnl_percentage)
+        |> assign(:total_trades, total_trades)
+        |> assign(:trade_page, 1)
+        |> assign(:trade_page_size, @trades_page_size)
+        |> assign(:current_page, :backtest_show)
+        |> assign_new(:chart_theme, fn -> session["theme"] || "light" end)
 
-    # Use theme from session if available, otherwise default to "dark"
-    theme = session["theme"] || "dark"
-
-    socket =
-      socket
-      |> assign(:strategy, strategy)
-      |> assign(:backtests, backtests)
-      |> assign(:backtest, backtest)
-      |> assign(:page_title, "Backtest: #{strategy.name}")
-      |> assign(:page_size, 50) # Default page size for trade tables
-      |> assign(
-        chart_data: [],
-        loading: true,
-        timeframe: timeframe,
-        symbol: symbol,
-        symbols: MarketDataLoader.get_symbols(),
-        timeframes: ["1m", "5m", "15m", "1h", "4h", "1d"],
-        chart_theme: theme,
-        trade_pages: %{}, # Map to store current page for each backtest
-        open_accordions: %{}, # Map to track which accordion items are open
-        selected_trades_map: %{} # NEW: Map to store selected trades per backtest id
-      )
-
-    # Load data immediately for the initial view
-    if connected?(socket) do
-      Process.send_after(self(), :load_initial_data, 300)
+      {:ok, socket}
+    rescue
+      Ecto.NoResultsError ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Backtest not found.")
+         |> redirect(to: ~p"/strategies")}
     end
-
-    {:ok, socket}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="container mx-auto px-4 py-8 w-full">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h1 class="text-2xl font-bold">Backtest: {@strategy.name}</h1>
-          <p class="text-muted-foreground mt-1">{@strategy.description}</p>
+    <div class="container mx-auto px-4 py-8">
+      <%= if @backtest do %>
+        <%!-- Header Section --%>
+        <div class="mb-6 border-b pb-4">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
+            <div>
+              <p class="text-sm text-muted-foreground">
+                Strategy: <.link navigate={~p"/strategies/#{@strategy.id}"} class="hover:underline"><%= @strategy.name %></.link>
+              </p>
+              <h1 class="text-2xl font-bold">
+                Backtest: <%= FormatterUtils.format_datetime(@backtest.inserted_at) %>
+              </h1>
+              <p class="text-sm text-muted-foreground">
+                <%= @backtest.symbol %> / <%= @backtest.timeframe %> | <%= format_time_range(@backtest.start_time, @backtest.end_time) %>
+              </p>
+            </div>
+            <div class="mt-3 md:mt-0">
+              <.link navigate={~p"/strategies/#{@strategy.id}"}>
+                 <.button variant="outline">Back to Strategy</.button>
+              </.link>
+            </div>
+          </div>
+
+          <%!-- Key Stats Row --%>
+          <div class="flex flex-wrap gap-4 text-sm mt-3">
+            <div class="flex items-center space-x-2">
+              <p class="text-muted-foreground">Final Balance:</p>
+              <p class="font-semibold"><%= FormatterUtils.format_currency(@backtest.final_balance) %></p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <p class="text-muted-foreground">Total PnL:</p>
+              <p class={Enum.join(["font-semibold", pnl_color(@total_pnl)], " ")}>
+                <%= FormatterUtils.format_currency(@total_pnl) %>
+              </p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <p class="text-muted-foreground">PnL %:</p>
+              <p class={Enum.join(["font-semibold", pnl_color(@total_pnl_percentage)], " ")}>
+                 <%= FormatterUtils.format_percent(@total_pnl_percentage) %>
+               </p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <p class="text-muted-foreground">Total Trades:</p>
+              <p class="font-semibold"><%= @total_trades || "N/A" %></p>
+            </div>
+          </div>
         </div>
-        <div class="flex space-x-3">
-          <.button phx-click="refresh_backtests" variant="outline" class="mr-2">
-            Refresh
-          </.button>
-          <.link navigate={~p"/strategies/#{@strategy.id}"}>
-            <.button variant="outline">Strategy Details</.button>
+
+        <%!-- Main Content Grid --%>
+        <div class="grid grid-cols-1 lg:grid-cols-6 gap-6">
+          <%!-- Left Column: Chart & Trades Table --%>
+          <div class="lg:col-span-4 space-y-6">
+            <%!-- Chart --%>
+            <.card>
+              <.card_header>
+                <.card_title>Market Chart</.card_title>
+              </.card_header>
+              <.card_content>
+                <.live_component
+                  module={BacktestChartComponent}
+                  id={"backtest-chart-#{@backtest.id}"}
+                  backtest={@backtest}
+                  theme={@chart_theme}
+                  height="500px"
+                  show_trades={true}
+                  trades={@all_trades_for_chart}
+                />
+              </.card_content>
+            </.card>
+
+            <%!-- Trades Table --%>
+            <.card>
+               <.card_header>
+                 <.card_title>Trades</.card_title>
+                 <.card_description>Detailed list of trades executed during the backtest.</.card_description>
+               </.card_header>
+               <.card_content>
+                <.data_table
+                  id={"trades-table-#{@backtest.id}"}
+                  rows={@backtest.trades}
+                  row_id={fn trade -> trade.id end}
+                  page={@trade_page}
+                  page_size={@trade_page_size}
+                  total_entries={@total_trades || 0}
+                  on_page_change="trade_page_changed"
+                  phx_value_keys={%{backtest_id: @backtest.id}}
+                  row_numbers={true}
+                  compact={true}
+                >
+                  <:col :let={trade} field={:entry_time} label="Entry Time">
+                    <%= FormatterUtils.format_datetime(trade.entry_time) %>
+                  </:col>
+                  <:col :let={trade} field={:side} label="Side">
+                    <p class={side_color(trade.side)}><%= String.upcase(to_string(trade.side)) %></p>
+                  </:col>
+                  <:col :let={trade} field={:entry_price} label="Entry Price" numeric>
+                    <%= trade.entry_price %>
+                  </:col>
+                  <:col :let={trade} field={:exit_price} label="Exit Price" numeric>
+                    <%= trade.exit_price %>
+                  </:col>
+                  <:col :let={trade} field={:pnl} label="PnL" numeric pnl>
+                    <p class={pnl_color(trade.pnl)}><%= FormatterUtils.format_currency(trade.pnl) %></p>
+                  </:col>
+                  <:col :let={trade} field={:pnl_percentage} label="PnL %" numeric pnl>
+                    <p class={pnl_color(trade.pnl_percentage)}>
+                      <%= FormatterUtils.format_percent(trade.pnl_percentage) %>
+                    </p>
+                  </:col>
+                </.data_table>
+              </.card_content>
+            </.card>
+          </div>
+
+          <%!-- Right Column: Backtest Info --%>
+          <div class="lg:col-span-2 space-y-6">
+            <%!-- Backtest Details --%>
+            <.card>
+              <.card_header>
+                <.card_title>Backtest Details</.card_title>
+              </.card_header>
+              <.card_content>
+                <div class="space-y-4 text-sm">
+                  <div>
+                    <p class="text-muted-foreground">Status</p>
+                    <p class="font-medium mt-1">
+                      <p class={status_color(@backtest.status)}>
+                        <%= String.upcase(to_string(@backtest.status)) %>
+                      </p>
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-muted-foreground">Symbol</p>
+                    <p class="font-medium mt-1"><%= @backtest.symbol %></p>
+                  </div>
+                  <div>
+                    <p class="text-muted-foreground">Timeframe</p>
+                    <p class="font-medium mt-1"><%= @backtest.timeframe %></p>
+                  </div>
+                  <div>
+                    <p class="text-muted-foreground">Date Range</p>
+                    <p class="font-medium mt-1"><%= format_time_range(@backtest.start_time, @backtest.end_time) %></p>
+                  </div>
+                  <div>
+                    <p class="text-muted-foreground">Initial Balance</p>
+                    <p class="font-medium mt-1"><%= FormatterUtils.format_currency(@backtest.initial_balance) %></p>
+                  </div>
+                  <div>
+                    <p class="text-muted-foreground">Position Size</p>
+                    <p class="font-medium mt-1"><%= get_in(@backtest.metadata, ["position_size"]) || "N/A" %>%</p>
+                  </div>
+                </div>
+              </.card_content>
+            </.card>
+
+            <%!-- Performance Summary --%>
+            <.card>
+              <.card_header>
+                <.card_title>Performance Summary</.card_title>
+              </.card_header>
+              <.card_content>
+                <div class="space-y-4 text-sm">
+                  <div>
+                    <p class="text-muted-foreground">Total Trades</p>
+                    <p class="font-medium mt-1"><%= @total_trades || 0 %></p>
+                  </div>
+                  <div>
+                    <p class="text-muted-foreground">Win Rate</p>
+                    <p class="font-medium mt-1"><%= calculate_win_rate(@all_trades_for_chart) %>%</p>
+                  </div>
+                  <div>
+                    <p class="text-muted-foreground">Average Profit</p>
+                    <p class="font-medium mt-1"><%= calculate_avg_profit(@all_trades_for_chart) %>%</p>
+                  </div>
+                  <div>
+                    <p class="text-muted-foreground">Average Loss</p>
+                    <p class="font-medium mt-1"><%= calculate_avg_loss(@all_trades_for_chart) %>%</p>
+                  </div>
+                  <div>
+                    <p class="text-muted-foreground">Profit Factor</p>
+                    <p class="font-medium mt-1"><%= calculate_profit_factor(@all_trades_for_chart) %></p>
+                  </div>
+                </div>
+              </.card_content>
+            </.card>
+          </div>
+        </div>
+      <% else %>
+        <%!-- Handles the case where backtest is nil after mount error --%>
+        <div class="flex flex-col items-center justify-center h-64 text-center">
+          <p class="text-lg text-muted-foreground">Loading backtest details or backtest not found.</p>
+          <.link navigate={~p"/strategies"} class="mt-4">
+            <.button variant="outline">Return to Strategies</.button>
           </.link>
         </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div class="lg:col-span-3">
-          <div class="bg-background rounded-lg border border-border p-4 flex flex-col">
-            <div class="mb-4">
-              <ChartStats.chart_stats chart_data={@chart_data} />
-            </div>
-
-            <div
-              id="tradingview-chart"
-              phx-hook="TradingViewChart"
-              data-chart-data={Jason.encode!(@chart_data)}
-              data-theme={@chart_theme}
-              data-symbol={@symbol}
-              data-timeframe={@timeframe}
-              class="w-full h-[50vh] rounded-lg border border-border bg-card flex-grow"
-              phx-update="ignore"
-              style="position: relative;"
-            >
-              <div class="h-full w-full flex items-center justify-center">
-                <p id="loading-text" class="text-muted-foreground">
-                  {if @loading, do: "Loading market data...", else: "Chart will render here"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-6">
-            <h2 class="text-xl font-semibold mb-4">Backtest History</h2>
-            <%= if Enum.empty?(@backtests) do %>
-              <div class="bg-card rounded-md p-6 border border-border text-center">
-                <h3 class="text-lg font-medium mb-2">No Backtests Found</h3>
-                <p class="text-muted-foreground mb-4">
-                  Use the form on the right to create your first backtest for this strategy.
-                </p>
-              </div>
-            <% else %>
-              <.accordion>
-                <%= for backtest <- @backtests do %>
-                  <.accordion_item>
-                    <.accordion_trigger
-                      group="backtests"
-                      open={Map.get(@open_accordions, backtest.id, false)}
-                      phx-click="toggle_accordion"
-                      phx-value-backtest_id={backtest.id}
-                    >
-                      <div class="flex justify-between items-center w-full">
-                        <span class="text-sm font-medium">{format_datetime(backtest.inserted_at)}</span>
-                        <span class="flex items-center space-x-2 mx-2">
-                          <span
-                            class={"px-2 py-0.5 rounded text-xs font-medium #{status_color(backtest.status)}"}
-                          >
-                            {String.upcase(to_string(backtest.status))}
-                          </span>
-                          <span class="text-sm text-muted-foreground">
-                            {backtest.symbol} / {backtest.timeframe}
-                          </span>
-                        </span>
-                      </div>
-                    </.accordion_trigger>
-                    <.accordion_content>
-                      <%!-- Only render content if the accordion item is open --%>
-                      <%= if Map.get(@open_accordions, backtest.id, false) do %>
-                        <div class="bg-card">
-                          <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <p class="text-sm text-muted-foreground">Initial Balance</p>
-                              <p class="font-semibold">{backtest.initial_balance} USDT</p>
-                            </div>
-                            <div>
-                              <p class="text-sm text-muted-foreground">Final Balance</p>
-                              <p class="font-semibold">{backtest.final_balance || "N/A"} USDT</p>
-                            </div>
-                            <div>
-                              <p class="text-sm text-muted-foreground">Start Time</p>
-                              <p class="font-semibold">{format_datetime(backtest.start_time)}</p>
-                            </div>
-                            <div>
-                              <p class="text-sm text-muted-foreground">End Time</p>
-                              <p class="font-semibold">{format_datetime(backtest.end_time)}</p>
-                            </div>
-                            <%= if backtest.status == :completed do %>
-                              <div>
-                                <p class="text-sm text-muted-foreground">Total Trades</p>
-                                <p class="font-semibold">{backtest.total_trades || "N/A"}</p>
-                              </div>
-                            <% end %>
-                          </div>
-
-                          <%= if Enum.empty?(backtest.trades) do %>
-                            <p class="text-muted-foreground">No trades for this backtest</p>
-                          <% else %>
-                            <%!-- Explicitly create the table ID --%>
-                            <% table_id = "trades-table-#{backtest.id}" %>
-                            <.data_table
-                              id={table_id}
-                              rows={backtest.trades}
-                              row_id={fn trade -> trade.id end}
-                              row_numbers
-                              selectable
-                              selected_rows={@selected_trades_map[backtest.id] || []}
-                              page={@trade_pages[backtest.id] || 1}
-                              page_size={@page_size}
-                              total_entries={backtest.total_trades}
-                              on_page_change="trade_page_changed"
-                              on_select="select_trade"
-                              phx_value_keys={%{backtest_id: backtest.id}}
-                            >
-                              <:col :let={trade} field={:entry_time} label="Entry Time">
-                                {format_datetime(trade.entry_time)}
-                              </:col>
-                              <:col :let={trade} field={:side} label="Side">
-                                <span class={side_color(trade.side)}>{trade.side}</span>
-                              </:col>
-                              <:col :let={trade} field={:entry_price} label="Entry Price" numeric>
-                                {trade.entry_price}
-                              </:col>
-                              <:col :let={trade} field={:exit_price} label="Exit Price" numeric>
-                                {trade.exit_price}
-                              </:col>
-                              <:col :let={trade} field={:pnl} label="PnL" numeric pnl>
-                                <span class={pnl_color(trade.pnl)}>{trade.pnl}</span>
-                              </:col>
-                              <:col :let={trade} field={:pnl_percentage} label="PnL %" numeric pnl>
-                                <span class={pnl_color(trade.pnl_percentage)}>
-                                  {format_percentage(trade.pnl_percentage)}
-                                </span>
-                              </:col>
-                            </.data_table>
-                          <% end %>
-                        </div>
-                      <% end %>
-                    </.accordion_content>
-                  </.accordion_item>
-                <% end %>
-              </.accordion>
-            <% end %>
-          </div>
-        </div>
-
-        <div>
-          <.live_component
-            module={CentralWeb.BacktestLive.Components.BacktestConfig}
-            id="backtest-config"
-            strategy={@strategy}
-            backtest={@backtest}
-          />
-        </div>
-      </div>
+      <% end %>
     </div>
     """
   end
 
+  # --- Event Handlers for Trade Pagination ---
   @impl true
-  def handle_event("refresh_data", _, socket) do
-    send(self(), :load_market_data)
-    {:noreply, assign(socket, loading: true)}
-  end
-
-  @impl true
-  def handle_event("date_time_picker_change", %{"id" => id, "name" => _name, "value" => value}, socket) do
-    # Parse the datetime value safely with error handling
-    try do
-      datetime = case DateTime.from_iso8601(value) do
-        {:ok, dt, _} -> dt
-        {:error, reason} ->
-          Logger.warning("Failed to parse date: #{value}. Reason: #{inspect(reason)}")
-          # Fall back to current time if parsing fails
-          DateTime.utc_now()
-      end
-
-      # Based on the input field ID, update the appropriate value in the socket assigns
-      socket =
-        case id do
-          "backtest-start-time" ->
-            # Check if we might need to fetch historical data for this range
-            symbol = socket.assigns.symbol
-            timeframe = socket.assigns.timeframe
-
-            # Trigger historical data loading for this date range
-            Task.start(fn ->
-              try do
-                Logger.info("Pre-loading historical data for #{symbol}/#{timeframe} starting at #{DateTime.to_iso8601(datetime)}")
-                MarketDataLoader.fetch_historical_data(symbol, timeframe, datetime, DateTime.utc_now())
-              rescue
-                e -> Logger.error("Failed to pre-load historical data: #{inspect(e)}")
-              end
-            end)
-
-            assign(socket, :start_time, datetime)
-            |> put_flash(:info, "Updated start time. Pre-loading historical market data in the background.")
-
-          "backtest-end-time" ->
-            assign(socket, :end_time, datetime)
-          _ ->
-            socket
-        end
-
-      {:noreply, socket}
-    rescue
-      error ->
-        Logger.error("Error handling date picker: #{inspect(error)}")
-        # Return the socket unchanged if something fails, but with a flash message
-        {:noreply, put_flash(socket, :error, "There was an error processing the date. Please try again or select a different date range.")}
-    end
-  end
-
-  @impl true
-  def handle_event("set_theme", %{"theme" => theme}, socket) do
-    socket =
-      socket
-      |> assign(:chart_theme, theme)
-      |> push_event("chart-theme-updated", %{theme: theme})
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("refresh_backtests", _, socket) do
-    strategy_id = socket.assigns.strategy.id
-
-    # Get backtests directly
-    backtests = BacktestContext.list_backtests_for_strategy(strategy_id)
-
-    # Load trades for each backtest
-    backtests_with_trades =
-      Enum.map(backtests, fn backtest ->
-        trades = TradeContext.list_trades_for_backtest(backtest.id)
-        total_trades = length(trades)
-        IO.inspect(%{backtest_id: backtest.id, total_trades: total_trades}, label: "[Refresh] Total trades count")
-
-        backtest
-        |> Map.put(:trades, trades)
-        |> Map.put(:total_trades, total_trades)
-      end)
-
-    {:noreply,
-     socket
-     |> assign(:backtests, backtests_with_trades)
-     |> put_flash(:info, "Refreshed backtests: Found #{length(backtests)}")}
-  end
-
-  @impl true
-  def handle_event("cancel", _, socket) do
-    {:noreply,
-     socket
-     |> redirect(to: ~p"/strategies/#{socket.assigns.strategy.id}")}
-  end
-
-  @impl true
-  def handle_event("load-historical-data", params, socket) do
-    # Extract parameters with defaults to handle any structure
-    timestamp = params["timestamp"]
-    symbol = params["symbol"] || socket.assigns.symbol
-    timeframe = params["timeframe"] || socket.assigns.timeframe
-    batch_size = params["batchSize"] || 200
-
-    # Convert timestamp to DateTime
-    earliest_time = try do
-      DateTime.from_unix!(timestamp)
-    rescue
-      _ -> DateTime.utc_now()
-    end
-
-    # Calculate start and end times for fetching historical data
-    timeframe_seconds =
-      case timeframe do
-        "1m" -> 60
-        "5m" -> 5 * 60
-        "15m" -> 15 * 60
-        "1h" -> 3600
-        "4h" -> 4 * 3600
-        "1d" -> 86400
-        # Default to 1h
-        _ -> 3600
-      end
-
-    # Calculate time needed to fetch earlier candles
-    fetch_duration = timeframe_seconds * batch_size
-    start_time = DateTime.add(earliest_time, -fetch_duration, :second)
-    end_time = earliest_time
-
-    # Fetch historical data using MarketDataLoader
-    candles = MarketDataLoader.fetch_historical_data(symbol, timeframe, start_time, end_time)
-
-    # Format the data for the chart
-    formatted_data = candles
-
-    # Check if we have data to indicate if more is available
-    has_more = length(formatted_data) > 0
-
-    # Optimize batch size for next fetch based on results
-    recommended_batch_size =
-      cond do
-        length(formatted_data) >= batch_size * 0.9 -> batch_size
-        length(formatted_data) >= batch_size * 0.5 -> batch_size
-        length(formatted_data) > 0 -> max(50, trunc(batch_size * 0.7))
-        true -> 100
-      end
-
-    # Send the data back to the client
-    socket =
-      push_event(socket, "chart-data-updated", %{
-        data: formatted_data,
-        symbol: symbol,
-        timeframe: timeframe,
-        # Indicate this is an append operation
-        append: true
-      })
-
-    # Return value to JavaScript pushEvent using {:reply, value, socket}
-    {:reply,
-     %{
-       has_more: has_more,
-       batchSize: recommended_batch_size
-     }, socket}
-  end
-
-  @impl true
-  def handle_event("trade_page_changed", %{"page" => page} = params, socket) do
-    # Extract backtest_id (string UUID)
-    backtest_id = params["backtest_id"]
-
-    if backtest_id do
-      # Use page_size from assigns
-      page_size = socket.assigns.page_size
-
-      # Fetch only the trades for this page
-      trades = TradeContext.list_trades_for_backtest_paginated(backtest_id, page, page_size)
-
-      # Update the backtest in the socket with the new trades
-      updated_backtests = Enum.map(socket.assigns.backtests, fn backtest ->
-        if backtest.id == backtest_id do
-          Map.put(backtest, :trades, trades)
-        else
-          backtest
-        end
-      end)
-
-      # Make sure the accordion stays open when changing pages
-      open_accordions = Map.put(socket.assigns.open_accordions, backtest_id, true)
+  def handle_event("trade_page_changed", %{"page" => page, "backtest_id" => backtest_id_str}, socket) when is_integer(page) do
+    # Handle the case when page is already an integer
+    if backtest_id_str == to_string(socket.assigns.backtest.id) do
+      trades = TradeContext.list_trades_for_backtest_paginated(socket.assigns.backtest.id, page, @trades_page_size)
+      updated_backtest = Map.put(socket.assigns.backtest, :trades, trades)
 
       {:noreply,
         socket
-        |> assign(:backtests, updated_backtests)
-        |> assign(:trade_pages, Map.put(socket.assigns.trade_pages, backtest_id, page))
-        |> assign(:open_accordions, open_accordions)}
+        |> assign(:backtest, updated_backtest)
+        |> assign(:trade_page, page)
+      }
     else
-      # If we can't find a backtest_id, just acknowledge the event
+      Logger.warning("Mismatched backtest_id in trade_page_changed event. Expected #{socket.assigns.backtest.id}, got #{backtest_id_str}")
       {:noreply, socket}
     end
   end
 
   @impl true
-  def handle_event("select_trade", %{"select" => trade_id_str, "backtest_id" => backtest_id}, socket) do
-    selected_map = socket.assigns.selected_trades_map
-    current_selection = Map.get(selected_map, backtest_id, [])
+  def handle_event("trade_page_changed", %{"page" => page_str, "backtest_id" => backtest_id_str}, socket) when is_binary(page_str) do
+    # Ensure backtest_id from event matches the one in the socket
+    # to prevent potential issues if the component ID is reused incorrectly.
+    if backtest_id_str == to_string(socket.assigns.backtest.id) do
+      case Integer.parse(page_str) do
+        {page, ""} when page > 0 ->
+          trades = TradeContext.list_trades_for_backtest_paginated(socket.assigns.backtest.id, page, @trades_page_size)
+          updated_backtest = Map.put(socket.assigns.backtest, :trades, trades)
 
-    new_selection =
-      if trade_id_str in current_selection do
-        List.delete(current_selection, trade_id_str)
-      else
-        [trade_id_str | current_selection]
+          {:noreply,
+            socket
+            |> assign(:backtest, updated_backtest)
+            |> assign(:trade_page, page)
+          }
+        _ ->
+          Logger.warning("Invalid page number received: #{page_str}")
+          {:noreply, socket}
       end
-
-    new_selected_map = Map.put(selected_map, backtest_id, new_selection)
-
-    {:noreply, assign(socket, :selected_trades_map, new_selected_map)}
-  end
-
-  @impl true
-  def handle_event("select_trade", %{"select_all" => "toggle", "backtest_id" => backtest_id}, socket) do
-    # backtest_id is the correct string UUID, no parsing needed
-
-    selected_map = socket.assigns.selected_trades_map
-    current_selection = Map.get(selected_map, backtest_id, [])
-
-    # Find the current backtest's structure from assigns using string ID
-    current_backtest = Enum.find(socket.assigns.backtests, fn b -> b.id == backtest_id end)
-
-    # Get IDs of all trades currently displayed for THIS BACKTEST PAGE
-    all_current_trade_ids =
-      if current_backtest do
-        Enum.map(current_backtest.trades, &(&1.id))
-      else
-        []
-      end
-
-    all_selected? = Enum.all?(all_current_trade_ids, fn id -> id in current_selection end)
-
-    new_selection =
-      if all_selected? do
-        # Remove the current page's trade IDs from the selection
-        Enum.reject(current_selection, fn id -> id in all_current_trade_ids end)
-      else
-        # Add all current trade IDs to the selection (avoiding duplicates)
-        Enum.uniq(current_selection ++ all_current_trade_ids)
-      end
-
-    new_selected_map = Map.put(selected_map, backtest_id, new_selection)
-
-    {:noreply, assign(socket, :selected_trades_map, new_selected_map)}
-  end
-
-  @impl true
-  def handle_event("toggle_accordion", %{"backtest_id" => backtest_id}, socket) do
-    # Toggle the open state of this accordion
-    open_accordions = socket.assigns.open_accordions
-    is_open = Map.get(open_accordions, backtest_id, false)
-
-    # Update the open state map
-    new_open_accordions = Map.put(open_accordions, backtest_id, !is_open)
-
-    {:noreply, assign(socket, :open_accordions, new_open_accordions)}
-  end
-
-  @impl true
-  def handle_info({:backtest_update, backtest}, socket) do
-    {:noreply, assign(socket, :backtest, backtest)}
-  end
-
-  @impl true
-  def handle_info(:load_initial_data, socket) do
-    chart_data =
-      MarketDataLoader.fetch_market_data(socket.assigns.symbol, socket.assigns.timeframe)
-
-    socket =
-      socket
-      |> assign(chart_data: chart_data, loading: false)
-      |> push_event("chart-data-updated", %{
-        data: chart_data,
-        symbol: socket.assigns.symbol,
-        timeframe: socket.assigns.timeframe
-      })
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_info(:load_market_data, socket) do
-    chart_data =
-      MarketDataLoader.fetch_market_data(socket.assigns.symbol, socket.assigns.timeframe)
-
-    socket =
-      socket
-      |> assign(chart_data: chart_data, loading: false)
-      |> push_event("chart-data-updated", %{
-        data: chart_data,
-        symbol: socket.assigns.symbol,
-        timeframe: socket.assigns.timeframe
-      })
-
-    {:noreply, socket}
-  end
-
-  # Helper functions for formatting and styling - using FormatterUtils
-  defp format_datetime(datetime) do
-    FormatterUtils.format_datetime(datetime)
-  end
-
-  defp format_percentage(nil), do: "N/A"
-  defp format_percentage(decimal) do
-    FormatterUtils.format_percent(decimal)
-  end
-
-  defp status_color(status) do
-    case status do
-      :completed -> "bg-green-100 text-green-800"
-      :running -> "bg-blue-100 text-blue-800"
-      :pending -> "bg-yellow-100 text-yellow-800"
-      :failed -> "bg-red-100 text-red-800"
-      _ -> "bg-gray-100 text-gray-800"
+    else
+      Logger.warning("Mismatched backtest_id in trade_page_changed event. Expected #{socket.assigns.backtest.id}, got #{backtest_id_str}")
+      {:noreply, socket}
     end
   end
 
-  defp side_color(side) do
-    case side do
-      :long -> "text-green-600"
-      :short -> "text-red-600"
-      _ -> ""
+  @impl true
+  def handle_event("chart-initialized", _params, socket) do
+    # Simply acknowledge the event from the chart component
+    {:noreply, socket}
+  end
+
+  # --- Helper functions ---
+  defp side_color(:long), do: "text-green-600 dark:text-green-400"
+  defp side_color(:short), do: "text-red-600 dark:text-red-400"
+  defp side_color(_), do: ""
+
+  defp pnl_color(value), do: FormatterUtils.color_class(value)
+
+  defp status_color(:completed), do: "text-green-600 dark:text-green-400"
+  defp status_color(:running), do: "text-blue-600 dark:text-blue-400"
+  defp status_color(:pending), do: "text-yellow-600 dark:text-yellow-400"
+  defp status_color(:failed), do: "text-red-600 dark:text-red-400"
+  defp status_color(_), do: "text-muted-foreground"
+
+  defp format_time_range(start_time, end_time) do
+    start_str = FormatterUtils.format_datetime(start_time)
+    end_str = FormatterUtils.format_datetime(end_time)
+    "#{start_str} - #{end_str}"
+  end
+
+  # Calculate total PnL from final and initial balance
+  defp calculate_total_pnl(backtest) do
+    if is_nil(backtest.final_balance) || is_nil(backtest.initial_balance) do
+      Decimal.new(0)
+    else
+      Decimal.sub(backtest.final_balance, backtest.initial_balance)
     end
   end
 
-  defp pnl_color(value) do
-    FormatterUtils.color_class(value)
+  # Calculate PnL percentage
+  defp calculate_pnl_percentage(initial_balance, final_balance) do
+    if is_nil(initial_balance) || is_nil(final_balance) || Decimal.compare(initial_balance, Decimal.new(0)) == :eq do
+      Decimal.new(0)
+    else
+      pnl = Decimal.sub(final_balance, initial_balance)
+      Decimal.div(pnl, initial_balance)
+    end
+  end
+
+  # Calculate win rate
+  defp calculate_win_rate(trades) do
+    if !trades || Enum.empty?(trades) do
+      "0.00"
+    else
+      profitable_trades = Enum.count(trades, fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :gt end)
+      win_rate = profitable_trades / length(trades) * 100
+      :erlang.float_to_binary(win_rate, decimals: 2)
+    end
+  end
+
+  # Calculate average profit percentage for winning trades
+  defp calculate_avg_profit(trades) do
+    if !trades || Enum.empty?(trades) do
+      "0.00"
+    else
+      profitable_trades = Enum.filter(trades, fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :gt end)
+
+      if length(profitable_trades) > 0 do
+        avg_profit_pct =
+          profitable_trades
+          |> Enum.map(fn trade -> Decimal.to_float(trade.pnl_percentage) * 100 end)
+          |> Enum.sum()
+          |> Kernel./(length(profitable_trades))
+
+        :erlang.float_to_binary(avg_profit_pct, decimals: 2)
+      else
+        "0.00"
+      end
+    end
+  end
+
+  # Calculate average loss percentage for losing trades
+  defp calculate_avg_loss(trades) do
+    if !trades || Enum.empty?(trades) do
+      "0.00"
+    else
+      losing_trades = Enum.filter(trades, fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :lt end)
+
+      if length(losing_trades) > 0 do
+        avg_loss_pct =
+          losing_trades
+          |> Enum.map(fn trade -> Decimal.to_float(trade.pnl_percentage) * 100 * -1 end) # Make positive for display
+          |> Enum.sum()
+          |> Kernel./(length(losing_trades))
+
+        :erlang.float_to_binary(avg_loss_pct, decimals: 2)
+      else
+        "0.00"
+      end
+    end
+  end
+
+  # Calculate profit factor (total profits / total losses)
+  defp calculate_profit_factor(trades) do
+    if !trades || Enum.empty?(trades) do
+      "0.00"
+    else
+      total_profit =
+        trades
+        |> Enum.filter(fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :gt end)
+        |> Enum.reduce(Decimal.new(0), fn trade, acc -> Decimal.add(acc, trade.pnl) end)
+
+      total_loss =
+        trades
+        |> Enum.filter(fn trade -> Decimal.compare(trade.pnl, Decimal.new(0)) == :lt end)
+        |> Enum.reduce(Decimal.new(0), fn trade, acc -> Decimal.add(acc, Decimal.abs(trade.pnl)) end)
+
+      if Decimal.compare(total_loss, Decimal.new(0)) == :gt do
+        profit_factor = Decimal.div(total_profit, total_loss)
+        Decimal.round(profit_factor, 2) |> Decimal.to_string()
+      else
+        "∞" # Infinity symbol when no losses
+      end
+    end
   end
 end
