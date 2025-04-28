@@ -36,17 +36,6 @@ defmodule CentralWeb.Components.Common.AppSidebar do
             url: "/backtest"
           }
         ]
-      },
-      %{
-        title: "Documentation",
-        url: "#",
-        icon: &book_open/1,
-        items: [
-          %{
-            title: "Changelog",
-            url: "/changelog"
-          }
-        ]
       }
     ]
   }
@@ -59,8 +48,16 @@ defmodule CentralWeb.Components.Common.AppSidebar do
     trigger_id: "settings-dialog-trigger"
   }
 
+  # Define changelog data
+  @changelog_data %{
+    title: "Changelog",
+    url: "/changelog",
+    icon: &book_open/1
+  }
+
   attr :data, :map, default: @default_data
   attr :settings_data, :map, default: @settings_data
+  attr :changelog_data, :map, default: @changelog_data
   attr :theme, :string, default: "light"
 
   attr :id, :string, default: "theme-container"
@@ -74,6 +71,7 @@ defmodule CentralWeb.Components.Common.AppSidebar do
         <.nav_main items={@data.navMain} />
       </.sidebar_content>
       <.sidebar_footer>
+        <.changelog_button changelog_data={@changelog_data} />
         <.settings_button settings_data={@settings_data} />
         <.logout_button />
         <SettingsDialog.settings_dialog
@@ -103,9 +101,22 @@ defmodule CentralWeb.Components.Common.AppSidebar do
     """
   end
 
+  attr :changelog_data, :map, required: true
+
+  defp changelog_button(assigns) do
+    ~H"""
+    <.sidebar_menu_button as_tag="a" href={@changelog_data.url} class="mt-2">
+      <span class="mr-2 h-4 w-4 flex items-center">
+        <.dynamic tag={@changelog_data.icon} class="h-4 w-4" />
+      </span>
+      <p>{@changelog_data.title}</p>
+    </.sidebar_menu_button>
+    """
+  end
+
   defp logout_button(assigns) do
     ~H"""
-    <form action="/users/log_out" method="post" class="mt-2">
+    <form action="/users/log_out" method="post">
       <input type="hidden" name="_method" value="delete" />
       <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
       <.sidebar_menu_button type="submit" class="hover:text-red-700 w-full">
