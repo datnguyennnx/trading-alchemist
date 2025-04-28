@@ -16,33 +16,19 @@ defmodule CentralWeb.StrategyLive.ShowLive do
   alias CentralWeb.StrategyLive.Components.BacktestHistory
   alias CentralWeb.StrategyLive.Components.TradingRules
   alias CentralWeb.StrategyLive.Components.LatestPerformance
-  alias CentralWeb.StrategyLive.Components.StrategyInfo
   alias CentralWeb.StrategyLive.Components.BacktestForm
+  alias CentralWeb.BacktestLive.Utils.FormatterUtils
+
+  @page_size 10
 
   def mount(%{"id" => id}, _session, socket) do
     strategy = StrategyContext.get_strategy!(id)
-    backtests_raw = BacktestContext.list_backtests_for_strategy(id)
 
-    # Calculate additional fields for each backtest
-    backtests =
-      Enum.map(backtests_raw, fn backtest ->
-        total_pnl = calculate_total_pnl(backtest)
-        total_pnl_percentage = calculate_pnl_percentage(backtest)
-        # Placeholder for trades count - requires more logic/preloading
-        total_trades = Map.get(backtest, :total_trades, "N/A")
+    page = 1
+    {backtests, backtests_count} = fetch_paginated_backtests(id, page, @page_size)
 
-        backtest
-        |> Map.put(:total_pnl, total_pnl)
-        |> Map.put(:total_pnl_percentage, total_pnl_percentage)
-        |> Map.put(:total_trades, total_trades)
-      end)
-
-    # Get the most recent backtest for quick stats
-    recent_backtest =
-      backtests
-      |> Enum.filter(fn b -> b.status == :completed end)
-      |> Enum.sort_by(fn b -> b.inserted_at end, :desc)
-      |> List.first()
+    # Get the most recent *completed* backtest for quick stats (fetch separately)
+    recent_backtest = BacktestContext.get_most_recent_completed_backtest(id) |> maybe_add_pnl()
 
     # Initialize backtest form with default values
     default_values = %{
@@ -57,14 +43,68 @@ defmodule CentralWeb.StrategyLive.ShowLive do
     {:ok,
      socket
      |> assign(:strategy, strategy)
-     |> assign(:backtests, backtests)
-     |> assign(:recent_backtest, recent_backtest)
+     |> assign(:backtests, backtests) # Now contains only the current page
+     |> assign(:page, page)
+     |> assign(:page_size, @page_size)
+     |> assign(:backtests_count, backtests_count)
+     |> assign(:recent_backtest, recent_backtest) # Assign potentially nil recent backtest
      |> assign(:indicators, Indicators.list_indicators())
      |> assign(:show_backtest_form, true)
      |> assign(:form, to_form(default_values))
      |> assign(:start_time, start_time)
      |> assign(:end_time, end_time)
      |> assign(:page_title, strategy.name)}
+  end
+
+  defp fetch_paginated_backtests(strategy_id, page, page_size) do
+    offset = (page - 1) * page_size
+    backtests_raw = BacktestContext.list_backtests_for_strategy(strategy_id, limit: page_size, offset: offset)
+    backtests_count = BacktestContext.count_backtests_for_strategy(strategy_id)
+
+    # Calculate additional fields for the current page of backtests
+    backtests =
+      Enum.map(backtests_raw, fn backtest ->
+        backtest
+        |> maybe_add_pnl()
+      end)
+
+    {backtests, backtests_count}
+  end
+
+  # Helper to add PnL fields to a single backtest map
+  defp maybe_add_pnl(nil), do: nil
+  defp maybe_add_pnl(backtest) do
+    total_pnl = calculate_total_pnl(backtest)
+    total_pnl_percentage = calculate_pnl_percentage(backtest)
+    total_trades = Map.get(backtest, :total_trades, "N/A") # Keep placeholder or improve later
+
+    backtest
+    |> Map.put(:total_pnl, total_pnl)
+    |> Map.put(:total_pnl_percentage, total_pnl_percentage)
+    |> Map.put(:total_trades, total_trades)
+  end
+
+  # Helper functions for PnL calculation (assuming these exist or are defined below)
+  defp calculate_total_pnl(backtest) do
+    # Return nil if final_balance is missing
+    if is_nil(backtest.final_balance) or is_nil(backtest.initial_balance) do
+      nil
+    else
+      Decimal.sub(backtest.final_balance, backtest.initial_balance)
+    end
+  end
+
+  defp calculate_pnl_percentage(backtest) do
+    initial = backtest.initial_balance
+    # Get total_pnl, which might be nil now
+    total_pnl = calculate_total_pnl(backtest)
+
+    # Check for nil pnl or invalid initial balance before calculating percentage
+    if is_nil(total_pnl) or is_nil(initial) or Decimal.compare(initial, Decimal.new(0)) != :gt do
+      nil
+    else
+      Decimal.div(total_pnl, initial) |> Decimal.mult(100) |> Decimal.round(2)
+    end
   end
 
   def render(assigns) do
@@ -89,13 +129,13 @@ defmodule CentralWeb.StrategyLive.ShowLive do
             </div>
             <div class="flex items-center gap-1">
               <p>Created:</p>
-              <p class="font-medium">{Calendar.strftime(@strategy.inserted_at, "%d/%m/%Y")}</p>
+              <p class="font-medium">{FormatterUtils.format_datetime(@strategy.inserted_at)}</p>
             </div>
             <div class="flex items-center gap-1">
               <p>Last Modified:</p>
-              <p class="font-medium">{Calendar.strftime(@strategy.updated_at, "%d/%m/%Y")}</p>
+              <p class="font-medium">{FormatterUtils.format_datetime(@strategy.updated_at)}</p>
             </div>
-            <%= if @strategy.description && @strategy.description != "" && @strategy.description != "12/31/23" do %>
+            <%= if @strategy.description && @strategy.description != "" do %>
               <div class="flex items-center gap-1">
                 <p>Description:</p>
                 <p class="font-medium">{@strategy.description}</p>
@@ -137,7 +177,7 @@ defmodule CentralWeb.StrategyLive.ShowLive do
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-6 gap-6">
-        <!-- Left Column: Backtest Controls -->
+        <!-- Left Column: Backtest Controls & History -->
         <div class="space-y-6 col-span-4">
           <.live_component
             module={BacktestForm}
@@ -148,19 +188,21 @@ defmodule CentralWeb.StrategyLive.ShowLive do
             strategy_id={@strategy.id}
           />
 
-    <!-- Backtest History -->
+          <!-- Backtest History -->
           <.live_component
             module={BacktestHistory}
             id="backtest-history"
-            backtests={@backtests}
-            max_items={5}
+            backtest_data={@backtests} # Pass current page data under a different name
+            page={@page}
+            page_size={@page_size}
+            total_entries={@backtests_count}
+            on_page_change="change_backtest_page" # Event name for pagination
           />
         </div>
 
-    <!-- Right Column: Strategy Information -->
+        <!-- Right Column: Strategy Information -->
         <div class="space-y-6 col-span-2">
-
-    <!-- Latest Performance -->
+          <!-- Latest Performance -->
           <%= if @recent_backtest do %>
             <.live_component
               module={LatestPerformance}
@@ -169,7 +211,7 @@ defmodule CentralWeb.StrategyLive.ShowLive do
             />
           <% end %>
 
-    <!-- Trading Rules -->
+          <!-- Trading Rules -->
           <.live_component
             module={TradingRules}
             id="trading-rules"
@@ -199,8 +241,8 @@ defmodule CentralWeb.StrategyLive.ShowLive do
     position_size = parse_decimal(params["position_size"], "2.0")
 
     # Parse dates or set defaults
-    start_time = parse_datetime(params["start_time"]) || socket.assigns.start_time
-    end_time = parse_datetime(params["end_time"]) || socket.assigns.end_time
+    start_time = parse_datetime(params["start_time"], socket.assigns.start_time)
+    end_time = parse_datetime(params["end_time"], socket.assigns.end_time)
 
     # Create backtest parameters
     backtest_params = %{
@@ -238,14 +280,18 @@ defmodule CentralWeb.StrategyLive.ShowLive do
           # Subscribe to backtest updates
           Phoenix.PubSub.subscribe(Central.PubSub, "backtest:#{backtest.id}")
 
-          # Update backtests list with the new backtest
-          updated_backtests = [backtest | socket.assigns.backtests]
+          # Refetch the first page of backtests to show the new one
+          {updated_backtests, updated_count} = fetch_paginated_backtests(strategy.id, 1, @page_size)
 
           {:noreply,
            socket
-           |> assign(:backtests, updated_backtests)
-           |> put_flash(:info, "Backtest started successfully!")
-           |> redirect(to: ~p"/backtest/#{backtest.id}")}
+           |> assign(
+             backtests: updated_backtests,
+             backtests_count: updated_count,
+             page: 1 # Reset to page 1
+           )
+           |> put_flash(:info, "Backtest started successfully! Redirecting...")
+           |> push_navigate(to: ~p"/backtest/#{backtest.id}")}
 
         {:error, changeset} ->
           {:noreply,
@@ -343,6 +389,17 @@ defmodule CentralWeb.StrategyLive.ShowLive do
     {:noreply, socket}
   end
 
+  # Handle page change for backtest history
+  def handle_event("change_backtest_page", %{"page" => page}, socket) when is_integer(page) do
+    strategy_id = socket.assigns.strategy.id
+    {backtests, _count} = fetch_paginated_backtests(strategy_id, page, socket.assigns.page_size)
+
+    {:noreply,
+     socket
+     |> assign(:backtests, backtests)
+     |> assign(:page, page)}
+  end
+
   # Helper functions for parsing form values
   defp parse_decimal(value, default) when is_binary(value) do
     case Decimal.parse(value) do
@@ -353,17 +410,17 @@ defmodule CentralWeb.StrategyLive.ShowLive do
 
   defp parse_decimal(_, default), do: Decimal.new(default)
 
-  defp parse_datetime(nil), do: nil
-  defp parse_datetime(""), do: nil
+  defp parse_datetime(nil, default), do: default
+  defp parse_datetime("", default), do: default
 
-  defp parse_datetime(datetime_string) when is_binary(datetime_string) do
+  defp parse_datetime(datetime_string, default) when is_binary(datetime_string) do
     case DateTime.from_iso8601(datetime_string) do
       {:ok, datetime, _} -> datetime
-      _ -> nil
+      _ -> default
     end
   end
 
-  defp parse_datetime(_), do: nil
+  defp parse_datetime(_, default), do: default
 
   # Helper functions to set reasonable default times as DateTime objects
   defp default_start_time_datetime do
@@ -388,27 +445,5 @@ defmodule CentralWeb.StrategyLive.ShowLive do
     end)
     |> Enum.map(fn {k, v} -> "#{k}: #{Enum.join(v, ", ")}" end)
     |> Enum.join("; ")
-  end
-
-  # Helper functions to calculate PnL
-  defp calculate_total_pnl(backtest) do
-    if is_nil(backtest.final_balance) || is_nil(backtest.initial_balance) do
-      Decimal.new(0)
-    else
-      Decimal.sub(backtest.final_balance, backtest.initial_balance)
-    end
-  end
-
-  defp calculate_pnl_percentage(backtest) do
-    initial_balance = backtest.initial_balance
-    final_balance = backtest.final_balance
-
-    if is_nil(initial_balance) || is_nil(final_balance) ||
-         Decimal.compare(initial_balance, Decimal.new(0)) == :eq do
-      Decimal.new(0)
-    else
-      pnl = Decimal.sub(final_balance, initial_balance)
-      Decimal.div(pnl, initial_balance)
-    end
   end
 end

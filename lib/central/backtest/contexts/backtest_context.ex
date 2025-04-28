@@ -6,7 +6,6 @@ defmodule Central.Backtest.Contexts.BacktestContext do
   import Ecto.Query
   alias Central.Repo
   alias Central.Backtest.Schemas.Backtest
-  alias Central.Backtest.Utils.BacktestUtils, as: Utils
 
   @doc """
   Creates a new backtest with the given attributes.
@@ -46,29 +45,55 @@ defmodule Central.Backtest.Contexts.BacktestContext do
   end
 
   @doc """
-  Lists all backtests for a specific strategy.
+  Lists all backtests for a specific strategy, supporting pagination.
+  Options:
+    * :limit - The maximum number of backtests to return.
+    * :offset - The number of backtests to skip.
   """
-  def list_backtests_for_strategy(strategy_id) do
+  def list_backtests_for_strategy(strategy_id, opts \\ []) do
+    limit = Keyword.get(opts, :limit)
+    offset = Keyword.get(opts, :offset)
+
+    query =
+      from(b in Backtest,
+        where: b.strategy_id == ^strategy_id,
+        order_by: [desc: b.inserted_at],
+        preload: [:strategy]
+      )
+
+    query =
+      if limit, do: from(q in query, limit: ^limit), else: query
+
+    query =
+      if offset, do: from(q in query, offset: ^offset), else: query
+
+    Repo.all(query)
+    # Note: Sorting in Elixir after Repo.all is inefficient for pagination.
+    # The order_by in the query should handle the sorting correctly.
+    # If specific complex sorting is needed that can't be done in SQL,
+    # consider if pagination is still the right approach or if the calculation
+    # needs pre-computation.
+    # |> Enum.sort_by(...)
+  end
+
+  @doc """
+  Counts the total number of backtests for a specific strategy.
+  """
+  def count_backtests_for_strategy(strategy_id) do
+    from(b in Backtest, where: b.strategy_id == ^strategy_id, select: count(b.id))
+    |> Repo.one()
+  end
+
+  @doc """
+  Gets the most recent completed backtest for a strategy.
+  """
+  def get_most_recent_completed_backtest(strategy_id) do
     from(b in Backtest,
-      where: b.strategy_id == ^strategy_id,
+      where: b.strategy_id == ^strategy_id and b.status == :completed,
       order_by: [desc: b.inserted_at],
+      limit: 1,
       preload: [:strategy]
     )
-    |> Repo.all()
-    |> Enum.sort_by(
-      fn backtest ->
-        case backtest.inserted_at do
-          %DateTime{} = dt ->
-            Utils.DateTime.to_unix(dt)
-
-          %NaiveDateTime{} = ndt ->
-            Utils.DateTime.to_unix(ndt)
-
-          _ ->
-            0
-        end
-      end,
-      :desc
-    )
+    |> Repo.one()
   end
 end

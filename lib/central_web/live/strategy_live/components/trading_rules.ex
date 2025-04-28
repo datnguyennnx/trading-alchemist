@@ -2,7 +2,6 @@ defmodule CentralWeb.StrategyLive.Components.TradingRules do
   use CentralWeb, :live_component
   import CentralWeb.Components.UI.Card
   import CentralWeb.Components.UI.Icon
-  import CentralWeb.Components.UI.Tooltip
   import CentralWeb.Components.UI.Table
 
   @impl true

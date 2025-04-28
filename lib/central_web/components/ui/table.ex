@@ -134,7 +134,7 @@ defmodule CentralWeb.Components.UI.Table do
     <td
       class={
         classes([
-          "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+          "p-3 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
           @numeric && "text-right tabular-nums",
           @class
         ])

@@ -167,7 +167,6 @@ defmodule CentralWeb.BacktestLive.ShowLive do
                   on_page_change="trade_page_changed"
                   phx_value_keys={%{backtest_id: @backtest.id}}
                   row_numbers={true}
-                  compact={true}
                 >
                   <:col :let={trade} field={:entry_time} label="Entry Time">
                     {FormatterUtils.format_datetime(trade.entry_time)}

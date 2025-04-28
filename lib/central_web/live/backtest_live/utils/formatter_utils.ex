@@ -28,15 +28,16 @@ defmodule CentralWeb.BacktestLive.Utils.FormatterUtils do
   """
   def format_percent(nil), do: "N/A"
 
-  def format_percent(decimal) when is_number(decimal) do
-    "#{:erlang.float_to_binary(decimal * 100, decimals: 2)}%"
+  def format_percent(number) when is_number(number) do
+    "#{:erlang.float_to_binary(abs(number) * 100, decimals: 2)}%"
   end
 
   def format_percent(decimal) do
-    case Decimal.to_float(decimal) do
+    abs_decimal = Decimal.abs(decimal)
+
+    case Decimal.to_float(abs_decimal) do
       value when is_number(value) ->
         "#{:erlang.float_to_binary(value * 100, decimals: 2)}%"
-        # The _ case is unreachable as Decimal.to_float returns a float or raises.
     end
   rescue
     _ -> "N/A"
@@ -81,14 +82,13 @@ defmodule CentralWeb.BacktestLive.Utils.FormatterUtils do
   def format_currency(nil), do: "N/A"
 
   def format_currency(%Decimal{} = value) do
-    # Fix for the Decimal.to_string/2 error - use Decimal.round first
-    rounded = Decimal.round(value, 2)
+    abs_value = Decimal.abs(value)
+    rounded = Decimal.round(abs_value, 2)
     "$#{Decimal.to_string(rounded)}"
   end
 
   def format_currency(value) when is_number(value) do
-    # Consider adding number formatting (commas) for larger values if needed
-    "$#{:erlang.float_to_binary(value, decimals: 2)}"
+    "$#{:erlang.float_to_binary(abs(value), decimals: 2)}"
   end
 
   # Catch-all for unexpected types

@@ -35,8 +35,8 @@ defmodule CentralWeb.StrategyLive.Components.IndicatorConfig do
               </h2>
 
               <div class="flex items-center">
-                <.badge variant={indicator_type_variant(@processed_indicator.type)} class="text-xs">
-                  {@processed_indicator.type |> Atom.to_string() |> String.capitalize()} Indicator
+                <.badge color={indicator_type_color(@processed_indicator.type)} class="text-xs">
+                  {humanize_value(to_string(@processed_indicator.type))}
                 </.badge>
               </div>
             </div>
@@ -58,7 +58,7 @@ defmodule CentralWeb.StrategyLive.Components.IndicatorConfig do
 
           <div class="text-xs text-gray-500 mt-2 flex items-center">
             <.icon name="hero-information-circle" class="h-3.5 w-3.5 mr-1.5" />
-            <span>Parameters are saved automatically when the strategy is created.</span>
+            <p>Parameters are saved automatically when the strategy is created.</p>
           </div>
         </div>
       <% else %>
@@ -402,15 +402,15 @@ defmodule CentralWeb.StrategyLive.Components.IndicatorConfig do
 
   # Helper functions for display formatting
 
-  # Convert indicator type to CSS variant for badge
-  defp indicator_type_variant(type) do
+  # Convert indicator type to CSS color for badge
+  defp indicator_type_color(type) do
     case type do
-      :trend -> "secondary"
-      :momentum -> "info"
-      :volatility -> "warning"
-      :volume -> "success"
-      :level -> "primary"
-      _ -> "secondary"
+      :trend -> "gray"
+      :momentum -> "sky"
+      :volatility -> "amber"
+      :volume -> "green"
+      :level -> "blue"
+      _ -> "gray"
     end
   end
 
