@@ -178,7 +178,7 @@ defmodule CentralWeb.StrategyLive.ShowLive do
 
       <div class="grid grid-cols-1 lg:grid-cols-6 gap-6">
         <!-- Left Column: Backtest Controls & History -->
-        <div class="space-y-6 col-span-4">
+        <div class="space-y-6 col-span-full lg:col-span-4">
           <.live_component
             module={BacktestForm}
             id="backtest-form-component"
@@ -201,7 +201,7 @@ defmodule CentralWeb.StrategyLive.ShowLive do
         </div>
 
         <!-- Right Column: Strategy Information -->
-        <div class="space-y-6 col-span-2">
+        <div class="space-y-6 col-span-full lg:col-span-2">
           <!-- Latest Performance -->
           <%= if @recent_backtest do %>
             <.live_component
