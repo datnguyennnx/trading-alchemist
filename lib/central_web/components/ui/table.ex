@@ -50,8 +50,8 @@ defmodule CentralWeb.Components.UI.Table do
 
   def table(assigns) do
     ~H"""
-    <div class="relative w-full overflow-auto">
-      <table class={classes(["w-full caption-bottom text-sm", @class])} {@rest}>
+    <div class="relative w-full overflow-auto no-scrollbar">
+      <table class={["w-full caption-bottom text-sm", @class]} {@rest}>
         {render_slot(@inner_block)}
       </table>
     </div>
@@ -64,7 +64,7 @@ defmodule CentralWeb.Components.UI.Table do
 
   def table_header(assigns) do
     ~H"""
-    <thead class={classes(["[&_tr]:border-b", @class])} {@rest}>
+    <thead class={["[&_tr]:border-b", @class]} {@rest}>
       {render_slot(@inner_block)}
     </thead>
     """
@@ -77,12 +77,10 @@ defmodule CentralWeb.Components.UI.Table do
   def table_row(assigns) do
     ~H"""
     <tr
-      class={
-        classes([
-          "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-          @class
-        ])
-      }
+      class={[
+        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+        @class
+      ]}
       {@rest}
     >
       {render_slot(@inner_block)}
@@ -98,13 +96,11 @@ defmodule CentralWeb.Components.UI.Table do
   def table_head(assigns) do
     ~H"""
     <th
-      class={
-        classes([
-          "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-          @numeric && "text-right",
-          @class
-        ])
-      }
+      class={[
+        "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        @numeric && "text-right",
+        @class
+      ]}
       {@rest}
     >
       {render_slot(@inner_block)}
@@ -118,7 +114,7 @@ defmodule CentralWeb.Components.UI.Table do
 
   def table_body(assigns) do
     ~H"""
-    <tbody class={classes(["[&_tr:last-child]:border-0", @class])} {@rest}>
+    <tbody class={["[&_tr:last-child]:border-0", @class]} {@rest}>
       {render_slot(@inner_block)}
     </tbody>
     """
@@ -132,13 +128,11 @@ defmodule CentralWeb.Components.UI.Table do
   def table_cell(assigns) do
     ~H"""
     <td
-      class={
-        classes([
-          "p-3 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-          @numeric && "text-right tabular-nums",
-          @class
-        ])
-      }
+      class={[
+        "p-3 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        @numeric && "text-right tabular-nums",
+        @class
+      ]}
       {@rest}
     >
       {render_slot(@inner_block)}
@@ -156,12 +150,10 @@ defmodule CentralWeb.Components.UI.Table do
   def table_footer(assigns) do
     ~H"""
     <tfoot
-      class={
-        classes([
-          "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
-          @class
-        ])
-      }
+      class={[
+        "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
+        @class
+      ]}
       {@rest}
     >
       {render_slot(@inner_block)}
@@ -175,7 +167,7 @@ defmodule CentralWeb.Components.UI.Table do
 
   def table_caption(assigns) do
     ~H"""
-    <caption class={classes(["mt-4 text-sm text-muted-foreground", @class])} {@rest}>
+    <caption class={["mt-4 text-sm text-muted-foreground", @class]} {@rest}>
       {render_slot(@inner_block)}
     </caption>
     """
