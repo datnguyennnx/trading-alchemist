@@ -192,11 +192,11 @@ defmodule CentralWeb.StrategyLive.ShowLive do
           <.live_component
             module={BacktestHistory}
             id="backtest-history"
-            backtest_data={@backtests} # Pass current page data under a different name
-            page={@page}
+            backtest_data={@backtests}
+            current_page={@page}
             page_size={@page_size}
             total_entries={@backtests_count}
-            on_page_change="change_backtest_page" # Event name for pagination
+            on_page_change="change_backtest_page"
           />
         </div>
 

@@ -68,7 +68,7 @@ defmodule CentralWeb.Components.UI.DataTable do
         {render_slot(@loading_state)}
       <% else %>
         <%= if Enum.empty?(@rows) do %>
-          <%# If rows are empty, render empty state slot if provided, otherwise default message %>
+          <%!-- If rows are empty, render empty state slot if provided, otherwise default message --%>
           <%= if @empty_state != [] do %>
             {render_slot(@empty_state)}
           <% else %>
@@ -77,7 +77,7 @@ defmodule CentralWeb.Components.UI.DataTable do
             </div>
           <% end %>
         <% else %>
-          <%# Rows are not empty, render the table %>
+          <%!-- Rows are not empty, render the table --%>
           <div class="rounded-md border-2">
             <.table>
               <.table_header>
@@ -147,7 +147,7 @@ defmodule CentralWeb.Components.UI.DataTable do
                       <.table_cell class={
                         classes([
                           "text-center text-sm text-muted-foreground w-[40px]",
-                          @sticky_first_col && "sticky left-0 z-10 bg-background",
+                          @sticky_first_col && "sticky left-0 z-10 bg-background"
                         ])
                       }>
                         {index + 1 + (@page - 1) * @page_size}
@@ -165,7 +165,7 @@ defmodule CentralWeb.Components.UI.DataTable do
                             col[:sticky] && "sticky z-10 bg-background",
                             col[:sticky] && col_index == 0 && "left-0",
                             @sticky_first_col && col_index == 0 && !@row_numbers &&
-                              "sticky left-0 z-10 bg-background",
+                              "sticky left-0 z-10 bg-background"
                           ])
                         }
                       >

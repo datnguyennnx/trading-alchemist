@@ -510,6 +510,7 @@ defmodule CentralWeb.Components.UI.Sidebar do
   attr :state, :string, default: "expanded"
   attr :as_tag, :any, default: "button"
   attr(:rest, :global)
+  attr :href, :string, default: nil
   slot(:inner_block, required: true)
   attr :tooltip, :string, required: false
 

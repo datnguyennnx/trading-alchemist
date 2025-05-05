@@ -48,14 +48,6 @@ defmodule CentralWeb.Live.Components.Chart.BacktestChartComponent do
   # Maximum trades to send in one batch for initial load
   @max_trade_batch 500
 
-  # Helper function to get the later of two DateTimes
-  defp max_datetime(dt1, dt2) do
-    case DateTime.compare(dt1, dt2) do
-      :gt -> dt1
-      _ -> dt2
-    end
-  end
-
   @impl true
   def mount(socket) do
     {:ok,
@@ -436,5 +428,13 @@ defmodule CentralWeb.Live.Components.Chart.BacktestChartComponent do
       />
     </div>
     """
+  end
+
+  defp max_datetime(candles, default) when is_list(candles) do
+    Enum.max_by(candles, & &1.timestamp, fn -> nil end)
+    |> case do
+      nil -> default
+      max_datetime -> max_datetime
+    end
   end
 end

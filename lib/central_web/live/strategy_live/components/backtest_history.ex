@@ -24,7 +24,7 @@ defmodule CentralWeb.StrategyLive.Components.BacktestHistory do
             id={"#{@id}-table"}
             rows={@backtest_data}
             row_id={fn bt -> bt.id end}
-            page={@page}
+            page={@current_page}
             page_size={@page_size}
             total_entries={@total_entries}
             on_page_change={@on_page_change}
