@@ -53,113 +53,71 @@ defmodule CentralWeb.StrategyLive.Components.RuleItem do
               class="absolute top-2 right-2 text-destructive hover:text-destructive/80"
             >
               <.icon name="hero-x-mark" class="h-4 w-4" />
-              <span class="sr-only">Remove Rule</span>
+              <p class="sr-only">Remove Rule</p>
             </.button>
           <% end %>
 
           <div class="flex flex-col gap-5">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="md:col-span-1">
+            <div class="grid grid-cols-1 gap-4">
+              <div>
                 <.form_item>
                   <.form_label>Indicator</.form_label>
-                  <.select
-                    :let={select}
-                    id={"indicator-select-#{@rule_type}-#{@index}"}
-                    name={@indicator_name}
-                    value={@indicator_id_str}
-                    selected_label={@indicator_label}
-                    placeholder={"Choose a #{@rule_type} indicator"}
-                  >
-                    <.select_trigger builder={select} class="w-full" />
-                    <.select_content builder={select} class="w-full">
-                      <.scroll_area>
-                        <%= for {type, indicators} <- @grouped_indicators do %>
-                          <.select_group>
-                            <.select_label>
-                              {Map.get(@type_labels, type, to_string(type))}
-                            </.select_label>
-                            <%= for indicator <- indicators do %>
-                              <.select_item
-                                builder={select}
-                                value={to_string(indicator.id)}
-                                label={indicator.name}
-                                event_name="indicator_changed"
-                                rule_type={@rule_type}
-                                index={@index}
-                              />
-                            <% end %>
-                          </.select_group>
-                        <% end %>
-                      </.scroll_area>
-                    </.select_content>
-                  </.select>
-                </.form_item>
-              </div>
-
-              <div class="md:col-span-1">
-                <.form_item>
-                  <.form_label>Condition</.form_label>
-                  <.select
-                    :let={select}
-                    id={"condition-select-#{@rule_type}-#{@index}"}
-                    name={@condition_name}
-                    value={@condition}
-                    selected_label={@condition_label}
-                    placeholder="Choose a trading condition"
-                  >
-                    <.select_trigger builder={select} class="w-full" />
-                    <.select_content builder={select} class="w-full">
-                      <.scroll_area>
-                        <.select_group>
-                          <.select_label>Conditions</.select_label>
-                          <%= for {condition_id, condition_name} <- @condition_labels do %>
-                            <.select_item
-                              builder={select}
-                              value={condition_id}
-                              label={condition_name}
-                              event_name="condition_changed"
-                              rule_type={@rule_type}
-                              index={@index}
-                            />
+                  <.form_control>
+                    <.select
+                      :let={select}
+                      id={"indicator-select-#{@rule_type}-#{@index}"}
+                      name={@indicator_name}
+                      value={@indicator_id_str}
+                      selected_label={@indicator_label}
+                      placeholder={"Choose a #{@rule_type} indicator"}
+                    >
+                      <.select_trigger builder={select} class="w-full" />
+                      <.select_content builder={select} class="w-full">
+                        <.scroll_area>
+                          <%= for {type, indicators} <- @grouped_indicators do %>
+                            <.select_group>
+                              <.select_label>
+                                {Map.get(@type_labels, type, to_string(type))}
+                              </.select_label>
+                              <%= for indicator <- indicators do %>
+                                <.select_item
+                                  builder={select}
+                                  value={to_string(indicator.id)}
+                                  label={indicator.name}
+                                  event_name="indicator_changed"
+                                  rule_type={@rule_type}
+                                  index={@index}
+                                />
+                              <% end %>
+                            </.select_group>
                           <% end %>
-                        </.select_group>
-                      </.scroll_area>
-                    </.select_content>
-                  </.select>
+                        </.scroll_area>
+                      </.select_content>
+                    </.select>
+                  </.form_control>
                 </.form_item>
-              </div>
 
-              <div class="md:col-span-1">
-                <.form_item>
-                  <.form_label>Value</.form_label>
-                  <.input
-                    type="number"
-                    step="any"
-                    id={"value-input-#{@rule_type}-#{@index}"}
-                    name={@value_name}
-                    value={@value_field}
-                    placeholder="Enter indicator value"
-                    class="w-full"
-                  />
-                </.form_item>
+                <!-- Hidden fields for condition and value -->
+                <input type="hidden" name={@condition_name} value={@condition || "crosses_above"} />
+                <input type="hidden" name={@value_name} value={@value_field || "0"} />
               </div>
             </div>
 
-            <%= if @indicator_id_str != "" and @indicator_id_str != "nil" and not is_nil(@indicator_id_str) do %>
-              <div class="mt-2">
-                <.live_component
-                  module={IndicatorConfig}
-                  id={"indicator-config-#{@rule_type}-#{@index}"}
-                  indicator_id={@indicator_id_str}
-                  params={@params}
-                  name_prefix={@params_prefix}
-                />
-              </div>
+            <div class="mt-2">
+              <.live_component
+                module={IndicatorConfig}
+                id={"indicator-config-#{@rule_type}-#{@index}"}
+                indicator_id={@indicator_id_str}
+                params={@params}
+                name_prefix={@params_prefix}
+              />
+            </div>
 
-              <%= if @rule_type == "exit" do %>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 pt-3 border-t border-gray-100">
-                  <.form_item>
-                    <.form_label>Stop Loss (%)</.form_label>
+            <%= if @rule_type == "exit" do %>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 pt-3 border-t border-gray-100">
+                <.form_item>
+                  <.form_label>Stop Loss (%)</.form_label>
+                  <.form_control>
                     <.input
                       name={"#{@rule_type}_stop_loss_#{@index}"}
                       type="number"
@@ -170,11 +128,13 @@ defmodule CentralWeb.StrategyLive.Components.RuleItem do
                       id={"#{@rule_type}_stop_loss_#{@index}"}
                       value={@stop_loss_value}
                     />
-                    <.form_message field={@form[:stop_loss]} />
-                  </.form_item>
+                  </.form_control>
+                  <.form_message field={@form[:stop_loss]} />
+                </.form_item>
 
-                  <.form_item>
-                    <.form_label>Take Profit (%)</.form_label>
+                <.form_item>
+                  <.form_label>Take Profit (%)</.form_label>
+                  <.form_control>
                     <.input
                       name={"#{@rule_type}_take_profit_#{@index}"}
                       type="number"
@@ -185,10 +145,10 @@ defmodule CentralWeb.StrategyLive.Components.RuleItem do
                       id={"#{@rule_type}_take_profit_#{@index}"}
                       value={@take_profit_value}
                     />
-                    <.form_message field={@form[:take_profit]} />
-                  </.form_item>
-                </div>
-              <% end %>
+                  </.form_control>
+                  <.form_message field={@form[:take_profit]} />
+                </.form_item>
+              </div>
             <% end %>
           </div>
         </div>
@@ -212,10 +172,13 @@ defmodule CentralWeb.StrategyLive.Components.RuleItem do
 
   # Private functions for processing rule data
   defp process_rule_data(assigns) do
-    rule = assigns.rule || %{value: "0", params: %{}}
+    rule = assigns.rule || %{indicator_id: "sma", value: "0", params: %{}}
 
     # Get indicator_id_str efficiently
     indicator_id_str = extract_indicator_id(rule)
+
+    # If no indicator is selected, default to sma
+    indicator_id_str = if indicator_id_str == "" or is_nil(indicator_id_str), do: "sma", else: indicator_id_str
 
     # Get condition efficiently
     condition = extract_condition(rule)

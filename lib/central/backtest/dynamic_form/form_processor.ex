@@ -116,14 +116,42 @@ defmodule Central.Backtest.DynamicForm.FormProcessor do
     condition_key = "#{prefix}_condition_#{index}"
     value_key = "#{prefix}_value_#{index}"
 
-    # Get basic rule components
-    indicator_id = Map.get(params, indicator_key)
-    condition = Map.get(params, condition_key)
-    value = Map.get(params, value_key)
+    # Get basic rule components with defaults
+    indicator_id = Map.get(params, indicator_key, "sma")
 
-    # Exit early if no indicator was selected
+    # Set default values for condition and value since they're not in the UI anymore
+    # but the rule structure still requires them
+    condition = Map.get(params, condition_key, "crosses_above")
+    value = Map.get(params, value_key, "0")
+
+    # Exit early if no indicator was selected, but provide a default
     if is_nil(indicator_id) || indicator_id == "" do
-      nil
+      # Create a rule with default indicator instead of returning nil
+      rule_id = "#{prefix}_#{index}"
+      default_params = get_default_params_for_indicator("sma")
+
+      rule_attrs =
+        if prefix == "exit" do
+          %{
+            id: rule_id,
+            indicator_id: "sma",
+            condition: condition,
+            value: value,
+            params: default_params,
+            stop_loss: "0.02",
+            take_profit: "0.04"
+          }
+        else
+          %{
+            id: rule_id,
+            indicator_id: "sma",
+            condition: condition,
+            value: value,
+            params: default_params
+          }
+        end
+
+      Rule.new(rule_attrs)
     else
       # Build rule struct
       rule_id = "#{prefix}_#{index}"
@@ -241,5 +269,11 @@ defmodule Central.Backtest.DynamicForm.FormProcessor do
       _ ->
         true
     end
+  end
+
+  # Helper function to get default parameters for a given indicator
+  defp get_default_params_for_indicator(indicator_id) do
+    alias Central.Backtest.DynamicForm.FormContext
+    FormContext.get_indicator_params(indicator_id)
   end
 end

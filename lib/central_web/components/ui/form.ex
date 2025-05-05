@@ -1,6 +1,7 @@
 defmodule CentralWeb.Components.UI.Form do
   @moduledoc false
   use CentralWeb.Component
+  import CentralWeb.Components.UI.Label
 
   @doc """
   Implement of form component. SaladUI doesn't define its own form, but it provides a set of form-related components to help you build your own form.
@@ -46,7 +47,7 @@ defmodule CentralWeb.Components.UI.Form do
 
   def form_item(assigns) do
     ~H"""
-    <div class={classes(["space-y-2", @class])} {@rest}>
+    <div class={classes(["flex flex-col space-y-2", @class])} {@rest}>
       {render_slot(@inner_block)}
     </div>
     """
@@ -71,7 +72,7 @@ defmodule CentralWeb.Components.UI.Form do
       end
 
     ~H"""
-    <CentralWeb.Components.UI.Label.label
+    <.label
       class={
         classes([
           @error && "text-destructive",
@@ -81,7 +82,7 @@ defmodule CentralWeb.Components.UI.Form do
       {@rest}
     >
       {render_slot(@inner_block)}
-    </CentralWeb.Components.UI.Label.label>
+    </.label>
     """
   end
 

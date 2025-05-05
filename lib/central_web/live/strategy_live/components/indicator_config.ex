@@ -324,14 +324,16 @@ defmodule CentralWeb.StrategyLive.Components.IndicatorConfig do
       <.form_label>
         {@param_label} {if @range_text != "", do: @range_text}
       </.form_label>
-      <.input
-        type="number"
-        name={"#{@path}_#{@param_name}"}
-        value={@param_value}
-        min={@min}
-        max={@max}
-        step={@step}
-      />
+      <.form_control>
+        <.input
+          type="number"
+          name={"#{@path}_#{@param_name}"}
+          value={@param_value}
+          min={@min}
+          max={@max}
+          step={@step}
+        />
+      </.form_control>
       <%= if @param_description do %>
         <.form_description>
           {@param_description}
@@ -345,22 +347,24 @@ defmodule CentralWeb.StrategyLive.Components.IndicatorConfig do
     ~H"""
     <.form_item>
       <.form_label>{@param_label}</.form_label>
-      <.select
-        :let={select}
-        name={"#{@path}_#{@param_name}"}
-        value={to_string(@param_value)}
-        selected_label={humanize_value(to_string(@param_value))}
-        placeholder={"Choose #{@param_label}"}
-      >
-        <.select_trigger builder={select} class="w-full" />
-        <.select_content builder={select} class="w-full">
-          <.scroll_area>
-            <%= for option <- @select_options do %>
-              <.select_item builder={select} value={option.value} label={option.key} />
-            <% end %>
-          </.scroll_area>
-        </.select_content>
-      </.select>
+      <.form_control>
+        <.select
+          :let={select}
+          name={"#{@path}_#{@param_name}"}
+          value={to_string(@param_value)}
+          selected_label={humanize_value(to_string(@param_value))}
+          placeholder={"Choose #{@param_label}"}
+        >
+          <.select_trigger builder={select} class="w-full" />
+          <.select_content builder={select} class="w-full">
+            <.scroll_area>
+              <%= for option <- @select_options do %>
+                <.select_item builder={select} value={option.value} label={option.key} />
+              <% end %>
+            </.scroll_area>
+          </.select_content>
+        </.select>
+      </.form_control>
       <%= if @param_description do %>
         <.form_description>
           {@param_description}
@@ -390,7 +394,9 @@ defmodule CentralWeb.StrategyLive.Components.IndicatorConfig do
     ~H"""
     <.form_item>
       <.form_label>{@param_label}</.form_label>
-      <.input type="text" name={"#{@path}_#{@param_name}"} value={@param_value} />
+      <.form_control>
+        <.input type="text" name={"#{@path}_#{@param_name}"} value={@param_value} />
+      </.form_control>
       <%= if @param_description do %>
         <.form_description>
           {@param_description}

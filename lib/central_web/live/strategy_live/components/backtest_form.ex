@@ -36,53 +36,61 @@ defmodule CentralWeb.StrategyLive.Components.BacktestForm do
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <.form_item>
                 <.form_label>Initial Balance</.form_label>
-                <.input
-                  field={f[:initial_balance]}
-                  name="initial_balance"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                  class="h-9"
-                />
+                <.form_control>
+                  <.input
+                    field={f[:initial_balance]}
+                    name="initial_balance"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    class="h-9"
+                  />
+                </.form_control>
               </.form_item>
 
               <.form_item>
                 <.form_label>Position Size (%)</.form_label>
-                <.input
-                  field={f[:position_size]}
-                  name="position_size"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  required
-                  class="h-9"
-                />
+                <.form_control>
+                  <.input
+                    field={f[:position_size]}
+                    name="position_size"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    required
+                    class="h-9"
+                  />
+                </.form_control>
               </.form_item>
 
               <.form_item>
                 <.form_label>Start Time</.form_label>
-                <div phx-update="ignore" id={"start_time_container_#{@strategy_id}"}>
-                  <.date_time_picker
-                    id={"backtest-start-time-#{@strategy_id}"}
-                    name="start_time"
-                    value={@start_time}
-                    suppress_events={true}
-                  />
-                </div>
+                <.form_control>
+                  <div phx-update="ignore" id={"start_time_container_#{@strategy_id}"}>
+                    <.date_time_picker
+                      id={"backtest-start-time-#{@strategy_id}"}
+                      name="start_time"
+                      value={@start_time}
+                      suppress_events={true}
+                    />
+                  </div>
+                </.form_control>
               </.form_item>
 
               <.form_item>
                 <.form_label>End Time</.form_label>
-                <div phx-update="ignore" id={"end_time_container_#{@strategy_id}"}>
-                  <.date_time_picker
-                    id={"backtest-end-time-#{@strategy_id}"}
-                    name="end_time"
-                    value={@end_time}
-                    suppress_events={true}
-                  />
-                </div>
+                <.form_control>
+                  <div phx-update="ignore" id={"end_time_container_#{@strategy_id}"}>
+                    <.date_time_picker
+                      id={"backtest-end-time-#{@strategy_id}"}
+                      name="end_time"
+                      value={@end_time}
+                      suppress_events={true}
+                    />
+                  </div>
+                </.form_control>
               </.form_item>
             </div>
 

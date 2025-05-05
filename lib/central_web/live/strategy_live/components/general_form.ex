@@ -22,18 +22,22 @@ defmodule CentralWeb.StrategyLive.Components.GeneralForm do
 
       <.form_item>
         <.form_label>Strategy Name</.form_label>
-        <.input field={@form[:name]} placeholder="e.g. RSI + SMA Crossover Strategy" required />
+        <.form_control>
+          <.input field={@form[:name]} placeholder="e.g. RSI + SMA Crossover Strategy" required />
+        </.form_control>
         <.form_message field={@form[:name]} />
       </.form_item>
 
       <.form_item>
         <.form_label>Description</.form_label>
-        <.textarea
-          id="strategy-description"
-          name={@form[:description].name}
-          value={@form[:description].value}
-          placeholder="Describe your strategy's logic and conditions..."
-        />
+        <.form_control>
+          <.textarea
+            id="strategy-description"
+            name={@form[:description].name}
+            value={@form[:description].value}
+            placeholder="Describe your strategy's logic and conditions..."
+          />
+        </.form_control>
         <.form_message field={@form[:description]} />
       </.form_item>
     </div>

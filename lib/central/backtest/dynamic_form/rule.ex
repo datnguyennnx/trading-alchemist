@@ -41,7 +41,26 @@ defmodule Central.Backtest.DynamicForm.Rule do
         do: attrs,
         else: Map.put(attrs, :id, generate_id())
 
+    # Ensure default values for condition and value if not provided
+    attrs = add_default_values(attrs)
+
     struct(__MODULE__, atomize_keys(attrs))
+  end
+
+  # Add default values for condition and value if not provided
+  defp add_default_values(attrs) do
+    attrs
+    |> ensure_key(:indicator_id, :sma)
+    |> ensure_key("indicator_id", :sma)
+    |> ensure_key(:condition, "crosses_above")
+    |> ensure_key("condition", "crosses_above")
+    |> ensure_key(:value, "0")
+    |> ensure_key("value", "0")
+  end
+
+  # Helper to ensure a key exists in a map with a default value
+  defp ensure_key(map, key, default) do
+    if Map.has_key?(map, key), do: map, else: Map.put(map, key, default)
   end
 
   @doc """
